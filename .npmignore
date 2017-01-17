@@ -1,0 +1,8 @@
+node_modules
+*.log
+.DS_Store
+test
+npm-debug.log
+.gitignore
+.editorconfig
+upload.json

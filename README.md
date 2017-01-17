@@ -13,9 +13,9 @@ npm i -g davos
 ## Usage
 
 ### Project setup
-* The first thing you should do is to run the command 'davos create' with your favorite CLI in your project's folder, witch will create the configuration file.
+* The first thing you should do is to run the command 'davos create' with your favorite CLI in your project's folder, which will create the configuration file.
 * You could easily insert profiles(dev01, dev02, development etc.) by running the 'davos insert' command.
-* Running the 'davos list' command will display a list of your profiles and will show witch profile is active now.
+* Running the 'davos list' command will display a list of your profiles and will show which profile is active now.
 * To switch your active profile you could run the following commands: 'davos switch --profile [name of profile]' or 'davos switch -P [name of profile]'.
 
 ###
