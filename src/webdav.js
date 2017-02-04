@@ -89,7 +89,7 @@
 				if(!!path) {
 					options.uri = getUriPath(path);
 				}
-				var signature = options.method + ' :: ' + options.uri
+				var signature = options.method + ' :: ' + options.uri;
 				req = request(options, function(error, response, body) {
 					if(attemptsLeft < MAX_ATTEMPTS) {
 						log.debug('Trying to ' + signature + ' for the ' + (MAX_ATTEMPTS - attemptsLeft) + ' time out of ' + MAX_ATTEMPTS + ' tries left.');

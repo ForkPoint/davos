@@ -12,37 +12,6 @@
     let config = function() {
         let configPropeties = ['hostname', 'username', 'password', 'cartridge', 'codeVersion', 'exclude'];
 
-        function loadConfiguration() {
-            //parse the configuration
-            let json = null;
-            try {
-                var fileContents = fs.readFileSync(CONFIG_NAME, 'UTF-8');
-                json = JSON.parse(fileContents);
-            } catch (e) {
-                log.error(chalk.red("\nThere was a problem parsing the configuration file : " + CONFIG_NAME + " ::: " + e.message));
-            }
-            return json;
-        }
-
-        function saveConfiguration(json) {
-            fs.writeFileSync(CONFIG_NAME, JSON.stringify(json), 'UTF-8');
-            log.info(chalk.cyan('\n Configuration saved in ' + CONFIG_NAME));
-        }
-
-        function isConfigExisting() {
-            try {
-                fs.statSync(CONFIG_NAME);
-                return true;
-            } catch (e) {
-                return false;
-            }
-        }
-
-        function promptError(e) {
-            log.error(e);
-            return 1;
-        }
-
         function validateConfigProperties(config) {
             configPropeties.forEach(function(property) {
                 if (!config.hasOwnProperty(property)) {
@@ -72,18 +41,8 @@
             return cartridges;
         }
 
-        function getConfigName() {
-        	//@TODO make config name dynamic
-        	return CONFIG_NAME;
-        }
-
         return {
-        	getConfigName: getConfigName,
-            isConfigExisting: isConfigExisting,
-            loadConfiguration: loadConfiguration,
-            saveConfiguration: saveConfiguration,
             getCartridges: getCartridges,
-            promptError: promptError,
             validateConfigProperties: validateConfigProperties
         };
     }();

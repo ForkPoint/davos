@@ -9,9 +9,6 @@
     "lint:fix": "npm run lint --silent -- --fix",
     "publish-please": "publish-please"
   },
-  "bin": {
-    "davos": "index.js"
-  },
   "keywords": [
     "demandware",
     "webdav",
@@ -39,12 +36,10 @@
     "del": "^2.2.2",
     "md5-file": "^3.1.1",
     "multimatch": "^2.1.0",
-    "prompt": "^1.0.0",
     "request": "^2.79.0",
     "sync-queue": "0.0.2",
     "walk": "^2.3.9",
     "xmldoc": "^1.0.0",
-    "yargs": "^6.6.0",
     "yazl": "^2.4.2",
     "winston": "^2.3.0",
     "progress": "^1.1.8",
