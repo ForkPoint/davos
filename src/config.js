@@ -2,7 +2,13 @@
   'use strict';
 
   // Constants
-  const CONFIG_NAME = 'upload.json';
+  const CONFIG_NAME = 'upload.json',
+    IGNORED_NAMES = [
+      '.git',
+      '.svn',
+      '.sass-cache',
+      'node_modules'
+    ];
 
   // Imports
   const fs = require('fs'),
@@ -42,19 +48,26 @@
     }
 
     function getCartridges(srcpath, cartridges) {
-      const directories = fs.readdirSync(srcpath);
-      const len = directories.length;
+      const directories = fs.readdirSync(srcpath),
+        len = directories.length;
 
-      for (let i = 0; i < len; i += 1) {
-        if (fs.statSync(path.join(srcpath, directories[i])).isDirectory()) {
-          if (directories[i] === 'cartridge') {
-            const relativePath = path.relative(process.cwd(), srcpath);
-            cartridges.push(relativePath);
+      for (let i = 0; i < len; i++) {
+        let fsName = directories[i],
+          fsPath = path.join(srcpath, fsName);
+
+        if (IGNORED_NAMES.indexOf(fsName) > -1) {
+          continue;
+        }
+
+        if (fs.statSync(fsPath).isDirectory()) {
+          if (fsName === 'cartridge') {
+            cartridges.push(path.relative(process.cwd(), srcpath));
             continue;
           }
-          getCartridges(`${srcpath}/${directories[i]}`, cartridges);
+          getCartridges(`${srcpath}/${fsName}`, cartridges);
         }
       }
+
       return cartridges;
     }
 
