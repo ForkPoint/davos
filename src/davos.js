@@ -1,296 +1,304 @@
-/*jshint esversion: 6 */
-(function() {
-    'use strict';
-    //own dependencies
-    const config = require('./config'),
-        WebDav = require('./webdav'),
-        log = require('./logger');
+(function () {
+  'use strict';
 
-    const fs = require('fs'),
-        path = require('path'),
-        chalk = require('chalk'),
-        multimatch = require('multimatch'),
-        walk = require('walk'),
-        yazl = require('yazl'),
-        del = require('del'),
-        Queue = require('sync-queue'),
-        chokidar = require('chokidar'),
-        md5File = require('md5-file'),
-        xmldoc = require('xmldoc');
+  // Imports
+  const fs = require('fs'),
+    path = require('path'),
+    chalk = require('chalk'),
+    multimatch = require('multimatch'),
+    walk = require('walk'),
+    yazl = require('yazl'),
+    del = require('del'),
+    Queue = require('sync-queue'),
+    chokidar = require('chokidar'),
+    md5File = require('md5-file'),
+    xmldoc = require('xmldoc');
 
-    class Davos {
-        constructor(conf) {
-            this.conf = conf;
-            return this;
-        }
+  // Local dependencies
+  const config = require('./config'),
+    WebDav = require('./webdav'),
+    log = require('./logger');
 
-        upload() {
-            var self = this;
-            return new Promise(function(uploadResolve, uploadReject){
-                config.validateConfigProperties(self.conf);
-                let queue = new Queue(),
-                    allCartridges = (self.conf.cartridge.constructor === Array) ? self.conf.cartridge : [self.conf.cartridge],
-                    webdav = new WebDav(self.conf),
-                    processedCartridges = 0;
-                allCartridges.forEach(function(cartridge) {
-                    let dirname = path.dirname(cartridge),
-                        cartridgeName = path.basename(cartridge),
-                        zipCartridgeName = cartridgeName + '.zip';
+  class Davos {
+    constructor (conf) {
+      this.conf = conf;
+      return this;
+    }
 
-                    queue.place(function() {
-                        return new Promise(function(resolve, reject) {
-                            let walker = walk.walk(cartridge),
-                                zipCartridge = new yazl.ZipFile();
-                            walker.on('file', function(root, filestats, next) {
-                                let realPath = path.resolve(root, filestats.name),
-                                    metadataPath = path.relative(dirname, realPath);
-                                if (!multimatch([root, filestats.name], self.conf.exclude).length) {
-                                    zipCartridge.addFile(realPath, metadataPath);
-                                }
-                                next();
-                            });
-                            walker.on('end', function() {
-                                log.debug('Walking zipped files done for ' + cartridge);
-                                zipCartridge.end();
-                            });
-                            zipCartridge.outputStream
-                                .pipe(fs.createWriteStream(zipCartridgeName))
-                                .on('close', function() {
-                                    log.info('Zipping finished for ' + cartridge);
-                                    resolve(cartridgeName);
-                                });
-                        }).then(function() {
-                            return webdav.delete(cartridgeName);
-                        }).then(function() {
-                            return webdav.put(zipCartridgeName);
-                        }).then(function() {
-                            return webdav.unzip(zipCartridgeName);
-                        }).then(function() {
-                            return webdav.delete(zipCartridgeName);
-                        }).then(function() {
-                            log.info(chalk.cyan(`Uploaded cartridge: ${cartridge}`));
-                            return del(zipCartridgeName)
-                                .then(function() {
-                                    if (++processedCartridges == allCartridges.length) {
-                                        return uploadResolve();
-                                    }
-                                    queue.next();
-                                });
-                        }, function(err) {
-                            log.error(err);
-                            return del(zipCartridgeName)
-                                .then(function() {
-                                    if (++processedCartridges == allCartridges.length) {
-                                        return uploadResolve();
-                                    }
-                                    queue.next();
-                                    return Promise.reject(err);
-                                });
-                        });
+    upload () {
+      const self = this;
+      return new Promise(function (uploadResolve) { // arguments: uploadResolve, uploadReject
+        config.validateConfigProperties(self.conf);
+        let queue = new Queue();
+        let allCartridges = (self.conf.cartridge.constructor === Array)
+          ? self.conf.cartridge
+          : [self.conf.cartridge];
+        let webdav = new WebDav(self.conf);
+        let processedCartridges = 0;
+
+        allCartridges.forEach(function (cartridge) {
+          let dirname = path.dirname(cartridge);
+          let cartridgeName = path.basename(cartridge);
+          let zipCartridgeName = cartridgeName + '.zip';
+
+          queue.place(function() {
+            return new Promise(function (resolve) { // arguments: resolve, reject
+              let walker = walk.walk(cartridge);
+              let zipCartridge = new yazl.ZipFile();
+
+              walker.on('file', function (root, filestats, next) {
+                let realPath = path.resolve(root, filestats.name);
+                let metadataPath = path.relative(dirname, realPath);
+
+                if (!multimatch([root, filestats.name], self.conf.exclude).length) {
+                  zipCartridge.addFile(realPath, metadataPath);
+                }
+                next();
+              });
+
+              walker.on('end', function () {
+                log.debug('Walking zipped files done for ' + cartridge);
+                zipCartridge.end();
+              });
+
+              zipCartridge.outputStream
+                          .pipe(fs.createWriteStream(zipCartridgeName))
+                          .on('close', function () {
+                            log.info('Zipping finished for ' + cartridge);
+                            resolve(cartridgeName);
+                          });
+            }).then(function () {
+              return webdav.delete(cartridgeName);
+            }).then(function () {
+              return webdav.put(zipCartridgeName);
+            }).then(function () {
+              return webdav.unzip(zipCartridgeName);
+            }).then(function () {
+              return webdav.delete(zipCartridgeName);
+            }).then(function () {
+              log.info(chalk.cyan(`Uploaded cartridge: ${cartridge}`));
+              return del(zipCartridgeName)
+                    .then(function () {
+                      if (++processedCartridges == allCartridges.length) {
+                        return uploadResolve();
+                      }
+                      queue.next();
                     });
+            }, function (err) {
+              log.error(err);
+              return del(zipCartridgeName)
+                    .then(function () {
+                      if (++processedCartridges == allCartridges.length) {
+                        return uploadResolve();
+                      }
+                      queue.next();
+                      return Promise.reject(err);
+                    });
+            });
+          });
+        });
+      });
+    }
+
+    watch () {
+      const self = this;
+      log.info('Waiting for initial scan completion');
+      let hash;
+      let queue = new Queue();
+      let webdav = new WebDav(self.conf);
+      let allCartridges = (self.conf.cartridge.constructor === Array) ? self.conf.cartridge : [self.conf.cartridge];
+      let excludesWithDotFiles = self.conf.exclude.concat([/[\/\\]\./]);
+      let watchHashList = [];
+      let isFirstUseFiles = true;
+      let isFirstUseDirectories = true;
+      let watcher = chokidar.watch(allCartridges, {
+        ignored: excludesWithDotFiles,
+        persistent: true,
+        atomic: true,
+        ignorePermissionErrors: true,
+        awaitWriteFinish: {
+          stabilityThreshold: 3000,
+          pollInterval: 100
+        }
+      });
+
+      watcher
+          .on('ready', () => {
+            log.info('Initial scan complete. Ready for changes');
+            isFirstUseFiles = false;
+            isFirstUseDirectories = false;
+          })
+          .on('add', p => {
+            hash = md5File.sync(p);
+            watchHashList.push({
+              filePath: p,
+              md5sum: hash
+            });
+
+            if (!isFirstUseFiles) {
+              log.info(`File ${p} has been added`);
+              queue.place(function () {
+                return webdav.put(p)
+                  .then(function () {
+                    log.info(chalk.cyan(`Successfully uploaded: ${p}`));
+                    queue.next();
+                  }, function(err) {
+                    log.error(err);
+                    queue.next();
+                  });
+              });
+            }
+          })
+          .on('addDir', p => {
+            if (!isFirstUseDirectories) {
+              log.info(`Directory ${p} has been added`);
+              queue.place(function () {
+                return webdav.mkcol(p)
+                  .then(function () {
+                    log.info(chalk.cyan(`Successfully uploaded: ${p}`));
+                    queue.next();
+                  }, function(err) {
+                    log.error(err);
+                    queue.next();
+                  });
+              });
+            }
+          })
+          .on('change', (p) => { // arguments: p, stats
+            let changedFile = watchHashList.find(x => x.filePath === p);
+            hash = md5File.sync(p);
+            if (!changedFile) {
+              changedFile = {
+                filePath: p,
+                md5sum: hash
+              };
+              watchHashList.push(changedFile);
+            }
+            if (changedFile.md5sum !== hash) {
+              changedFile.md5sum = hash;
+              log.info(`File ${p} has been changed`);
+              queue.place(function () {
+                return webdav.put(p)
+                  .then(function () {
+                    log.info(chalk.cyan(`Successfully uploaded: ${p}`));
+                    queue.next();
+                  }, function(err) {
+                    log.debug(err);
+                    queue.next();
+                  });
+              });
+            }
+          })
+          .on('unlink', path => {
+            let removedFile = watchHashList.find(x => x.filePath === path),
+              indexOfRemovedFile = watchHashList.indexOf(removedFile);
+            if (indexOfRemovedFile != -1) {
+              watchHashList.splice(indexOfRemovedFile, 1);
+            }
+
+            log.info(`File ${path} has been removed`);
+            queue.place(function () {
+              return webdav.delete(path)
+                .then(function() {
+                  log.info(chalk.cyan(`Successfully deleted: ${path}`));
+                  queue.next();
+                }, function(err) {
+                  log.error(err);
+                  queue.next();
                 });
             });
-        }
-
-        watch() {
-            var self = this;
-            log.info('Waiting for initial scan completion');
-            let hash,
-                queue = new Queue(),
-                webdav = new WebDav(self.conf),
-                allCartridges = (self.conf.cartridge.constructor === Array) ? self.conf.cartridge : [self.conf.cartridge],
-                excludesWithDotFiles = self.conf.exclude.concat([/[\/\\]\./]),
-                watchHashList = [],
-                isFirstUseFiles = true,
-                isFirstUseDirectories = true,
-
-                watcher = chokidar.watch(allCartridges, {
-                    ignored: excludesWithDotFiles,
-                    persistent: true,
-                    atomic: true,
-                    ignorePermissionErrors: true,
-                    awaitWriteFinish: {
-                        stabilityThreshold: 3000,
-                        pollInterval: 100
-                    },
+          })
+          .on('unlinkDir', path => {
+            log.info(`Directory ${path} has been removed`);
+            queue.place(function () {
+              return webdav.delete(path)
+                .then(function () {
+                  log.info(chalk.cyan(`Successfully deleted: ${path}`));
+                  queue.next();
+                }, function(err) {
+                  log.error(err);
+                  queue.next();
                 });
-
-            watcher
-                .on('ready', () => {
-                    log.info('Initial scan complete. Ready for changes');
-                    isFirstUseFiles = false;
-                    isFirstUseDirectories = false;
-                })
-                .on('add', p => {
-                    hash = md5File.sync(p);
-                    watchHashList.push({
-                        filePath: p,
-                        md5sum: hash
-                    });
-
-                    if (!isFirstUseFiles) {
-                        log.info(`File ${p} has been added`);
-                        queue.place(function() {
-                            return webdav.put(p)
-                                .then(function() {
-                                    log.info(chalk.cyan(`Successfully uploaded: ${p}`));
-                                    queue.next();
-                                }, function(err) {
-                                    log.error(err);
-                                    queue.next();
-                                });
-                        });
-                    }
-                })
-                .on('addDir', p => {
-                    if (!isFirstUseDirectories) {
-                        log.info(`Directory ${p} has been added`);
-                        queue.place(function() {
-                            return webdav.mkcol(p)
-                                .then(function() {
-                                    log.info(chalk.cyan(`Successfully uploaded: ${p}`));
-                                    queue.next();
-                                }, function(err) {
-                                    log.error(err);
-                                    queue.next();
-                                });
-                        });
-                    }
-                })
-                .on('change', (p, stats) => {
-                    let changedFile = watchHashList.find(x => x.filePath === p);
-                    hash = md5File.sync(p);
-                    if (!changedFile) {
-                        changedFile = {
-                            filePath: p,
-                            md5sum: hash
-                        };
-                        watchHashList.push(changedFile);
-                    }
-                    if (changedFile.md5sum !== hash) {
-                        changedFile.md5sum = hash;
-                        log.info(`File ${p} has been changed`);
-                        queue.place(function() {
-                            return webdav.put(p)
-                                .then(function() {
-                                    log.info(chalk.cyan(`Successfully uploaded: ${p}`));
-                                    queue.next();
-                                }, function(err) {
-                                    log.debug(err);
-                                    queue.next();
-                                });
-                        });
-                    }
-                })
-                .on('unlink', path => {
-                    let removedFile = watchHashList.find(x => x.filePath === path),
-                        indexOfRemovedFile = watchHashList.indexOf(removedFile);
-                    if (indexOfRemovedFile != -1) {
-                        watchHashList.splice(indexOfRemovedFile, 1);
-                    }
-
-                    log.info(`File ${path} has been removed`);
-                    queue.place(function() {
-                        return webdav.delete(path)
-                            .then(function() {
-                                log.info(chalk.cyan(`Successfully deleted: ${path}`));
-                                queue.next();
-                            }, function(err) {
-                                log.error(err);
-                                queue.next();
-                            });
-                    });
-                })
-                .on('unlinkDir', path => {
-                    log.info(`Directory ${path} has been removed`);
-                    queue.place(function() {
-                        return webdav.delete(path)
-                            .then(function() {
-                                log.info(chalk.cyan(`Successfully deleted: ${path}`));
-                                queue.next();
-                            }, function(err) {
-                                log.error(err);
-                                queue.next();
-                            });
-                    });
-                })
-                .on('error', function(err) {
-                    log.error('Error while watching with chokidar:',
-                        err, '\nRestarting watch...');
-                });
-        }
-        sync(){
-            var self = this;
-            var clearRemoteOnlyCartridges = (!self.conf.delete) ? self.conf.D : self.conf.delete;
-            if (clearRemoteOnlyCartridges === undefined) {
-                clearRemoteOnlyCartridges = false;
-            }
-            var webdav = new WebDav(self.conf);
-            webdav.propfind()
-                .then(function(res) {
-                    let workingDirectory = self.conf.basePath || process.cwd();
-                    let cartridges = config.getCartridges(workingDirectory, []);
-                    let i,
-                        j,
-                        localCartridgesLen,
-                        cartridgesOnServerLen,
-                        hasMatchedCartridges = false,
-                        doc = new xmldoc.XmlDocument(res),
-                        responseNodes = doc.childrenNamed('response'),
-                        nodesLen = responseNodes.length,
-                        cartridgesOnServer = [],
-                        localCartridges = [],
-                        differentCartridges = [];
-
-                    for (i = 0; i < nodesLen; i += 1) {
-                        if (i === 0) {
-                            continue;
-                        }
-                        cartridgesOnServer.push(responseNodes[i].valueWithPath('propstat.prop.displayname'));
-                    }
-                    cartridges.forEach(function(cartridge) {
-                        let arr = cartridge.split(path.sep);
-                        localCartridges.push(arr[arr.length - 1]);
-                    });
-
-                    for(i = 0, cartridgesOnServerLen = cartridgesOnServer.length; i < cartridgesOnServerLen; i += 1){
-                        let currentServerCartridge = cartridgesOnServer[i];
-                        for (j = 0, localCartridgesLen = localCartridges.length; j < localCartridgesLen; j += 1) {
-                            let currentLocalCartridge = localCartridges[j];
-                            if (currentServerCartridge === currentLocalCartridge) {
-                                hasMatchedCartridges = true;
-                                break;
-                            } else {
-                                hasMatchedCartridges = false;
-                            }
-                        }
-                        if (!hasMatchedCartridges) {
-                            differentCartridges.push(currentServerCartridge);
-                        }
-                    }
-                    return new Promise(function(resolve, reject) {
-                        if (differentCartridges.length > 0) {
-                            log.info(`\nThere are cartridges on the server that do not exist in your local cartridges: ${chalk.cyan(differentCartridges)}`);
-                            if (clearRemoteOnlyCartridges) {
-                                log.info(`Deleting cartridges ${differentCartridges}`);
-                                resolve(differentCartridges);
-                            } else {
-                                reject(`Cartridges were not deleted`);
-                            }
-                        } else {
-                            reject(`\nThere is no defference between the cartridges on the server and your local cartridges`);
-                        }
-                    });
-                }).then(function(res) {
-                    res.forEach(function(cartridge) {
-                        return webdav.delete(cartridge);
-                    });
-                }).then(function() {
-                    log.info('Cartridges were deleted');
-                }).catch(function(err) {
-                    log.info(err);
-                });
-        }
+            });
+          })
+          .on('error', function(err) {
+            log.error('Error while watching with chokidar:', err, '\nRestarting watch...');
+          });
     }
-    module.exports = Davos;
+
+    sync () {
+      const self = this;
+      let clearRemoteOnlyCartridges = (!self.conf.delete) ? self.conf.D : self.conf.delete;
+      if (clearRemoteOnlyCartridges === undefined) {
+        clearRemoteOnlyCartridges = false;
+      }
+      let webdav = new WebDav(self.conf);
+      webdav.propfind()
+          .then(function(res) {
+            let workingDirectory = self.conf.basePath || process.cwd();
+            let cartridges = config.getCartridges(workingDirectory, []);
+            let i,
+              j,
+              localCartridgesLen,
+              cartridgesOnServerLen,
+              hasMatchedCartridges = false,
+              doc = new xmldoc.XmlDocument(res),
+              responseNodes = doc.childrenNamed('response'),
+              nodesLen = responseNodes.length,
+              cartridgesOnServer = [],
+              localCartridges = [],
+              differentCartridges = [];
+
+            for (i = 0; i < nodesLen; i += 1) {
+              if (i === 0) {
+                continue;
+              }
+              cartridgesOnServer.push(responseNodes[i].valueWithPath('propstat.prop.displayname'));
+            }
+            cartridges.forEach(function (cartridge) {
+              let arr = cartridge.split(path.sep);
+              localCartridges.push(arr[arr.length - 1]);
+            });
+
+            for(i = 0, cartridgesOnServerLen = cartridgesOnServer.length; i < cartridgesOnServerLen; i += 1) {
+              let currentServerCartridge = cartridgesOnServer[i];
+              for (j = 0, localCartridgesLen = localCartridges.length; j < localCartridgesLen; j += 1) {
+                let currentLocalCartridge = localCartridges[j];
+                if (currentServerCartridge === currentLocalCartridge) {
+                  hasMatchedCartridges = true;
+                  break;
+                } else {
+                  hasMatchedCartridges = false;
+                }
+              }
+              if (!hasMatchedCartridges) {
+                differentCartridges.push(currentServerCartridge);
+              }
+            }
+            return new Promise(function(resolve, reject) {
+              if (differentCartridges.length > 0) {
+                log.info(`\nThere are cartridges on the server that do not exist in your local cartridges: ${chalk.cyan(differentCartridges)}`);
+                if (clearRemoteOnlyCartridges) {
+                  log.info(`Deleting cartridges ${differentCartridges}`);
+                  resolve(differentCartridges);
+                } else {
+                  reject(`Cartridges were not deleted`);
+                }
+              } else {
+                reject(`\nThere is no defference between the cartridges on the server and your local cartridges`);
+              }
+            });
+          }).then(function (res) {
+            res.forEach(function (cartridge) {
+              return webdav.delete(cartridge);
+            });
+          }).then(function () {
+            log.info('Cartridges were deleted');
+          }).catch(function(err) {
+            log.info(err);
+          });
+    }
+  }
+
+  module.exports = Davos;
 }());
