@@ -1,5 +1,5 @@
 module.exports = {
-    "extends": "defaults",
+    "ecmaVersion": 6,
     "ecmaFeatures": {
         "modules": true,
         "module":  true
@@ -13,5 +13,10 @@ module.exports = {
         "babel",
         "import",
         "mocha"
-    ]
+    ],
+    "extends": "eslint:recommended",
+    "rules": {
+      "indent": ["error", 2],
+      "linebreak-style": ["error", "unix"]
+    }
 };
