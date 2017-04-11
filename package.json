@@ -1,6 +1,6 @@
 {
   "name": "davos",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Salesforce Commerce Cloud (Demandware) cartridge uploader for WebDAV",
   "main": "index.js",
   "scripts": {
