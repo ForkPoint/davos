@@ -85,7 +85,7 @@
     function saveConfiguration(json) {
       let configFileName = this.getConfigName();
 
-      fs.writeFileSync(configFileName, JSON.stringify(json), 'UTF-8');
+      fs.writeFileSync(configFileName, JSON.stringify(json, null, '  '), 'UTF-8');
       log.info(chalk.cyan('\n Configuration saved in ' + configFileName));
     }
 
