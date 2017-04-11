@@ -1,5 +1,5 @@
 module.exports = {
-    "extends": "airbnb-base",
+    "extends": "defaults",
     "plugins": [
         "import"
     ]
