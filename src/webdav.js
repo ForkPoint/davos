@@ -68,12 +68,12 @@
       return '/' + targetPath.slice(targetPath.indexOf(previous));
     }
 
-    function doRequest(options, path, attemptsLeft, retryDelay, reject, resolve, lastError) {
+    function doRequest(options, path, attemptsLeft, retryDelay, reject, resolve) {
       let req = null,
         stream = null;
 
       if (attemptsLeft <= 0) {
-        let e = (lastError !== null ? lastError : new Error('The request to ' + path + ' could not be processed!'));
+        let e = new Error('The request to ' + path + ' could not be processed!');
         reject(e);
         return;
       }
@@ -102,7 +102,7 @@
           req.abort();
           // schedule a retry
           setTimeout((function () {
-            doRequest(options, path, --attemptsLeft, retryDelay, reject, resolve, e);
+            doRequest(options, path, --attemptsLeft, retryDelay, reject, resolve);
           }), retryDelay);
         } else if (!error && response.statusCode >= 400 && response.statusCode !== 404) {
           log.error( response.statusMessage + ' ' + response.statusCode + ". Could not " + signature + " :: skipping file.");
