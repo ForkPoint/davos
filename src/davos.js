@@ -14,7 +14,7 @@
     md5File = require('md5-file'),
     xmldoc = require('xmldoc');
 
-  // Local dependencies
+  // Locals
   const config = require('./config'),
     WebDav = require('./webdav'),
     log = require('./logger');
@@ -27,32 +27,33 @@
 
     upload () {
       const self = this;
+
       return new Promise(function (uploadResolve) { // arguments: uploadResolve, uploadReject
         config.validateConfigProperties(self.conf);
-        let queue = new Queue();
-        let allCartridges = (self.conf.cartridge.constructor === Array)
-          ? self.conf.cartridge
-          : [self.conf.cartridge];
-        let webdav = new WebDav(self.conf);
-        let processedCartridges = 0;
+
+        let queue = new Queue(),
+          webdav = new WebDav(self.conf),
+          allCartridges = (self.conf.cartridge.constructor === Array) ? self.conf.cartridge : [self.conf.cartridge],
+          processedCartridges = 0;
 
         allCartridges.forEach(function (cartridge) {
-          let dirname = path.dirname(cartridge);
-          let cartridgeName = path.basename(cartridge);
-          let zipCartridgeName = cartridgeName + '.zip';
+          let dirname = path.dirname(cartridge),
+            cartridgeName = path.basename(cartridge),
+            zipCartridgeName = cartridgeName + '.zip';
 
-          queue.place(function() {
+          queue.place(function () {
             return new Promise(function (resolve) { // arguments: resolve, reject
-              let walker = walk.walk(cartridge);
-              let zipCartridge = new yazl.ZipFile();
+              let zipCartridge = new yazl.ZipFile(),
+                walker = walk.walk(cartridge);
 
               walker.on('file', function (root, filestats, next) {
-                let realPath = path.resolve(root, filestats.name);
-                let metadataPath = path.relative(dirname, realPath);
+                let realPath = path.resolve(root, filestats.name),
+                  metadataPath = path.relative(dirname, realPath);
 
                 if (!multimatch([root, filestats.name], self.conf.exclude).length) {
                   zipCartridge.addFile(realPath, metadataPath);
                 }
+
                 next();
               });
 
@@ -62,11 +63,11 @@
               });
 
               zipCartridge.outputStream
-                          .pipe(fs.createWriteStream(zipCartridgeName))
-                          .on('close', function () {
-                            log.info('Zipping finished for ' + cartridge);
-                            resolve(cartridgeName);
-                          });
+                .pipe(fs.createWriteStream(zipCartridgeName))
+                .on('close', function () {
+                  log.info('Zipping finished for ' + cartridge);
+                  resolve(cartridgeName);
+                });
             }).then(function () {
               return webdav.delete(cartridgeName);
             }).then(function () {
@@ -77,23 +78,23 @@
               return webdav.delete(zipCartridgeName);
             }).then(function () {
               log.info(chalk.cyan(`Uploaded cartridge: ${cartridge}`));
-              return del(zipCartridgeName)
-                    .then(function () {
-                      if (++processedCartridges == allCartridges.length) {
-                        return uploadResolve();
-                      }
-                      queue.next();
-                    });
+              return del(zipCartridgeName).then(function () {
+                if (++processedCartridges == allCartridges.length) {
+                  return uploadResolve();
+                }
+
+                queue.next();
+              });
             }, function (err) {
               log.error(err);
-              return del(zipCartridgeName)
-                    .then(function () {
-                      if (++processedCartridges == allCartridges.length) {
-                        return uploadResolve();
-                      }
-                      queue.next();
-                      return Promise.reject(err);
-                    });
+              return del(zipCartridgeName).then(function () {
+                if (++processedCartridges == allCartridges.length) {
+                  return uploadResolve();
+                }
+
+                queue.next();
+                return Promise.reject(err);
+              });
             });
           });
         });
@@ -102,25 +103,27 @@
 
     watch () {
       const self = this;
+
       log.info('Waiting for initial scan completion');
-      let hash;
-      let queue = new Queue();
-      let webdav = new WebDav(self.conf);
-      let allCartridges = (self.conf.cartridge.constructor === Array) ? self.conf.cartridge : [self.conf.cartridge];
-      let excludesWithDotFiles = self.conf.exclude.concat([/[\/\\]\./]);
-      let watchHashList = [];
-      let isFirstUseFiles = true;
-      let isFirstUseDirectories = true;
-      let watcher = chokidar.watch(allCartridges, {
-        ignored: excludesWithDotFiles,
-        persistent: true,
-        atomic: true,
-        ignorePermissionErrors: true,
-        awaitWriteFinish: {
-          stabilityThreshold: 3000,
-          pollInterval: 100
-        }
-      });
+
+      let queue = new Queue(),
+        webdav = new WebDav(self.conf),
+        allCartridges = (self.conf.cartridge.constructor === Array) ? self.conf.cartridge : [self.conf.cartridge],
+        excludesWithDotFiles = self.conf.exclude.concat([/[\/\\]\./]),
+        watchHashList = [],
+        isFirstUseFiles = true,
+        isFirstUseDirectories = true,
+        hash,
+        watcher = chokidar.watch(allCartridges, {
+          ignored: excludesWithDotFiles,
+          persistent: true,
+          atomic: true,
+          ignorePermissionErrors: true,
+          awaitWriteFinish: {
+            stabilityThreshold: 3000,
+            pollInterval: 100
+          }
+        });
 
       watcher
           .on('ready', () => {
@@ -130,6 +133,7 @@
           })
           .on('add', p => {
             hash = md5File.sync(p);
+
             watchHashList.push({
               filePath: p,
               md5sum: hash
@@ -137,6 +141,7 @@
 
             if (!isFirstUseFiles) {
               log.info(`File ${p} has been added`);
+
               queue.place(function () {
                 return webdav.put(p)
                   .then(function () {
@@ -152,6 +157,7 @@
           .on('addDir', p => {
             if (!isFirstUseDirectories) {
               log.info(`Directory ${p} has been added`);
+
               queue.place(function () {
                 return webdav.mkcol(p)
                   .then(function () {
@@ -166,7 +172,9 @@
           })
           .on('change', (p) => { // arguments: p, stats
             let changedFile = watchHashList.find(x => x.filePath === p);
+
             hash = md5File.sync(p);
+
             if (!changedFile) {
               changedFile = {
                 filePath: p,
@@ -174,6 +182,7 @@
               };
               watchHashList.push(changedFile);
             }
+
             if (changedFile.md5sum !== hash) {
               changedFile.md5sum = hash;
               log.info(`File ${p} has been changed`);
@@ -192,11 +201,13 @@
           .on('unlink', path => {
             let removedFile = watchHashList.find(x => x.filePath === path),
               indexOfRemovedFile = watchHashList.indexOf(removedFile);
+
             if (indexOfRemovedFile != -1) {
               watchHashList.splice(indexOfRemovedFile, 1);
             }
 
             log.info(`File ${path} has been removed`);
+
             queue.place(function () {
               return webdav.delete(path)
                 .then(function() {
@@ -210,6 +221,7 @@
           })
           .on('unlinkDir', path => {
             log.info(`Directory ${path} has been removed`);
+
             queue.place(function () {
               return webdav.delete(path)
                 .then(function () {
@@ -228,56 +240,62 @@
 
     sync () {
       const self = this;
-      let clearRemoteOnlyCartridges = (!self.conf.delete) ? self.conf.D : self.conf.delete;
+
+      let webdav = new WebDav(self.conf),
+        clearRemoteOnlyCartridges = (!self.conf.delete) ? self.conf.D : self.conf.delete;
+
       if (clearRemoteOnlyCartridges === undefined) {
         clearRemoteOnlyCartridges = false;
       }
-      let webdav = new WebDav(self.conf);
+
       webdav.propfind()
           .then(function(res) {
-            let workingDirectory = self.conf.basePath || process.cwd();
-            let cartridges = config.getCartridges(workingDirectory, []);
-            let i,
-              j,
-              localCartridgesLen,
-              cartridgesOnServerLen,
-              hasMatchedCartridges = false,
-              doc = new xmldoc.XmlDocument(res),
+            let doc = new xmldoc.XmlDocument(res),
               responseNodes = doc.childrenNamed('response'),
               nodesLen = responseNodes.length,
+              workingDirectory = self.conf.basePath || process.cwd(),
+              cartridges = config.getCartridges(workingDirectory, []),
               cartridgesOnServer = [],
               localCartridges = [],
-              differentCartridges = [];
+              differentCartridges = [],
+              hasMatchedCartridges = false;
 
-            for (i = 0; i < nodesLen; i += 1) {
+            for (let i = 0; i < nodesLen; i++) {
               if (i === 0) {
                 continue;
               }
               cartridgesOnServer.push(responseNodes[i].valueWithPath('propstat.prop.displayname'));
             }
+
             cartridges.forEach(function (cartridge) {
               let arr = cartridge.split(path.sep);
               localCartridges.push(arr[arr.length - 1]);
             });
 
-            for(i = 0, cartridgesOnServerLen = cartridgesOnServer.length; i < cartridgesOnServerLen; i += 1) {
-              let currentServerCartridge = cartridgesOnServer[i];
-              for (j = 0, localCartridgesLen = localCartridges.length; j < localCartridgesLen; j += 1) {
-                let currentLocalCartridge = localCartridges[j];
-                if (currentServerCartridge === currentLocalCartridge) {
-                  hasMatchedCartridges = true;
+            let cartridgesOnServerLen = cartridgesOnServer.length;
+
+            for (let i = 0; i < cartridgesOnServerLen; i++) {
+              let currentServerCartridge = cartridgesOnServer[i],
+                localCartridgesLen = localCartridges.length;
+
+              for (let j = 0; j < localCartridgesLen; j++) {
+                let currentLocalCartridge = localCartridges[j],
+                  hasMatchedCartridges = (currentServerCartridge === currentLocalCartridge);
+
+                if (hasMatchedCartridges) {
                   break;
-                } else {
-                  hasMatchedCartridges = false;
                 }
               }
+
               if (!hasMatchedCartridges) {
                 differentCartridges.push(currentServerCartridge);
               }
             }
+
             return new Promise(function(resolve, reject) {
               if (differentCartridges.length > 0) {
                 log.info(`\nThere are cartridges on the server that do not exist in your local cartridges: ${chalk.cyan(differentCartridges)}`);
+
                 if (clearRemoteOnlyCartridges) {
                   log.info(`Deleting cartridges ${differentCartridges}`);
                   resolve(differentCartridges);
