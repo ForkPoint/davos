@@ -1,6 +1,11 @@
 (function () {
   'use strict';
 
+  // Constants
+  const DEFAULT_CONFIG_NAME = 'davos.json',
+    CONFIG_PROPERTIES = ['hostname', 'username', 'password', 'cartridge', 'codeVersion', 'exclude'],
+    IGNORED_DIRECTORY_NAMES = ['.git', '.svn', '.sass-cache', 'node_modules'];
+
   // Imports
   const fs = require('fs'),
     chalk = require('chalk'),
@@ -10,10 +15,6 @@
   const log = require('./logger');
 
   const Config = function () {
-
-    const DEFAULT_CONFIG_NAME = 'davos.json',
-      CONFIG_PROPERTIES = ['hostname', 'username', 'password', 'cartridge', 'codeVersion', 'exclude'],
-      IGNORED_DIRECTORY_NAMES = ['.git', '.svn', '.sass-cache', 'node_modules'];
 
     function getConfigName() {
       // @TODO make config name dynamic
