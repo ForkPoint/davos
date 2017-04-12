@@ -11,7 +11,7 @@
 
   const Config = function () {
 
-    const DEFAULT_CONFIG_NAME = 'upload.json',
+    const DEFAULT_CONFIG_NAME = 'davos.json',
       CONFIG_PROPERTIES = ['hostname', 'username', 'password', 'cartridge', 'codeVersion', 'exclude'],
       IGNORED_DIRECTORY_NAMES = ['.git', '.svn', '.sass-cache', 'node_modules'];
 
