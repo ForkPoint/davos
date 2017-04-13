@@ -10,7 +10,6 @@
   const fs = require('fs'),
     walk = require('walk'),
     path = require('path'),
-    Queue = require('sync-queue'),
     chalk = require('chalk');
 
   // Locals
@@ -76,6 +75,18 @@
       return result;
     }
 
+    function isValidCartridgePath (relativePath, cartridges) {
+      let validCartridge = false;
+
+      cartridges.forEach(function (cartridge) {
+        if (relativePath.startsWith(cartridge)) {
+          validCartridge = true;
+        }
+      });
+
+      return validCartridge;
+    }
+
     function loadConfiguration() {
       //parse the configuration
       let configName = this.getConfigName(),
@@ -109,6 +120,7 @@
       isConfigExisting,
       validateConfigProperties,
       getCartridges,
+      isValidCartridgePath,
       loadConfiguration,
       saveConfiguration,
       promptError
