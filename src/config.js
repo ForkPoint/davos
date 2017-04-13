@@ -47,7 +47,7 @@
     }
 
     function getCartridges(srcPath) {
-      let cartridges = [];
+      let result = [];
 
       walk.walkSync(srcPath, {
         filters: IGNORED_DIRECTORY_NAMES,
@@ -61,11 +61,11 @@
           },
           directories: function (root, dirStatsArray, next) {
             let dirName = path.basename(root),
-              cartridgePath = path.dirname(root),
-              relativePath = path.relative(srcPath, cartridgePath);
+              absolutePath = path.dirname(root),
+              relativePath = path.relative(srcPath, absolutePath);
 
             if (dirName === 'cartridge') {
-              cartridges.push(relativePath);
+              result.push(relativePath);
             }
 
             next();
@@ -73,7 +73,7 @@
         }
       });
 
-      return cartridges;
+      return result;
     }
 
     function loadConfiguration() {
