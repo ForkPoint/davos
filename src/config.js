@@ -8,8 +8,10 @@
 
   // Imports
   const fs = require('fs'),
-    chalk = require('chalk'),
-    path = require('path');
+    walk = require('walk'),
+    path = require('path'),
+    Queue = require('sync-queue'),
+    chalk = require('chalk');
 
   // Locals
   const log = require('./logger');
@@ -44,26 +46,32 @@
       });
     }
 
-    function getCartridges(srcpath, cartridges) {
-      const directories = fs.readdirSync(srcpath),
-        len = directories.length;
+    function getCartridges(srcPath) {
+      let cartridges = [];
 
-      for (let i = 0; i < len; i++) {
-        let fsName = directories[i],
-          fsPath = path.join(srcpath, fsName);
+      walk.walkSync(srcPath, {
+        filters: IGNORED_DIRECTORY_NAMES,
+        listeners: {
+          names: function (root, nodeNamesArray) {
+            nodeNamesArray.sort(function (a, b) {
+              if (a > b) return -1;
+              if (a < b) return 1;
+              return 0;
+            });
+          },
+          directories: function (root, dirStatsArray, next) {
+            let dirName = path.basename(root),
+              cartridgePath = path.dirname(root),
+              relativePath = path.relative(srcPath, cartridgePath);
 
-        if (IGNORED_DIRECTORY_NAMES.indexOf(fsName) > -1) {
-          continue;
-        }
+            if (dirName === 'cartridge') {
+              cartridges.push(relativePath);
+            }
 
-        if (fs.statSync(fsPath).isDirectory()) {
-          if (fsName === 'cartridge') {
-            cartridges.push(path.relative(process.cwd(), srcpath));
-            continue;
+            next();
           }
-          getCartridges(`${srcpath}/${fsName}`, cartridges);
         }
-      }
+      });
 
       return cartridges;
     }
@@ -96,6 +104,7 @@
     }
 
     return {
+      IGNORED_DIRECTORY_NAMES,
       getConfigName,
       isConfigExisting,
       validateConfigProperties,
