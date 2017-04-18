@@ -13,13 +13,8 @@
       'ENOTFOUND',
       'EADDRNOTAVAIL',
       'ECONNREFUSED'
-    ];
-
-  // Imports
-  const fs = require('fs'),
-    path = require('path'),
-    _ = require('underscore'),
-    request = require('request').defaults({
+    ],
+    REQUEST_DEFAULTS = {
       pool: {
         maxSockets: Infinity
       },
@@ -27,7 +22,13 @@
       agent: false,
       followRedirect: false,
       jar: false
-    });
+    };
+
+  // Imports
+  const _ = require('underscore'),
+    fs = require('fs'),
+    path = require('path'),
+    request = require('request').defaults(REQUEST_DEFAULTS);
 
   // Locals
   const configHelper = require('./config'),
@@ -37,22 +38,26 @@
    * A WebDav client realizing DELETE, PUT, UNZIP, MKCOL, PROPFIND
    * @param {Object} config The configuration object used by Davos
    */
-  var WebDav = function(config) {
+  class WebDav {
+    constructor (config) {
+      configHelper.validateConfigProperties(config);
 
-    configHelper.validateConfigProperties(config);
+      this.config = config;
+      this.baseOptions = {
+        baseUrl: 'https://' + config.hostname + '/on/demandware.servlet/webdav/Sites/Cartridges/' + config.codeVersion,
+        uri: '/',
+        auth: {
+          user: config.username,
+          password: config.password
+        },
+        timeout: REQUEST_TIMEOUT
+      };
 
-    const baseOptions = {
-      baseUrl: 'https://' + config.hostname + '/on/demandware.servlet/webdav/Sites/Cartridges/' + config.codeVersion,
-      uri: '/',
-      auth: {
-        user: config.username,
-        password: config.password
-      },
-      timeout: REQUEST_TIMEOUT
-    };
+      return this;
+    }
 
     // @TODO check why this methos has been used and remove/refactor if needed
-    function getUriPath(targetPath) {
+    getUriPath (targetPath) {
       let dirs = targetPath.split(path.sep),
         len = dirs.length,
         previous;
@@ -69,7 +74,9 @@
       return '/' + targetPath.slice(0, targetPath.indexOf(previous) + previous.length);
     }
 
-    function doRequest(options, path, attemptsLeft, retryDelay, reject, resolve) {
+    doRequest (options, path, attemptsLeft, retryDelay, reject, resolve) {
+      const self = this;
+
       let req = null,
         stream = null;
 
@@ -80,7 +87,7 @@
       }
 
       if (attemptsLeft === MAX_ATTEMPTS) {
-        options = Object.assign(options, baseOptions);
+        options = Object.assign(options, self.baseOptions);
       }
 
       if (path) {
@@ -103,7 +110,7 @@
           req.abort();
           // schedule a retry
           setTimeout((function () {
-            doRequest(options, path, --attemptsLeft, retryDelay, reject, resolve);
+            self.doRequest(options, path, --attemptsLeft, retryDelay, reject, resolve);
           }), retryDelay);
         } else if (!error && response.statusCode >= 400 && response.statusCode !== 404) {
           log.error( response.statusMessage + ' ' + response.statusCode + ". Could not " + signature + " :: skipping file.");
@@ -142,55 +149,64 @@
       }
     }
 
-    //Public
-    return {
-      delete: function(path) {
-        return new Promise(function (resolve, reject) {
-          var options = {
-            method: 'DELETE'
-          };
-          doRequest(options, path, MAX_ATTEMPTS, RETRY_DELAY, reject, resolve);
-        });
-      },
-      mkcol: function(path) {
-        return new Promise(function (resolve, reject) {
-          var options = {
-            method: 'MKCOL'
-          };
-          doRequest(options, path, MAX_ATTEMPTS, RETRY_DELAY, reject, resolve);
-        });
-      },
-      put: function(path) {
-        return new Promise(function (resolve, reject) {
-          var options = {
-            method: 'PUT'
-          };
-          doRequest(options, path, MAX_ATTEMPTS, RETRY_DELAY, reject, resolve);
-        });
-      },
-      unzip: function(path) {
-        return new Promise(function (resolve, reject) {
-          var options = {
-            method: 'POST',
-            form: {
-              method: 'UNZIP'
-            }
-          };
-          doRequest(options, path, MAX_ATTEMPTS, RETRY_DELAY, reject, resolve);
-        });
-      },
-      propfind: function() {
-        return new Promise(function (resolve, reject) {
-          var options = {
-            method: 'PROPFIND'
-          };
-          doRequest(options, null, MAX_ATTEMPTS, RETRY_DELAY, reject, resolve);
-        });
-      }
-    };
-  };
+    delete (path) {
+      const self = this;
 
-  module.exports = function(configuration) {
-    return new WebDav(configuration);
-  };
+      return new Promise(function (resolve, reject) {
+        let options = {
+          method: 'DELETE'
+        };
+        self.doRequest(options, path, MAX_ATTEMPTS, RETRY_DELAY, reject, resolve);
+      });
+    }
+
+    mkcol (path) {
+      const self = this;
+
+      return new Promise(function (resolve, reject) {
+        let options = {
+          method: 'MKCOL'
+        };
+        self.doRequest(options, path, MAX_ATTEMPTS, RETRY_DELAY, reject, resolve);
+      });
+    }
+
+    put (path) {
+      const self = this;
+
+      return new Promise(function (resolve, reject) {
+        let options = {
+          method: 'PUT'
+        };
+        self.doRequest(options, path, MAX_ATTEMPTS, RETRY_DELAY, reject, resolve);
+      });
+    }
+
+    unzip (path) {
+      const self = this;
+
+      return new Promise(function (resolve, reject) {
+        let options = {
+          method: 'POST',
+          form: {
+            method: 'UNZIP'
+          }
+        };
+        self.doRequest(options, path, MAX_ATTEMPTS, RETRY_DELAY, reject, resolve);
+      });
+    }
+
+    propfind () {
+      const self = this;
+
+      return new Promise(function (resolve, reject) {
+        let options = {
+          method: 'PROPFIND'
+        };
+        self.doRequest(options, null, MAX_ATTEMPTS, RETRY_DELAY, reject, resolve);
+      });
+    }
+  }
+
+  module.exports = WebDav;
 }());
