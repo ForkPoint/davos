@@ -91,7 +91,7 @@
       }
 
       if (path) {
-        options.uri = path;
+        options.uri = path; // self.getUriPath(path);
       }
 
       let signature = options.method + ' :: ' + options.uri;
@@ -147,6 +147,46 @@
           reject(e);
         }
       }
+    }
+
+    /**
+     * HTTP Request LOGIN
+     */
+    login () {
+      const self = this;
+
+      return new Promise(function (resolve, reject) {
+        let options: {
+            url: 'https://' + self.config.hostname + '/on/demandware.store/Sites-Site/default/ViewApplication-ProcessLogin',
+            form: {
+                LoginForm_Login: self.config.username,
+                LoginForm_Password: self.config.password,
+                LoginForm_RegistrationDomain: 'Sites'
+            },
+            jar: true,
+            followRedirect: true,
+            ignoreErrors: true
+        };
+        self.doRequest(options, null, MAX_ATTEMPTS, RETRY_DELAY, reject, resolve);
+      });
+    }
+
+    /**
+     * HTTP Request ACTIVATE CODE VERSION
+     */
+    activateCodeVersion: {
+      const self = this;
+
+      return new Promise(function (resolve, reject) {
+        let options: {
+            url: 'https://' + self.config.hostname + '/on/demandware.store/Sites-Site/default/ViewCodeDeployment-Activate',
+            form: {
+                CodeVersionID: self.config.codeVersion
+            },
+            jar: true
+        };
+        self.doRequest(options, null, MAX_ATTEMPTS, RETRY_DELAY, reject, resolve);
+      });
     }
 
     /**
