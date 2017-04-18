@@ -42,7 +42,29 @@
 
     }
 
-    zipCartridges (archiveName) {
+    deleteCartridges() {
+      const self = this;
+
+      return new Promise(function (resolve, reject) {
+        let queue = new Queue(),
+          webdav = new WebDav(self.conf),
+          cartridges = (self.conf.cartridge.constructor === Array) ? self.conf.cartridge : [self.conf.cartridge];
+
+        if (cartridges.length < 1) {
+          reject();
+          return;
+        }
+
+        cartridges.forEach(function (cartridge) {
+          queue.place(function () {
+            return webdav.delete(cartridge);
+          });
+        });
+
+      });
+    }
+
+    compress (archiveName) {
       const self = this;
 
       return new Promise(function (resolve, reject) {
@@ -102,28 +124,6 @@
       });
     }
 
-    deleteCartridges() {
-      const self = this;
-
-      return new Promise(function (resolve, reject) {
-        let queue = new Queue(),
-          webdav = new WebDav(self.conf),
-          cartridges = (self.conf.cartridge.constructor === Array) ? self.conf.cartridge : [self.conf.cartridge];
-
-        if (cartridges.length < 1) {
-          reject();
-          return;
-        }
-
-        cartridges.forEach(function (cartridge) {
-          queue.place(function () {
-            return webdav.delete(cartridge);
-          });
-        });
-
-      });
-    }
-
     upload () {
       const self = this;
 
@@ -135,7 +135,7 @@
           resolve();
         }).then(function () {
           log.info(chalk.cyan(`Creating archive of all cartridges.`));
-          return self.zipCartridges(archiveName);
+          return self.compress(archiveName);
         }).then(function () {
           log.info(chalk.cyan(`Uploading archive.`));
           return webdav.put(archiveName);
