@@ -51,6 +51,7 @@
       timeout: REQUEST_TIMEOUT
     };
 
+    // #TODO check why this methos has been used and remove/refactor if needed
     function getUriPath(targetPath) {
       let dirs = targetPath.split(path.sep),
         len = dirs.length,
@@ -65,7 +66,7 @@
 
         previous = current;
       }
-      return '/' + targetPath.slice(targetPath.indexOf(previous));
+      return '/' + targetPath.slice(0, targetPath.indexOf(previous) + previous.length);
     }
 
     function doRequest(options, path, attemptsLeft, retryDelay, reject, resolve) {
@@ -83,7 +84,7 @@
       }
 
       if (path) {
-        options.uri = getUriPath(path);
+        options.uri = path;
       }
 
       let signature = options.method + ' :: ' + options.uri;
