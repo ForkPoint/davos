@@ -56,7 +56,7 @@
       });
     }
 
-    compress (archiveName) {
+    compressCartridges (archiveName) {
       const self = this;
 
       return new Promise(function (resolve, reject) {
@@ -116,6 +116,10 @@
       });
     }
 
+    compressMeta () {
+
+    }
+
     upload () {
       const self = this;
 
@@ -127,7 +131,7 @@
           resolve();
         }).then(function () {
           log.info(chalk.cyan(`Creating archive of all cartridges.`));
-          return self.compress(archiveName);
+          return self.compressCartridges(archiveName);
         }).then(function () {
           log.info(chalk.cyan(`Uploading archive.`));
           return webdav.put(archiveName);
@@ -360,10 +364,6 @@
           }).catch(function(err) {
             log.info(err);
           });
-    }
-
-    compressMeta () {
-
     }
 
     insertBuildInfo () {
