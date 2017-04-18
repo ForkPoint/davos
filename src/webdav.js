@@ -51,7 +51,7 @@
       timeout: REQUEST_TIMEOUT
     };
 
-    // #TODO check why this methos has been used and remove/refactor if needed
+    // @TODO check why this methos has been used and remove/refactor if needed
     function getUriPath(targetPath) {
       let dirs = targetPath.split(path.sep),
         len = dirs.length,
