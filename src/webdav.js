@@ -156,7 +156,7 @@
       const self = this;
 
       return new Promise(function (resolve, reject) {
-        let options: {
+        let options = {
             url: 'https://' + self.config.hostname + '/on/demandware.store/Sites-Site/default/ViewApplication-ProcessLogin',
             form: {
                 LoginForm_Login: self.config.username,
@@ -174,14 +174,14 @@
     /**
      * HTTP Request ACTIVATE CODE VERSION
      */
-    activateCodeVersion: {
+    activateCodeVersion (codeVersion) {
       const self = this;
 
       return new Promise(function (resolve, reject) {
-        let options: {
+        let options = {
             url: 'https://' + self.config.hostname + '/on/demandware.store/Sites-Site/default/ViewCodeDeployment-Activate',
             form: {
-                CodeVersionID: self.config.codeVersion
+                CodeVersionID: codeVersion
             },
             jar: true
         };
