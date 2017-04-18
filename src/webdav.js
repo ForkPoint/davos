@@ -149,6 +149,9 @@
       }
     }
 
+    /**
+     * WebDav DELETE
+     */
     delete (path) {
       const self = this;
 
@@ -160,6 +163,9 @@
       });
     }
 
+    /**
+     * WebDav MKCOL
+     */
     mkcol (path) {
       const self = this;
 
@@ -171,6 +177,9 @@
       });
     }
 
+    /**
+     * WebDav PUT
+     */
     put (path) {
       const self = this;
 
@@ -182,6 +191,9 @@
       });
     }
 
+    /**
+     * WebDav UNZIP
+     */
     unzip (path) {
       const self = this;
 
@@ -196,6 +208,9 @@
       });
     }
 
+    /**
+     * WebDav PROPFIND
+     */
     propfind () {
       const self = this;
 
