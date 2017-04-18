@@ -133,9 +133,7 @@
           return webdav.delete(archiveName);
         }).then(function () {
           log.info(chalk.cyan(`Cartriges uploaded.`));
-          return del(archiveName).then(function () {
-            log.info(chalk.cyan(`Clean up local archive.`));
-          });
+          return del(archiveName).then(function () {});
         }, function (err) {
           log.error(err);
           return del(archiveName).then(function () {});
