@@ -4,6 +4,7 @@
   // Constants
   const DEFAULT_CONFIG_NAME = 'davos.json',
     CONFIG_PROPERTIES = ['hostname', 'username', 'password', 'cartridge', 'codeVersion', 'exclude'],
+    // @TODO add these into default config ignore path
     IGNORED_DIRECTORY_NAMES = ['.git', '.svn', '.sass-cache', 'node_modules'];
 
   // Imports
@@ -17,13 +18,13 @@
 
   const Config = function () {
 
-    function getConfigName() {
+    function getConfigName () {
       // @TODO make config name dynamic
       // check files for structure that match config and get first one - if not - throws an error
       return DEFAULT_CONFIG_NAME;
     }
 
-    function isConfigExisting() {
+    function isConfigExisting () {
       let configName = this.getConfigName();
 
       try {
@@ -34,7 +35,7 @@
       }
     }
 
-    function validateConfigProperties(config) {
+    function validateConfigProperties (config) {
       CONFIG_PROPERTIES.forEach(function (property) {
         if (!config.hasOwnProperty(property)) {
           throw {
@@ -45,7 +46,7 @@
       });
     }
 
-    function getCartridges(srcPath) {
+    function getCartridges (srcPath) {
       let result = [];
 
       walk.walkSync(srcPath, {
@@ -87,7 +88,7 @@
       return validCartridge;
     }
 
-    function loadConfiguration() {
+    function loadConfiguration () {
       //parse the configuration
       let configName = this.getConfigName(),
         json = null;
@@ -102,14 +103,14 @@
       return json;
     }
 
-    function saveConfiguration(json) {
+    function saveConfiguration (json) {
       let configFileName = this.getConfigName();
 
       fs.writeFileSync(configFileName, JSON.stringify(json, null, '  '), 'UTF-8');
       log.info(chalk.cyan('\n Configuration saved in ' + configFileName));
     }
 
-    function promptError(e) {
+    function promptError (e) {
       log.error(e);
       return 1;
     }
