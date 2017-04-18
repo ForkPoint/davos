@@ -174,14 +174,14 @@
     /**
      * HTTP Request ACTIVATE CODE VERSION
      */
-    activateCodeVersion (codeVersion) {
+    activateCodeVersion () {
       const self = this;
 
       return new Promise(function (resolve, reject) {
         let options = {
             url: 'https://' + self.config.hostname + '/on/demandware.store/Sites-Site/default/ViewCodeDeployment-Activate',
             form: {
-                CodeVersionID: codeVersion
+                CodeVersionID: self.conf.codeVersions
             },
             jar: true
         };

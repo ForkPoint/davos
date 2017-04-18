@@ -28,6 +28,20 @@
       return this;
     }
 
+    activateCodeVersion () {
+      let webdav = new WebDav(this.conf);
+      webdav.login();
+      webdav.activateCodeVersion();
+    }
+
+    clean () {
+
+    }
+
+    copy () {
+
+    }
+
     zipCartridges (archiveName) {
       const self = this;
 
@@ -354,6 +368,10 @@
           }).catch(function(err) {
             log.info(err);
           });
+    }
+
+    insertBuildInfo () {
+
     }
   }
 
