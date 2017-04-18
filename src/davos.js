@@ -34,14 +34,6 @@
       webdav.activateCodeVersion();
     }
 
-    clean () {
-
-    }
-
-    copy () {
-
-    }
-
     deleteCartridges() {
       const self = this;
 
@@ -368,6 +360,10 @@
           }).catch(function(err) {
             log.info(err);
           });
+    }
+
+    compressMeta () {
+
     }
 
     insertBuildInfo () {
