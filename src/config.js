@@ -1,27 +1,30 @@
 (function () {
   'use strict';
 
+  // Constants
+  const DEFAULT_CONFIG_NAME = 'davos.json',
+    CONFIG_PROPERTIES = ['hostname', 'username', 'password', 'cartridge', 'codeVersion', 'exclude'],
+    // @TODO add these into default config ignore path
+    IGNORED_DIRECTORY_NAMES = ['.git', '.svn', '.sass-cache', 'node_modules'];
+
   // Imports
   const fs = require('fs'),
-    chalk = require('chalk'),
-    path = require('path');
+    walk = require('walk'),
+    path = require('path'),
+    chalk = require('chalk');
 
   // Locals
   const log = require('./logger');
 
   const Config = function () {
 
-    const DEFAULT_CONFIG_NAME = 'davos.json',
-      CONFIG_PROPERTIES = ['hostname', 'username', 'password', 'cartridge', 'codeVersion', 'exclude'],
-      IGNORED_DIRECTORY_NAMES = ['.git', '.svn', '.sass-cache', 'node_modules'];
-
-    function getConfigName() {
+    function getConfigName () {
       // @TODO make config name dynamic
       // check files for structure that match config and get first one - if not - throws an error
       return DEFAULT_CONFIG_NAME;
     }
 
-    function isConfigExisting() {
+    function isConfigExisting () {
       let configName = this.getConfigName();
 
       try {
@@ -32,7 +35,7 @@
       }
     }
 
-    function validateConfigProperties(config) {
+    function validateConfigProperties (config) {
       CONFIG_PROPERTIES.forEach(function (property) {
         if (!config.hasOwnProperty(property)) {
           throw {
@@ -43,31 +46,49 @@
       });
     }
 
-    function getCartridges(srcpath, cartridges) {
-      const directories = fs.readdirSync(srcpath),
-        len = directories.length;
+    function getCartridges (srcPath) {
+      let result = [];
 
-      for (let i = 0; i < len; i++) {
-        let fsName = directories[i],
-          fsPath = path.join(srcpath, fsName);
+      walk.walkSync(srcPath, {
+        filters: IGNORED_DIRECTORY_NAMES,
+        listeners: {
+          names: function (root, nodeNamesArray) {
+            nodeNamesArray.sort(function (a, b) {
+              if (a > b) return -1;
+              if (a < b) return 1;
+              return 0;
+            });
+          },
+          directories: function (root, dirStatsArray, next) {
+            let dirName = path.basename(root),
+              absolutePath = path.dirname(root),
+              relativePath = path.relative(srcPath, absolutePath);
 
-        if (IGNORED_DIRECTORY_NAMES.indexOf(fsName) > -1) {
-          continue;
-        }
+            if (dirName === 'cartridge') {
+              result.push(relativePath);
+            }
 
-        if (fs.statSync(fsPath).isDirectory()) {
-          if (fsName === 'cartridge') {
-            cartridges.push(path.relative(process.cwd(), srcpath));
-            continue;
+            next();
           }
-          getCartridges(`${srcpath}/${fsName}`, cartridges);
         }
-      }
+      });
 
-      return cartridges;
+      return result;
     }
 
-    function loadConfiguration() {
+    function isValidCartridgePath (relativePath, cartridges) {
+      let validCartridge = false;
+
+      cartridges.forEach(function (cartridge) {
+        if (relativePath.startsWith(cartridge)) {
+          validCartridge = true;
+        }
+      });
+
+      return validCartridge;
+    }
+
+    function loadConfiguration () {
       //parse the configuration
       let configName = this.getConfigName(),
         json = null;
@@ -82,23 +103,25 @@
       return json;
     }
 
-    function saveConfiguration(json) {
+    function saveConfiguration (json) {
       let configFileName = this.getConfigName();
 
       fs.writeFileSync(configFileName, JSON.stringify(json, null, '  '), 'UTF-8');
       log.info(chalk.cyan('\n Configuration saved in ' + configFileName));
     }
 
-    function promptError(e) {
+    function promptError (e) {
       log.error(e);
       return 1;
     }
 
     return {
+      IGNORED_DIRECTORY_NAMES,
       getConfigName,
       isConfigExisting,
       validateConfigProperties,
       getCartridges,
+      isValidCartridgePath,
       loadConfiguration,
       saveConfiguration,
       promptError

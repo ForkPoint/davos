@@ -1,11 +1,14 @@
 (function () {
   'use strict';
 
+  // Constants
+  const ROOT_DIR = '.',
+    ARCHIVE_NAME = 'cartridges.zip';
+
   // Imports
   const fs = require('fs'),
     path = require('path'),
     chalk = require('chalk'),
-    multimatch = require('multimatch'),
     walk = require('walk'),
     yazl = require('yazl'),
     del = require('del'),
@@ -25,80 +28,116 @@
       return this;
     }
 
+    zipCartridges (archiveName) {
+      const self = this;
+
+      return new Promise(function (resolve, reject) {
+        config.validateConfigProperties(self.conf);
+
+        let archive = new yazl.ZipFile(),
+          srcPath = path.resolve(ROOT_DIR),
+          cartridges = (self.conf.cartridge.constructor === Array) ? self.conf.cartridge : [self.conf.cartridge];
+
+        if (cartridges.length < 1) {
+          reject();
+          return;
+        }
+
+        walk.walkSync(srcPath, {
+          filters: config.IGNORED_DIRECTORY_NAMES,
+          listeners: {
+            names: function (root, nodeNamesArray) {
+              nodeNamesArray.sort(function (a, b) {
+                if (a > b) return -1;
+                if (a < b) return 1;
+                return 0;
+              });
+            },
+            directories: function (root, dirStatsArray, next) {
+              let absolutePath = path.resolve(root, dirStatsArray[0].name),
+                relativePath = path.relative(srcPath, absolutePath);
+
+              if (config.isValidCartridgePath(relativePath, cartridges)) {
+                archive.addEmptyDirectory(relativePath);
+              }
+
+              next();
+            },
+            file: function (root, fileStats, next) {
+              let absolutePath = path.resolve(root, fileStats.name),
+                relativePath = path.relative(srcPath, absolutePath);
+
+              if (config.isValidCartridgePath(relativePath, cartridges)) {
+                archive.addFile(absolutePath, relativePath);
+              }
+
+              next();
+            }
+          }
+        });
+
+        archive.end();
+
+        archive.outputStream
+          .pipe(fs.createWriteStream(archiveName))
+          .on('close', function () {
+            log.info(chalk.cyan('Archive created.'));
+            resolve();
+          });
+
+      });
+    }
+
+    deleteCartridges() {
+      const self = this;
+
+      return new Promise(function (resolve, reject) {
+        let queue = new Queue(),
+          webdav = new WebDav(self.conf),
+          cartridges = (self.conf.cartridge.constructor === Array) ? self.conf.cartridge : [self.conf.cartridge];
+
+        if (cartridges.length < 1) {
+          reject();
+          return;
+        }
+
+        cartridges.forEach(function (cartridge) {
+          queue.place(function () {
+            return webdav.delete(cartridge);
+          });
+        });
+
+      });
+    }
+
     upload () {
       const self = this;
 
-      return new Promise(function (uploadResolve) { // arguments: uploadResolve, uploadReject
-        config.validateConfigProperties(self.conf);
+      let webdav = new WebDav(self.conf),
+        archiveName = path.join(ROOT_DIR, ARCHIVE_NAME);
 
-        let queue = new Queue(),
-          webdav = new WebDav(self.conf),
-          allCartridges = (self.conf.cartridge.constructor === Array) ? self.conf.cartridge : [self.conf.cartridge],
-          processedCartridges = 0;
-
-        allCartridges.forEach(function (cartridge) {
-          let dirname = path.dirname(cartridge),
-            cartridgeName = path.basename(cartridge),
-            zipCartridgeName = cartridgeName + '.zip';
-
-          queue.place(function () {
-            return new Promise(function (resolve) { // arguments: resolve, reject
-              let zipCartridge = new yazl.ZipFile(),
-                walker = walk.walk(cartridge);
-
-              walker.on('file', function (root, filestats, next) {
-                let realPath = path.resolve(root, filestats.name),
-                  metadataPath = path.relative(dirname, realPath);
-
-                if (!multimatch([root, filestats.name], self.conf.exclude).length) {
-                  zipCartridge.addFile(realPath, metadataPath);
-                }
-
-                next();
-              });
-
-              walker.on('end', function () {
-                log.debug('Walking zipped files done for ' + cartridge);
-                zipCartridge.end();
-              });
-
-              zipCartridge.outputStream
-                .pipe(fs.createWriteStream(zipCartridgeName))
-                .on('close', function () {
-                  log.info('Zipping finished for ' + cartridge);
-                  resolve(cartridgeName);
-                });
-            }).then(function () {
-              return webdav.delete(cartridgeName);
-            }).then(function () {
-              return webdav.put(zipCartridgeName);
-            }).then(function () {
-              return webdav.unzip(zipCartridgeName);
-            }).then(function () {
-              return webdav.delete(zipCartridgeName);
-            }).then(function () {
-              log.info(chalk.cyan(`Uploaded cartridge: ${cartridge}`));
-              return del(zipCartridgeName).then(function () {
-                if (++processedCartridges == allCartridges.length) {
-                  return uploadResolve();
-                }
-
-                queue.next();
-              });
-            }, function (err) {
-              log.error(err);
-              return del(zipCartridgeName).then(function () {
-                if (++processedCartridges == allCartridges.length) {
-                  return uploadResolve();
-                }
-
-                queue.next();
-                return Promise.reject(err);
-              });
-            });
-          });
+      return new Promise(function (resolve) {
+          // @TODO I can't figure out how to trigger .then without resolve()
+          resolve();
+        }).then(function () {
+          log.info(chalk.cyan(`Creating archive of all cartridges.`));
+          return self.zipCartridges(archiveName);
+        }).then(function () {
+          log.info(chalk.cyan(`Uploading archive.`));
+          return webdav.put(archiveName);
+        }).then(function () {
+          log.info(chalk.cyan(`Unzipping archive.`));
+          return webdav.unzip(archiveName);
+        }).then(function () {
+          log.info(chalk.cyan(`Removing archive.`));
+          return webdav.delete(archiveName);
+        }).then(function () {
+          log.info(chalk.cyan(`Cartriges uploaded.`));
+          return del(archiveName).then(function () {});
+        }, function (err) {
+          log.error(err);
+          return del(archiveName).then(function () {});
         });
-      });
     }
 
     watch () {
