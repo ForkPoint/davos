@@ -3,7 +3,7 @@
 
   // Constants
   const ROOT_DIR = '.',
-    ARCHIVE_NAME = 'davos_cartridges.zip';
+    ARCHIVE_NAME = 'cartridges.zip';
 
   // Imports
   const fs = require('fs'),
@@ -28,7 +28,7 @@
       return this;
     }
 
-    zipCartridges () {
+    zipCartridges (archiveName) {
       const self = this;
 
       return new Promise(function (resolve, reject) {
@@ -79,11 +79,33 @@
         archive.end();
 
         archive.outputStream
-          .pipe(fs.createWriteStream(ARCHIVE_NAME))
+          .pipe(fs.createWriteStream(archiveName))
           .on('close', function () {
-            log.info(chalk.cyan('Archiving finished for all cartridges.'));
+            log.info(chalk.cyan('Archive created.'));
             resolve();
           });
+
+      });
+    }
+
+    deleteCartridges() {
+      const self = this;
+
+      return new Promise(function (resolve, reject) {
+        let queue = new Queue(),
+          webdav = new WebDav(self.conf),
+          cartridges = (self.conf.cartridge.constructor === Array) ? self.conf.cartridge : [self.conf.cartridge];
+
+        if (cartridges.length < 1) {
+          reject();
+          return;
+        }
+
+        cartridges.forEach(function (cartridge) {
+          queue.place(function () {
+            return webdav.delete(cartridge);
+          });
+        });
 
       });
     }
@@ -91,35 +113,32 @@
     upload () {
       const self = this;
 
-      let webdav = new WebDav(self.conf);
+      let webdav = new WebDav(self.conf),
+        archiveName = path.join(ROOT_DIR, ARCHIVE_NAME);
 
       return new Promise(function (resolve) {
+          // @TODO I can't figure out how to trigger .then without resolve()
           resolve();
         }).then(function () {
           log.info(chalk.cyan(`Creating archive of all cartridges.`));
-          return self.zipCartridges();
+          return self.zipCartridges(archiveName);
         }).then(function () {
-          log.info(chalk.cyan(`Removing archive (if any) from WebDav.`));
-          return webdav.delete(ARCHIVE_NAME);
+          log.info(chalk.cyan(`Uploading archive.`));
+          return webdav.put(archiveName);
         }).then(function () {
-          log.info(chalk.cyan(`Uploading archive to WebDav.`));
-          return webdav.put(ARCHIVE_NAME);
+          log.info(chalk.cyan(`Unzipping archive.`));
+          return webdav.unzip(archiveName);
         }).then(function () {
-          log.info(chalk.cyan(`Unzipping archive on WebDav.`));
-          return webdav.unzip(ARCHIVE_NAME);
-        }).then(function () {
-          log.info(chalk.cyan(`Removing archive from WebDav.`));
-          return webdav.delete(ARCHIVE_NAME);
+          log.info(chalk.cyan(`Removing archive.`));
+          return webdav.delete(archiveName);
         }).then(function () {
           log.info(chalk.cyan(`Cartriges uploaded.`));
-          return del(ARCHIVE_NAME).then(function () {
-            return resolve();
+          return del(archiveName).then(function () {
+            log.info(chalk.cyan(`Clean up local archive.`));
           });
         }, function (err) {
           log.error(err);
-          return del(ARCHIVE_NAME).then(function () {
-              return reject(err);
-            });
+          return del(archiveName).then(function () {});
         });
     }
 
