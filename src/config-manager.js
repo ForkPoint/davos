@@ -39,7 +39,7 @@
       return this.profiles;
     }
 
-    getActiveProfie (config) {
+    getActiveProfile (config) {
       if (!this.profiles) {
         Log.error(chalk.red(`\nCannot read configuration.`));
         return config;
