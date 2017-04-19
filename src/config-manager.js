@@ -128,10 +128,11 @@
     loadConfiguration () {
       //parse the configuration
       let configName = this.getConfigName(),
+        fileContents = '',
         json = null;
 
       try {
-        const fileContents = fs.readFileSync(configName, 'UTF-8');
+        fileContents = fs.readFileSync(configName, 'UTF-8');
       } catch (e) {
         Log.error(chalk.red("\nConfiguration not found. Error: " + configName + " ::: " + e.message));
       }
