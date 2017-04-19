@@ -6,9 +6,9 @@ process.env.UV_THREADPOOL_SIZE = 128;
   'use strict';
 
   module.exports = {
-    core: require('./src/davos'),
-    config: require('./src/config'),
-    logger: require('./src/logger'),
-    webdav: require('./src/webdav')
+    Core: require('./src/davos'),
+    ConfigManager: require('./src/config-manager'),
+    Logger: require('./src/logger'),
+    WebDav: require('./src/webdav')
   };
 }());

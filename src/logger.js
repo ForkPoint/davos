@@ -2,10 +2,10 @@
   'use strict';
 
   // Imports
-  const logger = require('winston'),
+  const Logger = require('winston'),
     config = require('winston/lib/winston/config');
 
-  logger.addColors({
+  Logger.addColors({
     debug: 'cyan',
     info: 'green',
     silly: 'magenta',
@@ -13,9 +13,9 @@
     error: 'red'
   });
 
-  logger.remove(logger.transports.Console);
+  Logger.remove(Logger.transports.Console);
 
-  logger.add(logger.transports.Console, {
+  Logger.add(Logger.transports.Console, {
     level: 'verbose',
     colorize: 'all',
     handleExceptions: true,
@@ -36,9 +36,9 @@
     }
   });
 
-  logger.exitOnError = function (err) {
+  Logger.exitOnError = function (err) {
     return err.code !== 'EPIPE';
   }
 
-  module.exports = logger;
+  module.exports = Logger;
 })();
