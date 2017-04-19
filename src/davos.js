@@ -25,7 +25,7 @@
   class Davos {
     constructor (config) {
       this.ConfigManager = new ConfigManager();
-      this.config = this.ConfigManager.loadConfigurations().getActiveProfile(config);
+      this.config = this.ConfigManager.loadConfiguration().getActiveProfile(config);
       return this;
     }
 
