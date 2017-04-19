@@ -18,18 +18,19 @@
     xmldoc = require('xmldoc');
 
   // Locals
-  const config = require('./config'),
+  const ConfigManager = require('./config-manager'),
     WebDav = require('./webdav'),
-    log = require('./logger');
+    Log = require('./logger');
 
   class Davos {
-    constructor (conf) {
-      this.conf = conf;
+    constructor (config) {
+      this.ConfigManager = new ConfigManager();
+      this.config = this.ConfigManager.loadConfigurations().getActiveProfile(config);
       return this;
     }
 
     activateCodeVersion () {
-      let webdav = new WebDav(this.conf);
+      let webdav = new WebDav(this.config);
       webdav.login();
       webdav.activateCodeVersion();
     }
@@ -39,8 +40,8 @@
 
       return new Promise(function (resolve, reject) {
         let queue = new Queue(),
-          webdav = new WebDav(self.conf),
-          cartridges = (self.conf.cartridge.constructor === Array) ? self.conf.cartridge : [self.conf.cartridge];
+          webdav = new WebDav(self.config),
+          cartridges = self.config.cartridge;
 
         if (cartridges.length < 1) {
           reject();
@@ -60,11 +61,9 @@
       const self = this;
 
       return new Promise(function (resolve, reject) {
-        config.validateConfigProperties(self.conf);
-
         let archive = new yazl.ZipFile(),
           srcPath = path.resolve(ROOT_DIR),
-          cartridges = (self.conf.cartridge.constructor === Array) ? self.conf.cartridge : [self.conf.cartridge];
+          cartridges = self.config.cartridge;
 
         if (cartridges.length < 1) {
           reject();
@@ -72,7 +71,7 @@
         }
 
         walk.walkSync(srcPath, {
-          filters: config.IGNORED_DIRECTORY_NAMES,
+          filters: self.ConfigManager.getIgnoredPaths(),
           listeners: {
             names: function (root, nodeNamesArray) {
               nodeNamesArray.sort(function (a, b) {
@@ -85,7 +84,7 @@
               let absolutePath = path.resolve(root, dirStatsArray[0].name),
                 relativePath = path.relative(srcPath, absolutePath);
 
-              if (config.isValidCartridgePath(relativePath, cartridges)) {
+              if (self.ConfigManager.isValidCartridgePath(relativePath, cartridges)) {
                 archive.addEmptyDirectory(relativePath);
               }
 
@@ -95,7 +94,7 @@
               let absolutePath = path.resolve(root, fileStats.name),
                 relativePath = path.relative(srcPath, absolutePath);
 
-              if (config.isValidCartridgePath(relativePath, cartridges)) {
+              if (self.ConfigManager.isValidCartridgePath(relativePath, cartridges)) {
                 archive.addFile(absolutePath, relativePath);
               }
 
@@ -109,7 +108,7 @@
         archive.outputStream
           .pipe(fs.createWriteStream(archiveName))
           .on('close', function () {
-            log.info(chalk.cyan('Archive created.'));
+            Log.info(chalk.cyan('Archive created.'));
             resolve();
           });
 
@@ -117,35 +116,89 @@
     }
 
     compressMeta () {
+      const self = this;
 
+      return new Promise(function (resolve, reject) {
+        let archive = new yazl.ZipFile(),
+          srcPath = path.resolve(ROOT_DIR),
+          cartridges = self.config.cartridge;
+
+        if (cartridges.length < 1) {
+          reject();
+          return;
+        }
+
+        walk.walkSync(srcPath, {
+          filters: self.ConfigManager.getIgnoredPaths(),
+          listeners: {
+            names: function (root, nodeNamesArray) {
+              nodeNamesArray.sort(function (a, b) {
+                if (a > b) return -1;
+                if (a < b) return 1;
+                return 0;
+              });
+            },
+            directories: function (root, dirStatsArray, next) {
+              let absolutePath = path.resolve(root, dirStatsArray[0].name),
+                relativePath = path.relative(srcPath, absolutePath);
+
+              if (self.ConfigManager.isValidCartridgePath(relativePath, cartridges)) {
+                archive.addEmptyDirectory(relativePath);
+              }
+
+              next();
+            },
+            file: function (root, fileStats, next) {
+              let absolutePath = path.resolve(root, fileStats.name),
+                relativePath = path.relative(srcPath, absolutePath);
+
+              if (self.ConfigManager.isValidCartridgePath(relativePath, cartridges)) {
+                archive.addFile(absolutePath, relativePath);
+              }
+
+              next();
+            }
+          }
+        });
+
+        archive.end();
+
+        archive.outputStream
+          .pipe(fs.createWriteStream(archiveName))
+          .on('close', function () {
+            Log.info(chalk.cyan('Archive created.'));
+            resolve();
+          });
+
+      });
     }
 
     upload () {
       const self = this;
 
-      let webdav = new WebDav(self.conf),
+      let webdav = new WebDav(self.config),
         archiveName = path.join(ROOT_DIR, ARCHIVE_NAME);
 
       return new Promise(function (resolve) {
           // @TODO I can't figure out how to trigger .then without resolve()
           resolve();
         }).then(function () {
-          log.info(chalk.cyan(`Creating archive of all cartridges.`));
+          Log.info(chalk.cyan(`Creating archive of all cartridges.`));
           return self.compressCartridges(archiveName);
         }).then(function () {
-          log.info(chalk.cyan(`Uploading archive.`));
+          Log.info(chalk.cyan(`Uploading archive.`));
           return webdav.put(archiveName);
         }).then(function () {
-          log.info(chalk.cyan(`Unzipping archive.`));
+          Log.info(chalk.cyan(`Unzipping archive.`));
           return webdav.unzip(archiveName);
         }).then(function () {
-          log.info(chalk.cyan(`Removing archive.`));
+          Log.info(chalk.cyan(`Removing archive.`));
           return webdav.delete(archiveName);
         }).then(function () {
-          log.info(chalk.cyan(`Cartriges uploaded.`));
+          Log.info(chalk.cyan(`Cartriges uploaded.`));
           return del(archiveName).then(function () {});
         }, function (err) {
-          log.error(err);
+          Log.error(err);
           return del(archiveName).then(function () {});
         });
     }
@@ -153,12 +206,12 @@
     watch () {
       const self = this;
 
-      log.info('Waiting for initial scan completion');
+      Log.info('Waiting for initial scan completion');
 
       let queue = new Queue(),
-        webdav = new WebDav(self.conf),
-        allCartridges = (self.conf.cartridge.constructor === Array) ? self.conf.cartridge : [self.conf.cartridge],
-        excludesWithDotFiles = self.conf.exclude.concat([/[\/\\]\./]),
+        webdav = new WebDav(self.config),
+        allCartridges = self.config.cartridge,
+        excludesWithDotFiles = self.config.exclude.concat([/[\/\\]\./]),
         watchHashList = [],
         isFirstUseFiles = true,
         isFirstUseDirectories = true,
@@ -176,7 +229,7 @@
 
       watcher
           .on('ready', () => {
-            log.info('Initial scan complete. Ready for changes');
+            Log.info('Initial scan complete. Ready for changes');
             isFirstUseFiles = false;
             isFirstUseDirectories = false;
           })
@@ -189,15 +242,15 @@
             });
 
             if (!isFirstUseFiles) {
-              log.info(`File ${p} has been added`);
+              Log.info(`File ${p} has been added`);
 
               queue.place(function () {
                 return webdav.put(p)
                   .then(function () {
-                    log.info(chalk.cyan(`Successfully uploaded: ${p}`));
+                    Log.info(chalk.cyan(`Successfully uploaded: ${p}`));
                     queue.next();
                   }, function(err) {
-                    log.error(err);
+                    Log.error(err);
                     queue.next();
                   });
               });
@@ -205,15 +258,15 @@
           })
           .on('addDir', p => {
             if (!isFirstUseDirectories) {
-              log.info(`Directory ${p} has been added`);
+              Log.info(`Directory ${p} has been added`);
 
               queue.place(function () {
                 return webdav.mkcol(p)
                   .then(function () {
-                    log.info(chalk.cyan(`Successfully uploaded: ${p}`));
+                    Log.info(chalk.cyan(`Successfully uploaded: ${p}`));
                     queue.next();
                   }, function(err) {
-                    log.error(err);
+                    Log.error(err);
                     queue.next();
                   });
               });
@@ -234,14 +287,14 @@
 
             if (changedFile.md5sum !== hash) {
               changedFile.md5sum = hash;
-              log.info(`File ${p} has been changed`);
+              Log.info(`File ${p} has been changed`);
               queue.place(function () {
                 return webdav.put(p)
                   .then(function () {
-                    log.info(chalk.cyan(`Successfully uploaded: ${p}`));
+                    Log.info(chalk.cyan(`Successfully uploaded: ${p}`));
                     queue.next();
                   }, function(err) {
-                    log.debug(err);
+                    Log.debug(err);
                     queue.next();
                   });
               });
@@ -255,43 +308,43 @@
               watchHashList.splice(indexOfRemovedFile, 1);
             }
 
-            log.info(`File ${path} has been removed`);
+            Log.info(`File ${path} has been removed`);
 
             queue.place(function () {
               return webdav.delete(path)
                 .then(function() {
-                  log.info(chalk.cyan(`Successfully deleted: ${path}`));
+                  Log.info(chalk.cyan(`Successfully deleted: ${path}`));
                   queue.next();
                 }, function(err) {
-                  log.error(err);
+                  Log.error(err);
                   queue.next();
                 });
             });
           })
           .on('unlinkDir', path => {
-            log.info(`Directory ${path} has been removed`);
+            Log.info(`Directory ${path} has been removed`);
 
             queue.place(function () {
               return webdav.delete(path)
                 .then(function () {
-                  log.info(chalk.cyan(`Successfully deleted: ${path}`));
+                  Log.info(chalk.cyan(`Successfully deleted: ${path}`));
                   queue.next();
                 }, function(err) {
-                  log.error(err);
+                  Log.error(err);
                   queue.next();
                 });
             });
           })
           .on('error', function(err) {
-            log.error('Error while watching with chokidar:', err, '\nRestarting watch...');
+            Log.error('Error while watching with chokidar:', err, '\nRestarting watch...');
           });
     }
 
     sync () {
       const self = this;
 
-      let webdav = new WebDav(self.conf),
-        clearRemoteOnlyCartridges = (!self.conf.delete) ? self.conf.D : self.conf.delete;
+      let webdav = new WebDav(self.config),
+        clearRemoteOnlyCartridges = (!self.config.delete) ? self.config.D : self.config.delete;
 
       if (clearRemoteOnlyCartridges === undefined) {
         clearRemoteOnlyCartridges = false;
@@ -302,8 +355,8 @@
             let doc = new xmldoc.XmlDocument(res),
               responseNodes = doc.childrenNamed('response'),
               nodesLen = responseNodes.length,
-              workingDirectory = self.conf.basePath || process.cwd(),
-              cartridges = config.getCartridges(workingDirectory, []),
+              workingDirectory = self.config.basePath || process.cwd(),
+              cartridges = self.ConfigManager.getCartridges(workingDirectory),
               cartridgesOnServer = [],
               localCartridges = [],
               differentCartridges = [],
@@ -343,10 +396,10 @@
 
             return new Promise(function(resolve, reject) {
               if (differentCartridges.length > 0) {
-                log.info(`\nThere are cartridges on the server that do not exist in your local cartridges: ${chalk.cyan(differentCartridges)}`);
+                Log.info(`\nThere are cartridges on the server that do not exist in your local cartridges: ${chalk.cyan(differentCartridges)}`);
 
                 if (clearRemoteOnlyCartridges) {
-                  log.info(`Deleting cartridges ${differentCartridges}`);
+                  Log.info(`Deleting cartridges ${differentCartridges}`);
                   resolve(differentCartridges);
                 } else {
                   reject(`Cartridges were not deleted`);
@@ -360,9 +413,9 @@
               return webdav.delete(cartridge);
             });
           }).then(function () {
-            log.info('Cartridges were deleted');
+            Log.info('Cartridges were deleted');
           }).catch(function(err) {
-            log.info(err);
+            Log.info(err);
           });
     }
 

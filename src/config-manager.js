@@ -14,17 +14,54 @@
     chalk = require('chalk');
 
   // Locals
-  const log = require('./logger');
+  const Log = require('./logger');
 
-  const Config = function () {
+  class ConfigManager {
+    constructor () {
+      /* contain all the profiles */
+      this.profiles = [];
+      /* contain active profile */
+      this.config = {};
+      return this;
+    }
 
-    function getConfigName () {
+    getIgnoredPaths () {
+      return IGNORED_DIRECTORY_NAMES;
+    }
+
+    getConfigName () {
       // @TODO make config name dynamic
       // check files for structure that match config and get first one - if not - throws an error
       return DEFAULT_CONFIG_NAME;
     }
 
-    function isConfigExisting () {
+    getProfiles() {
+      return this.profiles;
+    }
+
+    getActiveProfie (config) {
+      if (!this.profiles) {
+        Log.error(chalk.red(`\nCannot read configuration.`));
+        return config;
+      }
+
+      let activeProfile = this.profiles.find(x => x.active === true);
+
+      if (!activeProfile) {
+        Log.error(chalk.red(`\nThere is no active profile in your configuration [${configPath}].`));
+        return config;
+      }
+
+      this.config = activeProfile.config;
+
+      if (config !== undefined) {
+        this.config = Object.assign(this.config, config);
+      }
+
+      return this.config;
+    }
+
+    isConfigExisting () {
       let configName = this.getConfigName();
 
       try {
@@ -35,7 +72,7 @@
       }
     }
 
-    function validateConfigProperties (config) {
+    validateConfigProperties (config) {
       CONFIG_PROPERTIES.forEach(function (property) {
         if (!config.hasOwnProperty(property)) {
           throw {
@@ -46,7 +83,7 @@
       });
     }
 
-    function getCartridges (srcPath) {
+    getCartridges (srcPath) {
       let result = [];
 
       walk.walkSync(srcPath, {
@@ -76,7 +113,7 @@
       return result;
     }
 
-    function isValidCartridgePath (relativePath, cartridges) {
+    isValidCartridgePath (relativePath, cartridges) {
       let validCartridge = false;
 
       cartridges.forEach(function (cartridge) {
@@ -88,45 +125,40 @@
       return validCartridge;
     }
 
-    function loadConfiguration () {
+    loadConfiguration () {
       //parse the configuration
       let configName = this.getConfigName(),
         json = null;
 
       try {
         const fileContents = fs.readFileSync(configName, 'UTF-8');
-        json = JSON.parse(fileContents);
       } catch (e) {
-        log.error(chalk.red("\nThere was a problem parsing the configuration file : " + configName + " ::: " + e.message));
+        Log.error(chalk.red("\nConfiguration not found. Error: " + configName + " ::: " + e.message));
       }
 
-      return json;
+      try {
+        json = JSON.parse(fileContents);
+      } catch (e) {
+        Log.error(chalk.red("\nThere was a problem parsing the configuration file : " + configName + " ::: " + e.message));
+      }
+
+      this.profiles = json;
+
+      return this;
     }
 
-    function saveConfiguration (json) {
+    saveConfiguration (json) {
       let configFileName = this.getConfigName();
 
       fs.writeFileSync(configFileName, JSON.stringify(json, null, '  '), 'UTF-8');
-      log.info(chalk.cyan('\n Configuration saved in ' + configFileName));
+      Log.info(chalk.cyan('\n Configuration saved in ' + configFileName));
     }
 
-    function promptError (e) {
-      log.error(e);
+    promptError (e) {
+      Log.error(e);
       return 1;
     }
+  };
 
-    return {
-      IGNORED_DIRECTORY_NAMES,
-      getConfigName,
-      isConfigExisting,
-      validateConfigProperties,
-      getCartridges,
-      isValidCartridgePath,
-      loadConfiguration,
-      saveConfiguration,
-      promptError
-    };
-  }();
-
-  module.exports = Config;
+  module.exports = ConfigManager;
 }());
