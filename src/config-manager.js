@@ -3,7 +3,10 @@
 
   // Constants
   const DEFAULT_CONFIG_NAME = 'davos.json',
-    CONFIG_PROPERTIES = ['hostname', 'username', 'password', 'cartridge', 'codeVersion', 'exclude'],
+    CONFIG_PROPERTIES = {
+      required: ['hostname', 'username', 'password', 'cartridge', 'codeVersion'],
+      optional: ['exclude', 'versionReplace']
+    },
     // @TODO add these into default config ignore path
     IGNORED_DIRECTORY_NAMES = ['.git', '.svn', '.sass-cache', 'node_modules'];
 
@@ -55,9 +58,16 @@
       this.config = activeProfile.config;
 
       if (config !== undefined) {
-        this.config = Object.assign(this.config, config);
+        this.mergeConfiguration(config);
       }
 
+      this.validateConfigProperties(this.config);
+
+      return this.config;
+    }
+
+    mergeConfiguration (config) {
+      this.config = Object.assign(this.config, config);
       return this.config;
     }
 
@@ -73,12 +83,17 @@
     }
 
     validateConfigProperties (config) {
-      CONFIG_PROPERTIES.forEach(function (property) {
+      CONFIG_PROPERTIES.required.forEach(function (property) {
         if (!config.hasOwnProperty(property)) {
           throw {
             name: 'InavlidConfiguration',
             message: `Your configuration profile does not contain ${property}`
           };
+        }
+      });
+      CONFIG_PROPERTIES.optional.forEach(function (property) {
+        if (!config.hasOwnProperty(property)) {
+          Log.warn(`Your configuration profile does not contain optional property ${property}`);
         }
       });
     }

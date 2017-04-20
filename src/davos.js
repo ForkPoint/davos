@@ -23,14 +23,16 @@
     Log = require('./logger');
 
   class Davos {
-    constructor (config) {
-      this.ConfigManager = new ConfigManager();
-      this.config = this.ConfigManager.loadConfiguration().getActiveProfile(config);
+    constructor (config, ConfigManagerInstance) {
+      this.ConfigManager = ConfigManagerInstance || new ConfigManager();
+      this.config = (Object.keys(this.ConfigManager.config).length === 0)
+        ? this.ConfigManager.loadConfiguration().getActiveProfile(config)
+        : this.ConfigManager.mergeConfiguration(config);
       return this;
     }
 
     activateCodeVersion () {
-      let webdav = new WebDav(this.config);
+      let webdav = new WebDav(this.config, self.ConfigManager);
       webdav.login();
       webdav.activateCodeVersion();
     }
@@ -40,7 +42,7 @@
 
       return new Promise(function (resolve, reject) {
         let queue = new Queue(),
-          webdav = new WebDav(self.config),
+          webdav = new WebDav(self.config, self.ConfigManager),
           cartridges = self.config.cartridge;
 
         if (cartridges.length < 1) {
@@ -176,7 +178,7 @@
     upload () {
       const self = this;
 
-      let webdav = new WebDav(self.config),
+      let webdav = new WebDav(self.config, self.ConfigManager),
         archiveName = path.join(ROOT_DIR, ARCHIVE_NAME);
 
       return new Promise(function (resolve) {
@@ -209,7 +211,7 @@
       Log.info('Waiting for initial scan completion');
 
       let queue = new Queue(),
-        webdav = new WebDav(self.config),
+        webdav = new WebDav(self.config, self.ConfigManager),
         allCartridges = self.config.cartridge,
         excludesWithDotFiles = self.config.exclude.concat([/[\/\\]\./]),
         watchHashList = [],
@@ -343,7 +345,7 @@
     sync () {
       const self = this;
 
-      let webdav = new WebDav(self.config),
+      let webdav = new WebDav(self.config, self.ConfigManager),
         clearRemoteOnlyCartridges = (!self.config.delete) ? self.config.D : self.config.delete;
 
       if (clearRemoteOnlyCartridges === undefined) {
@@ -419,8 +421,9 @@
           });
     }
 
-    insertBuildInfo () {
-
+    replaceTemplateInfo () {
+      let webdav = new WebDav(this.config, self.ConfigManager);
+      //this.config.
     }
   }
 

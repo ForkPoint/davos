@@ -39,9 +39,11 @@
    * @param {Object} config The configuration object used by Davos
    */
   class WebDav {
-    constructor (config) {
-      this.ConfigManager = new ConfigManager();
-      this.config = this.ConfigManager.loadConfiguration().getActiveProfile(config);
+    constructor (config, ConfigManagerInstance) {
+      this.ConfigManager = ConfigManagerInstance || new ConfigManager();
+      this.config = (Object.keys(this.ConfigManager.config).length === 0)
+        ? this.ConfigManager.loadConfiguration().getActiveProfile(config)
+        : this.ConfigManager.mergeConfiguration(config);
       this.baseOptions = {
         baseUrl: 'https://' + this.config.hostname + '/on/demandware.servlet/webdav/Sites/Cartridges/' + this.config.codeVersion,
         uri: '/',
