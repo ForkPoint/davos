@@ -419,7 +419,45 @@
     }
 
     replaceTemplateInfo () {
+      const self = this;
 
+      return new Promise(function (resolve) {
+        if (!self.config.hasOwnProperty('templateReplace')) {
+          Log.info(chalk.cyan('Skipping template replace.'));
+          Log.warn(`Your configuration profile does not contain optional property templateReplace`);
+          resolve();
+          return;
+        }
+
+        let webdav = new WebDav(self.config, self.ConfigManager);
+
+        self.config.templateReplace.files.forEach(function (templateFile) {
+            (function () {
+              return webdav.getContent(templateFile);
+            })().then(function (fileContent) {
+              let patterns = self.config.templateReplace.pattern;
+
+              Object.keys(patterns).forEach(function (key) {
+                let regexp = new RegExp(patterns[key], 'g'),
+                  value = '';
+
+                switch (key) {
+                  case 'buildVersion': {
+                    // @TODO get value from config
+                    value = key;
+                    break;
+                  }
+                }
+
+                fileContent = fileContent.replace(regexp, value);
+              });
+
+              return Promise.resolve(fileContent);
+            }).then(function (fileContent) {
+              return webdav.putContent(templateFile, fileContent);
+            });
+        });
+      });
     }
   }
 

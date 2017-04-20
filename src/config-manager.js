@@ -5,7 +5,7 @@
   const DEFAULT_CONFIG_NAME = 'davos.json',
     CONFIG_PROPERTIES = {
       required: ['hostname', 'username', 'password', 'cartridge', 'codeVersion'],
-      optional: ['exclude', 'versionReplace']
+      optional: ['exclude', 'templateReplace']
     },
     // @TODO add these into default config ignore path
     IGNORED_DIRECTORY_NAMES = ['.git', '.svn', '.sass-cache', 'node_modules'];

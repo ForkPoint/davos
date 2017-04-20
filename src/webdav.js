@@ -28,6 +28,7 @@
   const _ = require('underscore'),
     fs = require('fs'),
     path = require('path'),
+    Readable = require('stream').Readable,
     request = require('request').defaults(REQUEST_DEFAULTS);
 
   // Locals
@@ -138,11 +139,16 @@
 
       if (options.method === 'PUT') {
         try {
-          stream = fs.createReadStream(path);
+          // create file stream (default)
+          if (!options.hasOwnProperty('contentString')) {
+            stream = fs.createReadStream(path);
+          } else { // create string stream instead
+            stream = new Readable;
+            stream.push(options.contentString);
+            stream.push(null);
+          }
           stream.pipe(req);
-          stream.on('end', function () {
-            stream.close();
-          });
+          stream.on('end', function () {});
         } catch (e) {
           Log.error('There was an error reading the fs stream from ' + path + ' :: ' + e.code);
           reject(e);
@@ -219,6 +225,20 @@
     }
 
     /**
+     * WebDav GET CONTENT
+     */
+    getContent (path) {
+      const self = this;
+
+      return new Promise(function (resolve, reject) {
+        let options = {
+          method: 'GET'
+        };
+        self.doRequest(options, path, MAX_ATTEMPTS, RETRY_DELAY, reject, resolve);
+      });
+    }
+
+    /**
      * WebDav PUT
      */
     put (path) {
@@ -227,6 +247,21 @@
       return new Promise(function (resolve, reject) {
         let options = {
           method: 'PUT'
+        };
+        self.doRequest(options, path, MAX_ATTEMPTS, RETRY_DELAY, reject, resolve);
+      });
+    }
+
+    /**
+     * WebDav PUT CONTENT
+     */
+    putContent (path, content) {
+      const self = this;
+
+      return new Promise(function (resolve, reject) {
+        let options = {
+          method: 'PUT',
+          contentString: content
         };
         self.doRequest(options, path, MAX_ATTEMPTS, RETRY_DELAY, reject, resolve);
       });
