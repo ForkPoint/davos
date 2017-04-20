@@ -84,8 +84,7 @@
 
       if (attemptsLeft <= 0) {
         let e = new Error('The request to ' + path + ' could not be processed!');
-        reject(e);
-        return;
+        return reject(e);
       }
 
       if (attemptsLeft === MAX_ATTEMPTS) {
@@ -102,37 +101,50 @@
         if (attemptsLeft < MAX_ATTEMPTS) {
           Log.debug('Trying to ' + signature + ' for the ' + (MAX_ATTEMPTS - attemptsLeft) + ' time out of ' + MAX_ATTEMPTS + ' tries left.');
         }
-
-        if (error && _.contains(ERR_CODES, error.code)) {
+        if (!error) {
+          resolve(body);
+        }
+      }).on('response', function(response) {
+        if (response.statusCode === 404) {
+          let errorMessage = null;
+          switch (options.method) {
+            case 'GET': {
+              errorMessage = 'File ' + options.uri + ' was not found.';
+              break;
+            }
+            case 'DELETE': {
+              errorMessage = 'File ' + options.uri + ' was not found, maybe already deleted.';
+              Log.info();
+              break;
+            }
+          }
+          if (errorMessage) {
+            Log.info(errorMessage);
+          }
+          reject(new Error(errorMessage));
+        } else if (response.statusCode >= 400) {
+          let errorMessage = response.statusMessage + ' ' + response.statusCode + ". Could not " + signature + " :: skipping file.";
+          Log.error(errorMessage);
+          reject(new Error(errorMessage));
+        } else {
+          Log.debug('Succesfully actioned ' + path);
+        }
+      }).on('error', function (error) {
+        let e = new Error('Error occurred...' + error.code);
+        e.code = error.code;
+        if (_.contains(ERR_CODES, error.code)) {
           Log.error('Got ' + error.code + ' scheduling a retry after ' + retryDelay + 'ms');
+          // schedule a retry
+          setTimeout((function () {
+            self.doRequest(options, path, --attemptsLeft, retryDelay, reject, resolve);
+          }), retryDelay);
+          // terminate current stream (if any)
           if (stream) {
             stream.close();
           }
           // abort current request
           req.abort();
-          // schedule a retry
-          setTimeout((function () {
-            self.doRequest(options, path, --attemptsLeft, retryDelay, reject, resolve);
-          }), retryDelay);
-        } else if (!error && response.statusCode >= 400 && response.statusCode !== 404) {
-          Log.error( response.statusMessage + ' ' + response.statusCode + ". Could not " + signature + " :: skipping file.");
-
-          let e = new Error(response.statusMessage + ' ' + response.statusCode);
-          e.code = response.statusCode;
-          reject(e); // Issue #18 - investigate reason for reject(null);
-        } else if (!error && (200 <= response.statusCode && response.statusCode < 300)) {
-          Log.debug('Succesfully actioned ' + path);
-          resolve(body);
-        } else if (response && response.statusCode === 404 && options.method === 'DELETE') {
-          Log.info('File ' + options.uri + ' was not found, maybe already deleted.');
-          resolve(body);
-        } else if (error) {
-          let e = new Error(error);
-          e.code = error.code;
-          reject(e);
         } else {
-          let e = new Error('Unspecified error occurred...' + response.statusCode);
-          e.code = response.statusCode;
           reject(e);
         }
       });

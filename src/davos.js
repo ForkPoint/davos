@@ -421,18 +421,19 @@
     replaceTemplateInfo () {
       const self = this;
 
-      return new Promise(function (resolve) {
+      return new Promise(function (replaceResolve, replaceReject) {
         if (!self.config.hasOwnProperty('templateReplace')) {
           Log.info(chalk.cyan('Skipping template replace.'));
           Log.warn(`Your configuration profile does not contain optional property templateReplace`);
-          resolve();
-          return;
+          return replaceResolve();
         }
 
-        let webdav = new WebDav(self.config, self.ConfigManager);
+        let queue = new Queue(),
+          webdav = new WebDav(self.config, self.ConfigManager);
 
         self.config.templateReplace.files.forEach(function (templateFile) {
-            (function () {
+          queue.place(function () {
+            return (function () {
               return webdav.getContent(templateFile);
             })().then(function (fileContent) {
               let patterns = self.config.templateReplace.pattern;
@@ -455,8 +456,15 @@
               return Promise.resolve(fileContent);
             }).then(function (fileContent) {
               return webdav.putContent(templateFile, fileContent);
+            }).then(function () {
+              queue.next();
+            }, function (err) {
+              queue.next();
             });
+          });
         });
+
+        return replaceResolve();
       });
     }
   }
