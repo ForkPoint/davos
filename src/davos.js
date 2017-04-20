@@ -32,7 +32,7 @@
     }
 
     activateCodeVersion () {
-      let webdav = new WebDav(this.config, self.ConfigManager);
+      let webdav = new WebDav(this.config, this.ConfigManager);
       webdav.login();
       webdav.activateCodeVersion();
     }
@@ -181,28 +181,25 @@
       let webdav = new WebDav(self.config, self.ConfigManager),
         archiveName = path.join(ROOT_DIR, ARCHIVE_NAME);
 
-      return new Promise(function (resolve) {
-          // @TODO I can't figure out how to trigger .then without resolve()
-          resolve();
-        }).then(function () {
-          Log.info(chalk.cyan(`Creating archive of all cartridges.`));
-          return self.compressCartridges(archiveName);
-        }).then(function () {
-          Log.info(chalk.cyan(`Uploading archive.`));
-          return webdav.put(archiveName);
-        }).then(function () {
-          Log.info(chalk.cyan(`Unzipping archive.`));
-          return webdav.unzip(archiveName);
-        }).then(function () {
-          Log.info(chalk.cyan(`Removing archive.`));
-          return webdav.delete(archiveName);
-        }).then(function () {
-          Log.info(chalk.cyan(`Cartriges uploaded.`));
-          return del(archiveName).then(function () {});
-        }, function (err) {
-          Log.error(err);
-          return del(archiveName).then(function () {});
-        });
+      return (function () {
+        Log.info(chalk.cyan(`Creating archive of all cartridges.`));
+        return self.compressCartridges(archiveName);
+      })().then(function () {
+        Log.info(chalk.cyan(`Uploading archive.`));
+        return webdav.put(archiveName);
+      }).then(function () {
+        Log.info(chalk.cyan(`Unzipping archive.`));
+        return webdav.unzip(archiveName);
+      }).then(function () {
+        Log.info(chalk.cyan(`Removing archive.`));
+        return webdav.delete(archiveName);
+      }).then(function () {
+        Log.info(chalk.cyan(`Cartriges uploaded.`));
+        return del(archiveName).then(function () {});
+      }, function (err) {
+        Log.error(err);
+        return del(archiveName).then(function () {});
+      });
     }
 
     watch () {
@@ -422,8 +419,7 @@
     }
 
     replaceTemplateInfo () {
-      let webdav = new WebDav(this.config, self.ConfigManager);
-      //this.config.
+
     }
   }
 
