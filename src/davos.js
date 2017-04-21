@@ -3,7 +3,8 @@
 
   // Constants
   const ROOT_DIR = '.',
-    ARCHIVE_NAME = 'cartridges.zip';
+    ARCHIVE_NAME = 'cartridges.zip',
+    ARCHIVE_NAME_META = 'sitemeta.zip'
 
   // Imports
   const fs = require('fs'),
@@ -37,7 +38,7 @@
       webdav.activateCodeVersion();
     }
 
-    deleteCartridges() {
+    deleteCartridges () {
       const self = this;
 
       return new Promise(function (resolve, reject) {
@@ -62,13 +63,13 @@
     compressCartridges (archiveName) {
       const self = this;
 
-      return new Promise(function (resolve, reject) {
+      return new Promise(function (compressResolve, compressReject) {
         let archive = new yazl.ZipFile(),
           srcPath = path.resolve(ROOT_DIR),
           cartridges = self.config.cartridge;
 
         if (cartridges.length < 1) {
-          reject();
+          compressReject();
           return;
         }
 
@@ -111,24 +112,18 @@
           .pipe(fs.createWriteStream(archiveName))
           .on('close', function () {
             Log.info(chalk.cyan('Archive created.'));
-            resolve();
+            compressResolve();
           });
 
       });
     }
 
-    compressMeta () {
+    compressMeta (archiveName) {
       const self = this;
 
-      return new Promise(function (resolve, reject) {
+      return new Promise(function (compressResolve, compressReject) {
         let archive = new yazl.ZipFile(),
-          srcPath = path.resolve(ROOT_DIR),
-          cartridges = self.config.cartridge;
-
-        if (cartridges.length < 1) {
-          reject();
-          return;
-        }
+          srcPath = path.resolve(ROOT_DIR, 'sites');
 
         walk.walkSync(srcPath, {
           filters: self.ConfigManager.getIgnoredPaths(),
@@ -144,9 +139,7 @@
               let absolutePath = path.resolve(root, dirStatsArray[0].name),
                 relativePath = path.relative(srcPath, absolutePath);
 
-              if (self.ConfigManager.isValidCartridgePath(relativePath, cartridges)) {
-                archive.addEmptyDirectory(relativePath);
-              }
+              archive.addEmptyDirectory(relativePath);
 
               next();
             },
@@ -154,9 +147,7 @@
               let absolutePath = path.resolve(root, fileStats.name),
                 relativePath = path.relative(srcPath, absolutePath);
 
-              if (self.ConfigManager.isValidCartridgePath(relativePath, cartridges)) {
-                archive.addFile(absolutePath, relativePath);
-              }
+              archive.addFile(absolutePath, relativePath);
 
               next();
             }
@@ -168,14 +159,14 @@
         archive.outputStream
           .pipe(fs.createWriteStream(archiveName))
           .on('close', function () {
-            Log.info(chalk.cyan('Archive created.'));
-            resolve();
+            Log.info(chalk.cyan('Archive with site metadata created.'));
+            compressResolve();
           });
 
       });
     }
 
-    upload () {
+    uploadCartridges () {
       const self = this;
 
       let webdav = new WebDav(self.config, self.ConfigManager),
@@ -200,6 +191,34 @@
         Log.error(err);
         return del(archiveName).then(function () {});
       });
+    }
+
+    uploadMeta () {
+      const self = this;
+
+      let webdav = new WebDav(self.config, self.ConfigManager),
+        archiveName = path.join(ROOT_DIR, ARCHIVE_NAME_META);
+/*
+      return (function () {
+        Log.info(chalk.cyan(`Creating archive of all cartridges.`));
+        return self.compressMeta(archiveName);
+      })().then(function () {
+        Log.info(chalk.cyan(`Uploading archive.`));
+        return webdav.put(archiveName);
+      }).then(function () {
+        Log.info(chalk.cyan(`Unzipping archive.`));
+        return webdav.unzip(archiveName);
+      }).then(function () {
+        Log.info(chalk.cyan(`Removing archive.`));
+        return webdav.delete(archiveName);
+      }).then(function () {
+        Log.info(chalk.cyan(`Site meta uploaded.`));
+        return del(archiveName).then(function () {});
+      }, function (err) {
+        Log.error(err);
+        return del(archiveName).then(function () {});
+      });
+*/
     }
 
     watch () {
