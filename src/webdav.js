@@ -45,14 +45,23 @@
       this.config = (Object.keys(this.ConfigManager.config).length === 0)
         ? this.ConfigManager.loadConfiguration().getActiveProfile(config)
         : this.ConfigManager.mergeConfiguration(config);
-      this.baseOptions = {
+
+      this.webdavOptions = {
         baseUrl: 'https://' + this.config.hostname + '/on/demandware.servlet/webdav/Sites/Cartridges/' + this.config.codeVersion,
         uri: '/',
+        contentString: null,
         auth: {
           user: this.config.username,
           password: this.config.password
         },
         timeout: REQUEST_TIMEOUT
+      },
+      this.bmOptions = {
+        baseUrl: 'https://' + this.config.hostname + '/on/demandware.store/Sites-Site/default',
+        uri: '/',
+        jar: true,
+        ignoreErrors: true,
+        followRedirect: true
       };
 
       return this;
@@ -76,23 +85,29 @@
       return '/' + targetPath.slice(0, targetPath.indexOf(previous) + previous.length);
     }
 
-    doRequest (options, path, attemptsLeft, retryDelay, reject, resolve) {
+    doRequest (options, requestType, attemptsLeft, retryDelay, requestReject, requestResolve) {
       const self = this;
 
       let req = null,
-        stream = null;
-
-      if (attemptsLeft <= 0) {
-        let e = new Error('The request to ' + path + ' could not be processed!');
-        return reject(e);
-      }
+        stream = null,
+        responseBody = null;
 
       if (attemptsLeft === MAX_ATTEMPTS) {
-        options = Object.assign(options, self.baseOptions);
+        switch (requestType) {
+          case 'webdav': {
+            options = Object.assign({}, self.webdavOptions, options);
+            break;
+          }
+          case 'bm': {
+            options = Object.assign({}, options, self.bmOptions);
+            break;
+          }
+        }
       }
 
-      if (path) {
-        options.uri = path; // self.getUriPath(path);
+      if (attemptsLeft <= 0) {
+        let e = new Error('The request to ' + options.uri + ' could not be processed!');
+        return requestReject(e);
       }
 
       let signature = options.method + ' :: ' + options.uri;
@@ -102,14 +117,19 @@
           Log.debug('Trying to ' + signature + ' for the ' + (MAX_ATTEMPTS - attemptsLeft) + ' time out of ' + MAX_ATTEMPTS + ' tries left.');
         }
         if (!error) {
-          resolve(body);
+          responseBody = body;
+          if (options.method === 'PUT') {
+            // see after req() body condition with === 'PUT'
+          } else {
+            requestResolve(body);
+          }
         }
       }).on('response', function(response) {
         if (response.statusCode === 404) {
-          let errorMessage = null;
+          let errorMessage = '';
           switch (options.method) {
             case 'GET': {
-              errorMessage = 'File ' + options.uri + ' was not found.';
+              errorMessage = 'Path ' + options.uri + ' was not found.';
               break;
             }
             case 'DELETE': {
@@ -121,13 +141,13 @@
           if (errorMessage) {
             Log.info(errorMessage);
           }
-          reject(new Error(errorMessage));
+          requestReject(new Error(errorMessage));
         } else if (response.statusCode >= 400) {
-          let errorMessage = response.statusMessage + ' ' + response.statusCode + ". Could not " + signature + " :: skipping file.";
+          let errorMessage = response.statusMessage + ' ' + response.statusCode + ". Could not " + signature + " :: skipping.";
           Log.error(errorMessage);
-          reject(new Error(errorMessage));
+          requestReject(new Error(errorMessage));
         } else {
-          Log.debug('Succesfully actioned ' + path);
+          Log.debug('Succesfully actioned ' + options.uri);
         }
       }).on('error', function (error) {
         let e = new Error('Error occurred...' + error.code);
@@ -136,7 +156,7 @@
           Log.error('Got ' + error.code + ' scheduling a retry after ' + retryDelay + 'ms');
           // schedule a retry
           setTimeout((function () {
-            self.doRequest(options, path, --attemptsLeft, retryDelay, reject, resolve);
+            self.doRequest(options, requestType, --attemptsLeft, retryDelay, requestReject, requestResolve);
           }), retryDelay);
           // terminate current stream (if any)
           if (stream) {
@@ -145,25 +165,29 @@
           // abort current request
           req.abort();
         } else {
-          reject(e);
+          requestReject(e);
         }
       });
 
       if (options.method === 'PUT') {
         try {
-          // create file stream (default)
-          if (!options.hasOwnProperty('contentString')) {
-            stream = fs.createReadStream(path);
-          } else { // create string stream instead
+          if (options.contentString) {
+            // create string stream
             stream = new Readable;
             stream.push(options.contentString);
             stream.push(null);
+          } else {
+            // create file stream (default)
+            stream = fs.createReadStream(options.uri);
           }
           stream.pipe(req);
-          stream.on('end', function () {});
+          stream.on('end', function () {
+            requestResolve(responseBody);
+          });
         } catch (e) {
-          Log.error('There was an error reading the fs stream from ' + path + ' :: ' + e.code);
-          reject(e);
+          let errComment = (options.contentString) ? 'options.contentString' : options.uri;
+          Log.error('There was an error reading the stream from ' + errComment + ' :: ' + e.code);
+          requestReject(e);
         }
       }
     }
@@ -174,19 +198,16 @@
     login () {
       const self = this;
 
-      return new Promise(function (resolve, reject) {
+      return new Promise(function (loginResolve, loginReject) {
         let options = {
-            url: 'https://' + self.config.hostname + '/on/demandware.store/Sites-Site/default/ViewApplication-ProcessLogin',
+            uri: '/ViewApplication-ProcessLogin',
             form: {
                 LoginForm_Login: self.config.username,
                 LoginForm_Password: self.config.password,
                 LoginForm_RegistrationDomain: 'Sites'
-            },
-            jar: true,
-            followRedirect: true,
-            ignoreErrors: true
+            }
         };
-        self.doRequest(options, null, MAX_ATTEMPTS, RETRY_DELAY, reject, resolve);
+        self.doRequest(options, 'bm', MAX_ATTEMPTS, RETRY_DELAY, loginReject, loginResolve);
       });
     }
 
@@ -196,15 +217,14 @@
     activateCodeVersion () {
       const self = this;
 
-      return new Promise(function (resolve, reject) {
+      return new Promise(function (activateResolve, activateReject) {
         let options = {
-            url: 'https://' + self.config.hostname + '/on/demandware.store/Sites-Site/default/ViewCodeDeployment-Activate',
+            uri: '/ViewCodeDeployment-Activate',
             form: {
                 CodeVersionID: self.conf.codeVersions
-            },
-            jar: true
+            }
         };
-        self.doRequest(options, null, MAX_ATTEMPTS, RETRY_DELAY, reject, resolve);
+        self.doRequest(options, 'bm', MAX_ATTEMPTS, RETRY_DELAY, activateReject, activateResolve);
       });
     }
 
@@ -214,11 +234,12 @@
     delete (path) {
       const self = this;
 
-      return new Promise(function (resolve, reject) {
+      return new Promise(function (deleteResolve, deleteReject) {
         let options = {
-          method: 'DELETE'
+          method: 'DELETE',
+          uri: path
         };
-        self.doRequest(options, path, MAX_ATTEMPTS, RETRY_DELAY, reject, resolve);
+        self.doRequest(options, 'webdav', MAX_ATTEMPTS, RETRY_DELAY, deleteReject, deleteResolve);
       });
     }
 
@@ -228,11 +249,12 @@
     mkcol (path) {
       const self = this;
 
-      return new Promise(function (resolve, reject) {
+      return new Promise(function (mkcolResolve, mkcolReject) {
         let options = {
-          method: 'MKCOL'
+          method: 'MKCOL',
+          uri: path
         };
-        self.doRequest(options, path, MAX_ATTEMPTS, RETRY_DELAY, reject, resolve);
+        self.doRequest(options, 'webdav', MAX_ATTEMPTS, RETRY_DELAY, mkcolReject, mkcolResolve);
       });
     }
 
@@ -242,11 +264,12 @@
     getContent (path) {
       const self = this;
 
-      return new Promise(function (resolve, reject) {
+      return new Promise(function (getContentResolve, getContentReject) {
         let options = {
-          method: 'GET'
+          method: 'GET',
+          uri: path
         };
-        self.doRequest(options, path, MAX_ATTEMPTS, RETRY_DELAY, reject, resolve);
+        self.doRequest(options, 'webdav', MAX_ATTEMPTS, RETRY_DELAY, getContentReject, getContentResolve);
       });
     }
 
@@ -256,11 +279,12 @@
     put (path) {
       const self = this;
 
-      return new Promise(function (resolve, reject) {
+      return new Promise(function (putResolve, putReject) {
         let options = {
-          method: 'PUT'
+          method: 'PUT',
+          uri: path
         };
-        self.doRequest(options, path, MAX_ATTEMPTS, RETRY_DELAY, reject, resolve);
+        self.doRequest(options, 'webdav', MAX_ATTEMPTS, RETRY_DELAY, putReject, putResolve);
       });
     }
 
@@ -270,12 +294,13 @@
     putContent (path, content) {
       const self = this;
 
-      return new Promise(function (resolve, reject) {
+      return new Promise(function (putContentResolve, putContentReject) {
         let options = {
           method: 'PUT',
+          uri: path,
           contentString: content
         };
-        self.doRequest(options, path, MAX_ATTEMPTS, RETRY_DELAY, reject, resolve);
+        self.doRequest(options, 'webdav', MAX_ATTEMPTS, RETRY_DELAY, putContentReject, putContentResolve);
       });
     }
 
@@ -285,14 +310,15 @@
     unzip (path) {
       const self = this;
 
-      return new Promise(function (resolve, reject) {
+      return new Promise(function (unzipResolve, unzipReject) {
         let options = {
           method: 'POST',
+          uri: path,
           form: {
             method: 'UNZIP'
           }
         };
-        self.doRequest(options, path, MAX_ATTEMPTS, RETRY_DELAY, reject, resolve);
+        self.doRequest(options, 'webdav', MAX_ATTEMPTS, RETRY_DELAY, unzipReject, unzipResolve);
       });
     }
 
@@ -302,11 +328,11 @@
     propfind () {
       const self = this;
 
-      return new Promise(function (resolve, reject) {
+      return new Promise(function (propfindResolve, propfindReject) {
         let options = {
           method: 'PROPFIND'
         };
-        self.doRequest(options, null, MAX_ATTEMPTS, RETRY_DELAY, reject, resolve);
+        self.doRequest(options, 'webdav', MAX_ATTEMPTS, RETRY_DELAY, propfindReject, propfindResolve);
       });
     }
   }

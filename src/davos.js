@@ -198,7 +198,6 @@
 
       let webdav = new WebDav(self.config, self.ConfigManager),
         archiveName = path.join(ROOT_DIR, ARCHIVE_NAME_META);
-/*
       return (function () {
         Log.info(chalk.cyan(`Creating archive of all cartridges.`));
         return self.compressMeta(archiveName);
@@ -218,7 +217,6 @@
         Log.error(err);
         return del(archiveName).then(function () {});
       });
-*/
     }
 
     watch () {

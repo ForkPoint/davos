@@ -9,7 +9,6 @@ process.env.UV_THREADPOOL_SIZE = 128;
     Core: require('./src/davos'),
     ConfigManager: require('./src/config-manager'),
     Logger: require('./src/logger'),
-    WebDav: require('./src/webdav'),
-    BMTools: require('./src/bm-tools')
+    WebDav: require('./src/webdav')
   };
 }());
