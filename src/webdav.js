@@ -102,7 +102,7 @@
             break;
           }
           case 'bm': {
-            options = Object.assign({}, options, self.bmOptions);
+            options = Object.assign({}, self.bmOptions, options);
             options.uri = self.bm.appendCSRF(options.uri);
             break;
           }
