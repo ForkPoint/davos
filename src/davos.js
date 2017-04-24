@@ -10,7 +10,8 @@
   const fs = require('fs'),
     path = require('path'),
     chalk = require('chalk'),
-    walk = require('walk'),
+    walk = require('walk'), // @todo remove from requirements
+    globby = require('globby'),
     yazl = require('yazl'),
     del = require('del'),
     Queue = require('sync-queue'),
@@ -112,51 +113,35 @@
       });
     }
 
-    compressMeta (archiveName) {
+    // arrayWithGlob example: ['meta*.xml', 'sites/**/*.xml']
+    compressMeta (arrayWithGlob) {
       const self = this;
 
-      return new Promise(function (compressResolve, compressReject) {
+      return new Promise(function (compressMetaResolve, compressMetaReject) {
         let archive = new yazl.ZipFile(),
-          srcPath = path.resolve(ROOT_DIR, 'sites');
+          archiveName = 'sites_' + self.config.codeVersion + '.zip';
 
-        walk.walkSync(srcPath, {
-          filters: self.ConfigManager.getIgnoredPaths(),
-          listeners: {
-            names: function (root, nodeNamesArray) {
-              nodeNamesArray.sort(function (a, b) {
-                if (a > b) return -1;
-                if (a < b) return 1;
-                return 0;
-              });
-            },
-            directories: function (root, dirStatsArray, next) {
-              let absolutePath = path.resolve(root, dirStatsArray[0].name),
-                relativePath = path.relative(srcPath, absolutePath);
+        return globby(arrayWithGlob, {
+          cwd: self.config.basePath || process.cwd(),
+          dot: true,
+          nosort: true,
+          absolute: true,
+          ignore: self.config.exclude
+        }).then((paths) => {
+          paths.forEach(function (filePath) {
+            let absolutePath = filePath,
+              relativePath = path.relative(ROOT_DIR, absolutePath);
 
-              archive.addEmptyDirectory(relativePath);
-
-              next();
-            },
-            file: function (root, fileStats, next) {
-              let absolutePath = path.resolve(root, fileStats.name),
-                relativePath = path.relative(srcPath, absolutePath);
-
-              archive.addFile(absolutePath, relativePath);
-
-              next();
-            }
-          }
-        });
-
-        archive.end();
-
-        archive.outputStream
-          .pipe(fs.createWriteStream(archiveName))
-          .on('close', function () {
-            Log.info(chalk.cyan('Archive with site metadata created.'));
-            compressResolve();
+            archive.addFile(absolutePath, relativePath);
           });
-
+          archive.end();
+          archive.outputStream
+            .pipe(fs.createWriteStream(archiveName))
+            .on('close', function () {
+              Log.info(chalk.cyan('Archive with sites data created.'));
+              compressMetaResolve();
+            });
+        });
       });
     }
 
