@@ -1,16 +1,10 @@
 (function () {
   'use strict';
 
-  // Constants
-  const ROOT_DIR = '.',
-    ARCHIVE_NAME = 'cartridges.zip',
-    ARCHIVE_NAME_META = 'sitemeta.zip'
-
   // Imports
   const fs = require('fs'),
     path = require('path'),
     chalk = require('chalk'),
-    walk = require('walk'), // @todo remove from requirements
     globby = require('globby'),
     yazl = require('yazl'),
     del = require('del'),
@@ -36,13 +30,13 @@
     deleteCartridges () {
       const self = this;
 
-      return new Promise(function (resolve, reject) {
+      return new Promise(function (deleteCartridgesResolve, deleteCartridgesReject) {
         let queue = new Queue(),
           webdav = new WebDav(self.config, self.ConfigManager),
           cartridges = self.config.cartridge;
 
         if (cartridges.length < 1) {
-          reject();
+          deleteCartridgesReject();
           return;
         }
 
@@ -52,77 +46,27 @@
           });
         });
 
+        return deleteCartridgesResolve();
       });
     }
 
-    compressCartridges (archiveName) {
+    /**
+     * @var string archiveName
+     * @var array arrayWithGlob example: ['*'] or ['meta*.xml', 'sites/**\/*.xml']
+     */
+    compress (archiveName, arrayWithGlob) {
       const self = this;
+
+      if (arrayWithGlob === undefined) {
+        arrayWithGlob = ['**'];
+      }
 
       return new Promise(function (compressResolve, compressReject) {
         let archive = new yazl.ZipFile(),
-          srcPath = path.resolve(ROOT_DIR),
-          cartridges = self.config.cartridge;
-
-        if (cartridges.length < 1) {
-          compressReject();
-          return;
-        }
-
-        walk.walkSync(srcPath, {
-          filters: self.ConfigManager.getIgnoredPaths(),
-          listeners: {
-            names: function (root, nodeNamesArray) {
-              nodeNamesArray.sort(function (a, b) {
-                if (a > b) return -1;
-                if (a < b) return 1;
-                return 0;
-              });
-            },
-            directories: function (root, dirStatsArray, next) {
-              let absolutePath = path.resolve(root, dirStatsArray[0].name),
-                relativePath = path.relative(srcPath, absolutePath);
-
-              if (self.ConfigManager.isValidCartridgePath(relativePath, cartridges)) {
-                archive.addEmptyDirectory(relativePath);
-              }
-
-              next();
-            },
-            file: function (root, fileStats, next) {
-              let absolutePath = path.resolve(root, fileStats.name),
-                relativePath = path.relative(srcPath, absolutePath);
-
-              if (self.ConfigManager.isValidCartridgePath(relativePath, cartridges)) {
-                archive.addFile(absolutePath, relativePath);
-              }
-
-              next();
-            }
-          }
-        });
-
-        archive.end();
-
-        archive.outputStream
-          .pipe(fs.createWriteStream(archiveName))
-          .on('close', function () {
-            Log.info(chalk.cyan('Archive created.'));
-            compressResolve();
-          });
-
-      });
-    }
-
-    // arrayWithGlob example: ['meta*.xml', 'sites/**/*.xml']
-    compressMeta (arrayWithGlob) {
-      const self = this;
-
-      return new Promise(function (compressMetaResolve, compressMetaReject) {
-        let archive = new yazl.ZipFile(),
-          archiveName = 'sites_' + self.config.codeVersion + '.zip';
+          currentRoot = self.config.basePath || process.cwd();
 
         return globby(arrayWithGlob, {
-          cwd: self.config.basePath || process.cwd(),
+          cwd: currentRoot,
           dot: true,
           nosort: true,
           absolute: true,
@@ -130,16 +74,20 @@
         }).then((paths) => {
           paths.forEach(function (filePath) {
             let absolutePath = filePath,
-              relativePath = path.relative(ROOT_DIR, absolutePath);
+              relativePath = path.relative(currentRoot, absolutePath);
 
-            archive.addFile(absolutePath, relativePath);
+            if (fs.lstatSync(absolutePath).isDirectory()) {
+              archive.addEmptyDirectory(relativePath);
+            } else {
+              archive.addFile(absolutePath, relativePath);
+            }
           });
           archive.end();
           archive.outputStream
             .pipe(fs.createWriteStream(archiveName))
             .on('close', function () {
-              Log.info(chalk.cyan('Archive with sites data created.'));
-              compressMetaResolve();
+              Log.info(chalk.cyan('Archive created.'));
+              compressResolve();
             });
         });
       });
@@ -149,11 +97,11 @@
       const self = this;
 
       let webdav = new WebDav(self.config, self.ConfigManager),
-        archiveName = path.join(ROOT_DIR, ARCHIVE_NAME);
+        archiveName = 'cartriges_' + self.config.codeVersion + '.zip';
 
       return (function () {
         Log.info(chalk.cyan(`Creating archive of all cartridges.`));
-        return self.compressCartridges(archiveName);
+        return self.compress(archiveName, self.config.cartridge);
       })().then(function () {
         Log.info(chalk.cyan(`Uploading archive.`));
         return webdav.put(archiveName);
@@ -172,25 +120,26 @@
       });
     }
 
-    uploadMeta () {
+    uploadMeta (arrayWithGlob) {
       const self = this;
 
       let webdav = new WebDav(self.config, self.ConfigManager),
-        archiveName = path.join(ROOT_DIR, ARCHIVE_NAME_META);
+        archiveName = 'sites_' + self.config.codeVersion + '.zip';
+
       return (function () {
         Log.info(chalk.cyan(`Creating archive of all cartridges.`));
-        return self.compressMeta(archiveName);
+        return self.compress(archiveName, arrayWithGlob);
       })().then(function () {
         Log.info(chalk.cyan(`Uploading archive.`));
         return webdav.put(archiveName);
       }).then(function () {
-        Log.info(chalk.cyan(`Unzipping archive.`));
-        return webdav.unzip(archiveName);
+        Log.info(chalk.cyan(`Starting import procedure...`));
+        return webdav.put(archiveName);
       }).then(function () {
         Log.info(chalk.cyan(`Removing archive.`));
         return webdav.delete(archiveName);
       }).then(function () {
-        Log.info(chalk.cyan(`Site meta uploaded.`));
+        Log.info(chalk.cyan(`Site meta imported.`));
         return del(archiveName).then(function () {});
       }, function (err) {
         Log.error(err);
@@ -367,8 +316,7 @@
             let doc = new xmldoc.XmlDocument(res),
               responseNodes = doc.childrenNamed('response'),
               nodesLen = responseNodes.length,
-              workingDirectory = self.config.basePath || process.cwd(),
-              cartridges = self.ConfigManager.getCartridges(workingDirectory),
+              cartridges = self.config.cartridge,
               cartridgesOnServer = [],
               localCartridges = [],
               differentCartridges = [],

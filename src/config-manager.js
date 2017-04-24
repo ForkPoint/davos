@@ -7,14 +7,19 @@
       required: ['hostname', 'username', 'password', 'cartridge', 'codeVersion'],
       optional: ['exclude', 'templateReplace']
     },
-    // @TODO add these into default config ignore path
-    IGNORED_DIRECTORY_NAMES = ['.git', '.svn', '.sass-cache', 'node_modules'];
+    GLOB_IGNORED = [
+  		"**/.git/**",
+  		"**/.svn/**",
+  		"**/.sass-cache/**",
+      "**/node_modules/**"
+    ];
 
   // Imports
   const fs = require('fs'),
-    walk = require('walk'),
+    globby = require('globby'),
     path = require('path'),
-    chalk = require('chalk');
+    chalk = require('chalk'),
+    Queue = require('sync-queue');
 
   // Locals
   const Log = require('./logger');
@@ -28,18 +33,10 @@
       return this;
     }
 
-    getIgnoredPaths () {
-      return IGNORED_DIRECTORY_NAMES;
-    }
-
     getConfigName () {
       // @TODO make config name dynamic
       // check files for structure that match config and get first one - if not - throws an error
       return DEFAULT_CONFIG_NAME;
-    }
-
-    getProfiles() {
-      return this.profiles;
     }
 
     getActiveProfile (config) {
@@ -57,6 +54,8 @@
 
       this.config = activeProfile.config;
 
+
+
       if (config !== undefined) {
         this.mergeConfiguration(config);
       }
@@ -67,7 +66,7 @@
     }
 
     mergeConfiguration (config) {
-      this.config = Object.assign(this.config, config);
+      this.config = Object.assign({}, this.config, config);
       return this.config;
     }
 
@@ -98,40 +97,34 @@
       });
     }
 
-    getCartridges (srcPath) {
+    getCartridges (currentRoot) {
       let result = [];
 
-      walk.walkSync(srcPath, {
-        filters: IGNORED_DIRECTORY_NAMES,
-        listeners: {
-          names: function (root, nodeNamesArray) {
-            nodeNamesArray.sort(function (a, b) {
-              if (a > b) return -1;
-              if (a < b) return 1;
-              return 0;
-            });
-          },
-          directories: function (root, dirStatsArray, next) {
-            let dirName = path.basename(root),
-              absolutePath = path.dirname(root),
-              relativePath = path.relative(srcPath, absolutePath);
+      let paths = globby.sync(['**/cartridge/'], {
+        cwd: currentRoot,
+        dot: true,
+        nosort: true,
+        absolute: true,
+        ignore: GLOB_IGNORED
+      });
 
-            if (dirName === 'cartridge') {
-              result.push(relativePath);
-            }
+      paths.forEach(function (filePath) {
+        let absolutePath = filePath,
+          relativeCartridgePath = path.relative(currentRoot, absolutePath),
+          relativePath = path.dirname(relativeCartridgePath).replace(/\\/g, '/');
 
-            next();
-          }
-        }
+        result.push(relativePath + '/**');
       });
 
       return result;
     }
 
-    isValidCartridgePath (relativePath, cartridges) {
+    isValidCartridgePath (relativePath) {
+      const self = this;
+
       let validCartridge = false;
 
-      cartridges.forEach(function (cartridge) {
+      self.config.cartridge.forEach(function (cartridge) {
         if (relativePath.startsWith(cartridge)) {
           validCartridge = true;
         }
