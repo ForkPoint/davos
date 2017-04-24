@@ -4,15 +4,15 @@
   // Imports
   const _ = require('underscore'),
     fs = require('fs'),
-    path = require('path'),
-    request = require('request').defaults(REQUEST_DEFAULTS);
+    path = require('path');
 
   // Locals
-  const ConfigManager = require('./config-manager'),
-    Log = require('./logger');
+  const Log = require('./logger');
 
   class BMTools {
     constructor () {
+      this.lastCsrfToken = null;
+      this.isAuth = false;
       return this;
     }
 

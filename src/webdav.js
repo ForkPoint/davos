@@ -33,6 +33,7 @@
 
   // Locals
   const ConfigManager = require('./config-manager'),
+    BMTools = require('./bm-tools'),
     Log = require('./logger');
 
   /**
@@ -45,6 +46,8 @@
       this.config = (Object.keys(this.ConfigManager.config).length === 0)
         ? this.ConfigManager.loadConfiguration().getActiveProfile(config)
         : this.ConfigManager.mergeConfiguration(config);
+
+      this.bm = new BMTools();
 
       this.webdavOptions = {
         baseUrl: 'https://' + this.config.hostname + '/on/demandware.servlet/webdav/Sites/Cartridges/' + this.config.codeVersion,
@@ -100,6 +103,7 @@
           }
           case 'bm': {
             options = Object.assign({}, options, self.bmOptions);
+            options.uri = self.bm.appendCSRF(options.uri);
             break;
           }
         }
@@ -118,6 +122,12 @@
         }
         if (!error) {
           responseBody = body;
+
+          if (requestType === 'bm') {
+            self.bm.parseCsrfToken(body);
+            self.bm.isAuth = self.bm.isLoggedIn(body);
+          }
+
           if (options.method === 'PUT') {
             // see after req() body condition with === 'PUT'
           } else {
@@ -193,9 +203,9 @@
     }
 
     /**
-     * HTTP Request LOGIN
+     * HTTP Request BM LOGIN
      */
-    login () {
+    bmLogin () {
       const self = this;
 
       return new Promise(function (loginResolve, loginReject) {
