@@ -32,12 +32,6 @@
       return this;
     }
 
-    activateCodeVersion () {
-      let webdav = new WebDav(this.config, this.ConfigManager);
-      webdav.login();
-      webdav.activateCodeVersion();
-    }
-
     deleteCartridges () {
       const self = this;
 
@@ -433,6 +427,23 @@
           }).catch(function(err) {
             Log.info(err);
           });
+    }
+
+    activateCodeVersion () {
+      const self = this;
+
+      let webdav = new WebDav(self.config, self.ConfigManager);
+
+      return (function () {
+        Log.info(chalk.cyan(`Logging in to Business Manager.`));
+        return webdav.bmLogin();
+      })().then(function () {
+        Log.info(chalk.cyan(`Activating code version.`));
+        return webdav.activateCodeVersion();
+      }, function (err) {
+        Log.error(err);
+        return Promise.reject(err);
+      });
     }
 
     replaceTemplateInfo () {
