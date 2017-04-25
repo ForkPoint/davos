@@ -50,7 +50,9 @@
       }
 
       if (attemptsLeft <= 0) {
-        let e = new Error('The request to ' + options.uri + ' could not be processed!');
+        let errorMessage = 'The request to ' + options.uri + ' could not be processed!',
+          e = new Error(errorMessage);
+        Log.error(errorMessage);
         return doRequestReject(e);
       }
 
@@ -58,7 +60,7 @@
 
       req = request(options, function (error, response, body) {
         if (attemptsLeft < MAX_ATTEMPTS) {
-          Log.debug('Trying to ' + signature + ' for the ' + (MAX_ATTEMPTS - attemptsLeft) + ' time out of ' + MAX_ATTEMPTS + ' tries left.');
+          Log.error('Trying to ' + signature + ' for the ' + (MAX_ATTEMPTS - attemptsLeft) + ' time out of ' + MAX_ATTEMPTS + ' tries left.');
         }
         if (!error) {
           responseBody = body;
@@ -71,7 +73,7 @@
         }
       }).on('response', function(response) {
         if (response.statusCode === 404) {
-          let errorMessage = '';
+          let errorMessage = 'Status code: ' + response.statusCode;
           switch (options.method) {
             case 'GET': {
               errorMessage = 'Path ' + options.uri + ' was not found.';
@@ -79,18 +81,19 @@
             }
             case 'DELETE': {
               errorMessage = 'File ' + options.uri + ' was not found, maybe already deleted.';
-              Log.info();
               break;
             }
           }
-          if (errorMessage) {
-            Log.info(errorMessage);
-          }
-          doRequestReject(new Error(errorMessage));
-        } else if (response.statusCode >= 400) {
-          let errorMessage = response.statusMessage + ' ' + response.statusCode + ". Could not " + signature + " :: skipping.";
+          let e = new Error(errorMessage);
+          e.code = response.statusCode;
           Log.error(errorMessage);
-          doRequestReject(new Error(errorMessage));
+          doRequestReject(e);
+        } else if (response.statusCode >= 400) {
+          let errorMessage = response.statusMessage + ' ' + response.statusCode + ". Could not " + signature + " :: skipping.",
+            e = new Error(errorMessage);
+          e.code = response.statusCode;
+          Log.error(errorMessage);
+          doRequestReject(e);
         } else {
           Log.debug('Succesfully actioned ' + options.uri);
         }
