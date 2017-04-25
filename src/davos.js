@@ -116,7 +116,7 @@
         Log.info(chalk.cyan(`Cartriges uploaded.`));
         return del(archiveName).then(function () {});
       }, function (err) {
-        Log.error(err);
+        Log.debug(err);
         return del(archiveName).then(function () {});
       });
     }
