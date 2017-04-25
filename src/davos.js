@@ -113,11 +113,14 @@
         Log.info(chalk.cyan(`Removing archive.`));
         return webdav.delete(archiveName);
       }).then(function () {
-        Log.info(chalk.cyan(`Cartriges uploaded.`));
-        return del(archiveName).then(function () {});
+        return del(archiveName).then(function () {
+          Log.info(chalk.cyan(`Cartriges uploaded. Removing local archive.`));
+        });
       }, function (err) {
-        Log.debug(err);
-        return del(archiveName).then(function () {});
+        return del(archiveName).then(function () {
+          Log.info(chalk.red(`Error occurred. Removing local archive.`));
+          Log.debug(err);
+        });
       });
     }
 
