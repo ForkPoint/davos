@@ -60,6 +60,13 @@
 
       this.validateConfigProperties(this.config);
 
+      this.config.cartridge.forEach(function (cartridge) {
+        if (cartridge.indexOf('\\') > -1 || cartridge.indexOf('**') < 0) {
+          Log.warn(chalk.yellow(`\nYour cartrige format is not valid. Please fix it.`));
+          process.exit();
+        }
+      });
+
       return this.config;
     }
 
