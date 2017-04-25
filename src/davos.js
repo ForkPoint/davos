@@ -28,29 +28,6 @@
       return this;
     }
 
-    deleteCartridges () {
-      const self = this;
-
-      return new Promise(function (deleteCartridgesResolve, deleteCartridgesReject) {
-        let queue = new Queue(),
-          webdav = new WebDav(self.config, self.ConfigManager),
-          cartridges = self.config.cartridge;
-
-        if (cartridges.length < 1) {
-          deleteCartridgesReject();
-          return;
-        }
-
-        cartridges.forEach(function (cartridge) {
-          queue.place(function () {
-            return webdav.delete(cartridge);
-          });
-        });
-
-        return deleteCartridgesResolve();
-      });
-    }
-
     /**
      * @var string archiveName
      * @var array arrayWithGlob example: ['*'] or ['meta*.xml', 'sites/**\/*.xml']
