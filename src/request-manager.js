@@ -90,7 +90,6 @@
             Log.error(errorMessage);
             reject(e);
           } else if (response.statusCode >= 400) {
-            console.log('response > 400');
             Log.error(response.statusMessage + ' ' + response.statusCode + ". Could not " + signature + " :: skipping.");
             resolve();
           } else {
