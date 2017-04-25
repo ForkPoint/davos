@@ -3,11 +3,13 @@
 
   // Constants
   const MAX_ATTEMPTS = 3,
-    RETRY_DELAY = 300;
+    RETRY_DELAY = 300,
+    REQUEST_TIMEOUT = 15000;
 
   // Locals
   const ConfigManager = require('./config-manager'),
     RequestManager = require('./request-manager'),
+    BMTools = require('./bm-tools'),
     Log = require('./logger');
 
   /**
@@ -26,6 +28,7 @@
       this.options = {
         baseUrl: 'https://' + this.config.hostname + '/on/demandware.store/Sites-Site/default',
         uri: '/',
+        contentString: null,
         jar: true,
         ignoreErrors: true,
         followRedirect: true
@@ -48,7 +51,7 @@
     /**
      * HTTP Request BM LOGIN
      */
-    bmLogin () {
+    login () {
       const self = this;
 
       return new Promise(function (resolve, reject) {
@@ -82,6 +85,55 @@
             form: {
                 CodeVersionID: self.conf.codeVersions
             }
+        };
+
+        self.doRequest(options, MAX_ATTEMPTS, RETRY_DELAY)
+          .then(function () {
+            resolve();
+          }, function (err) {
+            reject(err);
+          });
+      });
+    }
+
+    uploadSitesArchive (path) {
+      const self = this;
+
+      return new Promise(function (resolve, reject) {
+        let options = {
+            method: 'PUT',
+            baseUrl: 'https://' + self.config.hostname + '/on/demandware.servlet/webdav/Sites/Impex/src/instance',
+            uri: path,
+            auth: {
+              user: self.config.username,
+              password: self.config.password
+            },
+            timeout: REQUEST_TIMEOUT
+        };
+
+        self.doRequest(options, MAX_ATTEMPTS, RETRY_DELAY)
+          .then(function () {
+            resolve();
+          }, function (err) {
+            reject(err);
+          });
+      });
+    }
+
+    deleteSitesArchive (path) {
+      const self = this;
+
+      return new Promise(function (resolve, reject) {
+        let options = {
+            method: 'DELETE',
+            baseUrl: 'https://' + self.config.hostname + '/on/demandware.servlet/webdav/Sites/Impex/src/instance',
+            uri: path,
+            contentString: null,
+            auth: {
+              user: self.config.username,
+              password: self.config.password
+            },
+            timeout: REQUEST_TIMEOUT
         };
 
         self.doRequest(options, MAX_ATTEMPTS, RETRY_DELAY)

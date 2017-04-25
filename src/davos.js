@@ -101,30 +101,38 @@
       });
     }
 
-    uploadMeta (arrayWithGlob) {
+    uploadSitesMeta (arrayWithGlob) {
       const self = this;
 
       let webdav = new WebDav(self.config, self.ConfigManager),
+        bm = new BM(self.config, self.ConfigManager),
         archiveName = 'sites_' + self.config.codeVersion + '.zip';
+
+      if (arrayWithGlob === undefined) {
+        arrayWithGlob = ['sites/**/meta*.xml'];
+      }
 
       return (function () {
         Log.info(chalk.cyan(`Creating archive of all cartridges.`));
         return self.compress(archiveName, arrayWithGlob);
       })().then(function () {
         Log.info(chalk.cyan(`Uploading archive.`));
-        return webdav.put(archiveName);
+        return bm.uploadSitesArchive(archiveName);
       }).then(function () {
         Log.info(chalk.cyan(`Starting import procedure...`));
-        return webdav.put(archiveName);
+        return bm.login();
       }).then(function () {
         Log.info(chalk.cyan(`Removing archive.`));
-        return webdav.delete(archiveName);
+        return bm.deleteSitesArchive(archiveName);
       }).then(function () {
-        Log.info(chalk.cyan(`Site meta imported.`));
-        return del(archiveName).then(function () {});
+        return del(archiveName).then(function () {
+          Log.info(chalk.cyan(`Site meta imported. Removing local archive.`));
+        });
       }, function (err) {
-        Log.error(err);
-        return del(archiveName).then(function () {});
+        return del(archiveName).then(function () {
+          Log.info(chalk.red(`Error occurred. Removing local archive.`));
+          Log.debug(err);
+        });
       });
     }
 
