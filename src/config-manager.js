@@ -54,8 +54,6 @@
 
       this.config = activeProfile.config;
 
-
-
       if (config !== undefined) {
         this.mergeConfiguration(config);
       }
@@ -167,7 +165,7 @@
       Log.error(e);
       return 1;
     }
-  };
+  }
 
   module.exports = ConfigManager;
 }());

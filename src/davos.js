@@ -16,6 +16,7 @@
   // Locals
   const ConfigManager = require('./config-manager'),
     WebDav = require('./webdav'),
+    BM = require('./bm'),
     Log = require('./logger');
 
   class Davos {
