@@ -38,8 +38,8 @@
       return this;
     }
 
-    doRequest (options, attemptsLeft, retryDelay, requestResolve, requestReject) {
-      this.reqMan.doRequest(options, attemptsLeft, retryDelay, requestResolve, requestReject);
+  doRequest (options, attemptsLeft, retryDelay) {
+      return this.reqMan.doRequest(options, attemptsLeft, retryDelay);
     }
 
     /**
@@ -48,12 +48,18 @@
     delete (path) {
       const self = this;
 
-      return new Promise(function (deleteResolve, deleteReject) {
+      return new Promise(function (resolve, reject) {
         let options = {
           method: 'DELETE',
           uri: path
         };
-        self.doRequest(options, MAX_ATTEMPTS, RETRY_DELAY, deleteResolve, deleteReject);
+
+        self.doRequest(options, MAX_ATTEMPTS, RETRY_DELAY)
+          .then(function () {
+            resolve();
+          }, function (err) {
+            reject(err);
+          });
       });
     }
 
@@ -63,12 +69,18 @@
     mkcol (path) {
       const self = this;
 
-      return new Promise(function (mkcolResolve, mkcolReject) {
+      return new Promise(function (resolve, reject) {
         let options = {
           method: 'MKCOL',
           uri: path
         };
-        self.doRequest(options, MAX_ATTEMPTS, RETRY_DELAY, mkcolResolve, mkcolReject);
+
+        self.doRequest(options, MAX_ATTEMPTS, RETRY_DELAY)
+          .then(function () {
+            resolve();
+          }, function (err) {
+            reject(err);
+          });
       });
     }
 
@@ -78,12 +90,18 @@
     getContent (path) {
       const self = this;
 
-      return new Promise(function (getContentResolve, getContentReject) {
+      return new Promise(function (resolve, reject) {
         let options = {
           method: 'GET',
           uri: path
         };
-        self.doRequest(options, MAX_ATTEMPTS, RETRY_DELAY, getContentResolve, getContentReject);
+
+        self.doRequest(options, MAX_ATTEMPTS, RETRY_DELAY)
+          .then(function () {
+            resolve();
+          }, function (err) {
+            reject(err);
+          });
       });
     }
 
@@ -93,12 +111,18 @@
     put (path) {
       const self = this;
 
-      return new Promise(function (putResolve, putReject) {
+      return new Promise(function (resolve, reject) {
         let options = {
           method: 'PUT',
           uri: path
         };
-        self.doRequest(options, MAX_ATTEMPTS, RETRY_DELAY, putResolve, putReject);
+
+        self.doRequest(options, MAX_ATTEMPTS, RETRY_DELAY)
+          .then(function () {
+            resolve();
+          }, function (err) {
+            reject(err);
+          });
       });
     }
 
@@ -108,13 +132,19 @@
     putContent (path, content) {
       const self = this;
 
-      return new Promise(function (putContentResolve, putContentReject) {
+      return new Promise(function (resolve, reject) {
         let options = {
           method: 'PUT',
           uri: path,
           contentString: content
         };
-        self.doRequest(options, MAX_ATTEMPTS, RETRY_DELAY, putContentResolve, putContentReject);
+
+        self.doRequest(options, MAX_ATTEMPTS, RETRY_DELAY)
+          .then(function () {
+            resolve();
+          }, function (err) {
+            reject(err);
+          });
       });
     }
 
@@ -124,7 +154,7 @@
     unzip (path) {
       const self = this;
 
-      return new Promise(function (unzipResolve, unzipReject) {
+      return new Promise(function (resolve, reject) {
         let options = {
           method: 'POST',
           uri: path,
@@ -132,7 +162,13 @@
             method: 'UNZIP'
           }
         };
-        self.doRequest(options, MAX_ATTEMPTS, RETRY_DELAY, unzipResolve, unzipReject);
+
+        self.doRequest(options, MAX_ATTEMPTS, RETRY_DELAY)
+          .then(function () {
+            resolve();
+          }, function (err) {
+            reject(err);
+          });
       });
     }
 
@@ -142,11 +178,17 @@
     propfind () {
       const self = this;
 
-      return new Promise(function (propfindResolve, propfindReject) {
+      return new Promise(function (resolve, reject) {
         let options = {
           method: 'PROPFIND'
         };
-        self.doRequest(options, MAX_ATTEMPTS, RETRY_DELAY, propfindResolve, propfindReject);
+
+        self.doRequest(options, MAX_ATTEMPTS, RETRY_DELAY)
+          .then(function () {
+            resolve();
+          }, function (err) {
+            reject(err);
+          });
       });
     }
   }

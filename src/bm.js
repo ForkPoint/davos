@@ -36,8 +36,13 @@
       return this;
     }
 
-    doRequest (options, attemptsLeft, retryDelay, requestResolve, requestReject) {
-      this.reqMan.doRequest(options, attemptsLeft, retryDelay, requestResolve, requestReject);
+    doRequest (options, attemptsLeft, retryDelay) {
+      return this.reqMan.doRequest(options, attemptsLeft, retryDelay)
+        .then(function (body) {
+          return Promise.resolve(body);
+        }, function (err) {
+          return Promise.reject(err);
+        });
     }
 
     /**
@@ -46,7 +51,7 @@
     bmLogin () {
       const self = this;
 
-      return new Promise(function (loginResolve, loginReject) {
+      return new Promise(function (resolve, reject) {
         let options = {
             uri: '/ViewApplication-ProcessLogin',
             form: {
@@ -55,7 +60,13 @@
                 LoginForm_RegistrationDomain: 'Sites'
             }
         };
-        self.doRequest(options, MAX_ATTEMPTS, RETRY_DELAY, loginResolve, loginReject);
+
+        self.doRequest(options, MAX_ATTEMPTS, RETRY_DELAY)
+          .then(function () {
+            resolve();
+          }, function (err) {
+            reject(err);
+          });
       });
     }
 
@@ -65,14 +76,20 @@
     activateCodeVersion () {
       const self = this;
 
-      return new Promise(function (activateResolve, activateReject) {
+      return new Promise(function (resolve, reject) {
         let options = {
             uri: '/ViewCodeDeployment-Activate',
             form: {
                 CodeVersionID: self.conf.codeVersions
             }
         };
-        self.doRequest(options, 'bm', MAX_ATTEMPTS, RETRY_DELAY, activateResolve, activateReject);
+
+        self.doRequest(options, MAX_ATTEMPTS, RETRY_DELAY)
+          .then(function () {
+            resolve();
+          }, function (err) {
+            reject(err);
+          });
       });
     }
   }
