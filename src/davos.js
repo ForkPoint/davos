@@ -103,7 +103,7 @@
       }, function (err) {
         return del(archiveName).then(function () {
           Log.info(chalk.red(`Error occurred. Removing local archive.`));
-          Log.debug(err);
+          Log.error(err);
         });
       });
     }
@@ -134,13 +134,13 @@
         return bm.login();
       }).then(function () {
         Log.info(chalk.cyan(`Ensure no import currently being processed.`));
-        return bm.ensureNoImport();
+        return bm.ensureNoImport(archiveName);
       }).then(function () {
         Log.info(chalk.cyan(`Importing sites.`));
         return bm.importSites(archiveName);
       }).then(function () {
         Log.info(chalk.cyan(`Check import progress.`));
-        return bm.checkImportProgress();
+        return bm.checkImportProgress(archiveName);
       }).then(function () {
         Log.info(chalk.cyan(`Removing archive.`));
         return bm.deleteSitesArchive(archiveName);
@@ -151,7 +151,7 @@
       }, function (err) {
         return del(archiveName).then(function () {
           Log.info(chalk.red(`Error occurred. Removing local archive.`));
-          Log.debug(err);
+          Log.error(err);
         });
       });
     }
