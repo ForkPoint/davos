@@ -6,6 +6,9 @@
     RETRY_DELAY = 300,
     REQUEST_TIMEOUT = 15000;
 
+  // Imports
+  const request = require('request');
+
   // Locals
   const ConfigManager = require('./config-manager'),
     RequestManager = require('./request-manager'),
@@ -24,12 +27,13 @@
         : this.ConfigManager.mergeConfiguration(config);
 
       this.options = {
+        method: 'POST',
         baseUrl: 'https://' + this.config.hostname + '/on/demandware.store/Sites-Site/default',
         uri: '/',
         contentString: null,
-        jar: true,
+        jar: request.jar(),
         ignoreErrors: true,
-        followRedirect: true
+        followAllRedirects: true
       };
 
       this.bmTools = new BMTools();
@@ -55,7 +59,6 @@
 
       return new Promise(function (resolve, reject) {
         let options = {
-            method: 'POST',
             uri: '/ViewApplication-ProcessLogin',
             form: {
                 LoginForm_Login: self.config.username,
@@ -66,13 +69,52 @@
 
         self.doRequest(options, MAX_ATTEMPTS, RETRY_DELAY)
           .then(function (body) {
-            body = self.bmTools.removeAllWhiteSpaces(body);
-            if (self.bmTools.isLoggedIn(body)) {
-              resolve(body);
-            } else {
+            if (!self.bmTools.isLoggedIn(body)) {
               let e = new Error('Not able to login into business manager.')
-              reject(e);
+              return reject(e);
             }
+
+            self.bmTools.parseCsrfToken(body);
+
+            resolve(body);
+          }, function (err) {
+            reject(err);
+          });
+      });
+    }
+
+    /**
+     * HTTP Request BM ENSURE NO IMPORT
+     */
+    ensureNoImport (archiveName) {
+      const self = this;
+
+      return new Promise(function (resolve, reject) {
+        let options = {
+            uri: self.bmTools.appendCSRF('/ViewSiteImpex-Status')
+        };
+
+        self.doRequest(options, MAX_ATTEMPTS, RETRY_DELAY)
+          .then(function (body) {
+            if (!self.bmTools.isLoggedIn(body)) {
+              let e = new Error('Not authenticated.');
+              return reject(e);
+            }
+
+            self.bmTools.parseCsrfToken(body);
+
+            let job = self.bmTools.parseBody(body, {
+              archiveName: archiveName,
+              selector: '#unitSelection ~ table:nth-of-type(3)',
+              processLabel: 'Site Import ({0})'
+            });
+
+            if (job && job.isRunning) {
+                let e = new Error('Import already running! Duration: ' + job.duration);
+                return reject(e);
+            }
+
+            resolve(body);
           }, function (err) {
             reject(err);
           });
@@ -87,7 +129,7 @@
 
       return new Promise(function (resolve, reject) {
         let options = {
-            uri: '/ViewSiteImpex-Dispatch',
+            uri: self.bmTools.appendCSRF('/ViewSiteImpex-Dispatch'),
             form: {
                 ImportFileName: archiveName,
                 import: 'OK',
@@ -102,13 +144,52 @@
 
         self.doRequest(options, MAX_ATTEMPTS, RETRY_DELAY)
           .then(function (body) {
-            body = self.bmTools.removeAllWhiteSpaces(body);
-            if (self.bmTools.isLoggedIn(body)) {
-              resolve(body);
-            } else {
+            if (!self.bmTools.isLoggedIn(body)) {
               let e = new Error('Not authenticated.');
-              reject(e);
+              return reject(e);
             }
+
+            self.bmTools.parseCsrfToken(body);
+
+            resolve(body);
+          }, function (err) {
+            reject(err);
+          });
+      });
+    }
+
+    /**
+     * HTTP Request BM CHECK IMPORT PROGRESS
+     */
+    checkImportProgress (archiveName) {
+      const self = this;
+
+      return new Promise(function (resolve, reject) {
+        let options = {
+            uri: self.bmTools.appendCSRF('/ViewSiteImpex-Status')
+        };
+
+        self.doRequest(options, MAX_ATTEMPTS, RETRY_DELAY)
+          .then(function (body) {
+            if (!self.bmTools.isLoggedIn(body)) {
+              let e = new Error('Not authenticated.');
+              return reject(e);
+            }
+
+            self.bmTools.parseCsrfToken(body);
+
+            let job = self.bmTools.parseBody(body, {
+              archiveName: archiveName,
+              selector: '#unitSelection ~ table:nth-of-type(3)',
+              processLabel: 'Site Import ({0})'
+            });
+
+            if (!job) {
+                let e = new Error('Could not find import job.');
+                return reject(e);
+            }
+
+            resolve(body);
           }, function (err) {
             reject(err);
           });
@@ -153,6 +234,7 @@
               user: self.config.username,
               password: self.config.password
             },
+            jar: false,
             timeout: REQUEST_TIMEOUT
         };
 
@@ -181,6 +263,7 @@
               user: self.config.username,
               password: self.config.password
             },
+            jar: false,
             timeout: REQUEST_TIMEOUT
         };
 
