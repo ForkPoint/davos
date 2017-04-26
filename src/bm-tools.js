@@ -4,7 +4,9 @@
   // Imports
   const _ = require('underscore'),
     fs = require('fs'),
-    path = require('path');
+    path = require('path'),
+    cheerio = require('cheerio'),
+    moment = require('moment');
 
   // Locals
   const Log = require('./logger');
@@ -12,7 +14,6 @@
   class BMTools {
     constructor () {
       this.lastCsrfToken = null;
-      this.isAuth = false;
       return this;
     }
 
@@ -20,13 +21,14 @@
      * Determines if a process is logged in order not.
      * {Usage} - request a business manager page via the request class, pass response body to this function to determine log in state.
      *
+     * @TODO must be refactored in more comprehendable way
+     *
      * @param {string} body - Represents the html page body text.
      * @return {bool} - result of login check
      */
     isLoggedIn (body) {
-        // @TODO must be refactored in more comprehendable way
-        //we must check an text element on the page to determine if we are logged in or not
-        return (!body || body.indexOf('You are currently not logged in') === -1);
+      //we must check an text element on the page to determine if we are logged in or not
+      return (!body || body.indexOf('You are currently not logged in') === -1);
     }
 
     /**
@@ -36,28 +38,28 @@
      * @return {String} - The formatted text
      */
     removeAllWhiteSpaces (text) {
-        return (text || '').replace(/\s/g, '');
+      return (text || '').replace(/\s/g, '');
     }
 
     parseCsrfToken (body) {
-        if (!body || !body.includes('csrf_token')) {
-            return;
-        }
+      if (!body || !body.includes('csrf_token')) {
+        return;
+      }
 
-        var matches = body.match(/\'csrf_token\',\n\'(.*)\',/);
+      var matches = body.match(/\'csrf_token\',\n\'(.*)\',/);
 
-        if (matches && matches[1] && matches[1].length >= 20) {
-            this.lastCsrfToken = matches[1];
-        }
+      if (matches && matches[1] && matches[1].length >= 20) {
+        this.lastCsrfToken = matches[1];
+      }
     }
 
     appendCSRF (url) {
-        if (this.lastCsrfToken) {
-            url = (url.indexOf('?') === -1) ? url + '?' : url + '&';
-            url += 'csrf_token=' + this.lastCsrfToken;
-        }
+      if (this.lastCsrfToken) {
+        url = (url.indexOf('?') === -1) ? url + '?' : url + '&';
+        url += 'csrf_token=' + this.lastCsrfToken;
+      }
 
-        return url;
+      return url;
     }
 
     /**
@@ -65,78 +67,61 @@
      * The most recently created job is returned.
      */
     parseBody (body, options) {
-        if (!bmUtils.isLoggedIn(body)) {
-            throw 'Not able to login into business manager';
-        }
+      const self = this;
 
-        if (!options.selector) {
-            throw 'Unable to retrieve process element, no selector defined';
-        }
+      if (!this.isLoggedIn(body)) {
+        throw 'Not able to login into business manager';
+      }
 
-        // check if export zip is available by parsing dom.
-        var $ = cheerio.load(body),
-            $table = $(options.selector);
+      if (!options.selector) {
+        throw 'Unable to retrieve process element, no selector defined';
+      }
 
-        // sort by start date and pick the last record
-        var result = _.last(
-            _.sortBy(
-                filterRecords(
-                    parseTable($, $table),
-                    options),
-                'start'));
+      // check if export zip is available by parsing dom.
+      var $ = cheerio.load(body),
+          $table = $(options.selector);
 
-        return result;
+      // sort by start date and pick the last record
+      var result = _.last(
+        _.sortBy(
+          self.filterRecords(
+            self.parseTable($, $table),
+            options),
+          'start'));
+
+      return result;
     }
 
     /**
-     * Parse the start date of an import job.
-     * The date is rendered in the HTML as 7/21/15 10:19:13 am,
-     * but the space between year and hour can be actually a '&nbsp;'.
-     *
-     * Returns an array with the date time components in the order:
-     * year, month, day, hour, minute, second.
+     * Filters out records and keeps only the ones with the desired name.
      */
-    parseStartDate (startDate) {
-        var regex = /(\d+)\/(\d+)\/(\d+)[\s\S]+?(\d+):(\d+):(\d+) (\w+)/;
-        var match = regex.exec(startDate);
-        if (!match) {
-            return null;
-        }
+    filterRecords (records, options) {
+      const self = this;
 
-        return [
+      if (!options.archiveName) {
+        throw 'Archive name was not provided';
+      }
 
-            // year + 2000
-            2000 + parseInt(match[3], 10),
+      if (!options.processLabel) {
+        throw 'Archive label not provided';
+      }
 
-            // month - 1 because in javascript month is zero-based index
-            parseInt(match[1], 10) - 1,
-
-            // day
-            parseInt(match[2], 10),
-
-            // hour + 12 if pm
-            parseInt(match[4], 10) + (match[7] === 'pm' ? 12 : 0),
-
-            // minute
-            parseInt(match[5], 10),
-
-            // seconds
-            parseInt(match[6], 10)
-        ];
+      let textToFind = this.removeAllWhiteSpaces(options.processLabel.replace('{0}', options.archiveName));
+      return _.filter(records, function(record) {
+        return self.removeAllWhiteSpaces(record.name) === textToFind;
+      });
     }
 
     /**
-     * Parses the data errors string to determine how many data errors, if any, existed.
-     * This string is something like 'Finished (1 data errors)'.
+     * Parses the HTML table containing the import jobs.
+     * Returns an array of objects describing the jobs.
      */
-    parseDataErrors (status) {
-        var regex = /(\d+) data errors/;
-        var match = regex.exec(status);
-        if (!match) {
-            return 0;
-        }
+    parseTable ($, $table) {
+      const self = this;
 
-        return parseInt(match[1], 10);
+      return $table.find('tr').map(function() {
+        return self.parseRow($, $(this));
+      });
     }
 
     /**
@@ -152,76 +137,100 @@
      * - dataErrors: the number of data errors in the job
      */
     parseRow ($, $row) {
-        var $cells = $row.find('td');
+      const self = this;
 
-        // has to be 5 columns otherwise it's not what we're looking for
-        if (!$cells || $cells.length !== 5) {
-            return null;
-        }
+      let $cells = $row.find('td');
 
-        /**
-         * Small utility function to get the (trimmed) text of a table cell.
-         */
-        var cellText = function(index) {
-            var $cell = $($cells.get(index));
-            return $cell.text().trim();
-        };
+      // has to be 5 columns otherwise it's not what we're looking for
+      if (!$cells || $cells.length !== 5) {
+        return null;
+      }
 
-        // get the start date as a text 7/21/15 10:19:13 am
-        var startAsText = cellText(2);
+      /**
+       * Small utility function to get the (trimmed) text of a table cell.
+       */
+      var cellText = function(index) {
+        var $cell = $($cells.get(index));
+        return $cell.text().trim();
+      };
 
-        // parse it into an array of its components
-        var startAsArray = parseStartDate(startAsText);
+      // get the start date as a text 7/21/15 10:19:13 am
+      var startAsText = cellText(2);
 
-        // create a moment instance
-        var startAsMoment = moment(startAsArray);
+      // parse it into an array of its components
+      var startAsArray = this.parseStartDate(startAsText);
 
-        // format it into a sortable string (2015-07-21T10:19:13)
-        var startAsSortableText = startAsMoment.format('YYYY-MM-DDTHH:mm:ss');
+      // create a moment instance
+      var startAsMoment = moment(startAsArray);
 
-        var name = cellText(1),
-            start = startAsSortableText,
-            duration = cellText(3),
-            status = cellText(4);
+      // format it into a sortable string (2015-07-21T10:19:13)
+      var startAsSortableText = this.startAsMoment.format('YYYY-MM-DDTHH:mm:ss');
 
-        return {
-            name: name,
-            start: start,
-            duration: duration,
-            status: status,
-            isRunning: status === 'Running',
-            isFinished: status.indexOf('Finished') === 0 || status.indexOf('Success') === 0 || status.indexOf('Error') === 0,
-            isError: status.indexOf('Error') === 0,
-            dataErrors: parseDataErrors(status)
-        };
+      var name = cellText(1),
+          start = startAsSortableText,
+          duration = cellText(3),
+          status = cellText(4);
+
+      return {
+        name: name,
+        start: start,
+        duration: duration,
+        status: status,
+        isRunning: status === 'Running',
+        isFinished: status.indexOf('Finished') === 0 || status.indexOf('Success') === 0 || status.indexOf('Error') === 0,
+        isError: status.indexOf('Error') === 0,
+        dataErrors: self.parseDataErrors(status)
+      };
     }
 
     /**
-     * Parses the HTML table containing the import jobs.
-     * Returns an array of objects describing the jobs.
+     * Parse the start date of an import job.
+     * The date is rendered in the HTML as 7/21/15 10:19:13 am,
+     * but the space between year and hour can be actually a '&nbsp;'.
+     *
+     * Returns an array with the date time components in the order:
+     * year, month, day, hour, minute, second.
      */
-    parseTable ($, $table) {
-        return $table.find('tr').map(function() {
-            return parseRow($, $(this));
-        });
+    parseStartDate (startDate) {
+      var regex = /(\d+)\/(\d+)\/(\d+)[\s\S]+?(\d+):(\d+):(\d+) (\w+)/;
+      var match = regex.exec(startDate);
+      if (!match) {
+        return null;
+      }
+
+      return [
+        // year + 2000
+        2000 + parseInt(match[3], 10),
+
+        // month - 1 because in javascript month is zero-based index
+        parseInt(match[1], 10) - 1,
+
+        // day
+        parseInt(match[2], 10),
+
+        // hour + 12 if pm
+        parseInt(match[4], 10) + (match[7] === 'pm' ? 12 : 0),
+
+        // minute
+        parseInt(match[5], 10),
+
+        // seconds
+        parseInt(match[6], 10)
+      ];
     }
 
     /**
-     * Filters out records and keeps only the ones with the desired name.
+     * Parses the data errors string to determine how many data errors, if any, existed.
+     * This string is something like 'Finished (1 data errors)'.
      */
-    filterRecords (records, options) {
-        if (!options.archiveName) {
-            throw 'Archive name was not provided';
-        }
+    parseDataErrors (status) {
+      var regex = /(\d+) data errors/;
+      var match = regex.exec(status);
+      if (!match) {
+        return 0;
+      }
 
-        if (!options.processLabel) {
-            throw 'Archive label not provided';
-        }
-
-        var textToFind = bmUtils.removeAllWhiteSpaces(options.processLabel.replace('{0}', options.archiveName));
-        return _.filter(records, function(record) {
-            return bmUtils.removeAllWhiteSpaces(record.name) === textToFind;
-        });
+      return parseInt(match[1], 10);
     }
   };
 
