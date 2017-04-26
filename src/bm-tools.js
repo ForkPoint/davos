@@ -17,15 +17,16 @@
     }
 
     /**
-     * Determines if a process is logged in.
+     * Determines if a process is logged in order not.
      * {Usage} - request a business manager page via the request class, pass response body to this function to determine log in state.
      *
      * @param {string} body - Represents the html page body text.
      * @return {bool} - result of login check
      */
     isLoggedIn (body) {
+        // @TODO must be refactored in more comprehendable way
         //we must check an text element on the page to determine if we are logged in or not
-        return (body && body.indexOf('You are currently not logged in') > -1);
+        return (!body || body.indexOf('You are currently not logged in') === -1);
     }
 
     /**
