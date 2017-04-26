@@ -58,7 +58,6 @@
         url = (url.indexOf('?') === -1) ? url + '?' : url + '&';
         url += 'csrf_token=' + this.lastCsrfToken;
       }
-
       return url;
     }
 
@@ -86,8 +85,11 @@
         _.sortBy(
           self.filterRecords(
             self.parseTable($, $table),
-            options),
-          'start'));
+            options
+          ),
+          'start'
+        )
+      );
 
       return result;
     }
@@ -107,6 +109,7 @@
       }
 
       let textToFind = this.removeAllWhiteSpaces(options.processLabel.replace('{0}', options.archiveName));
+
       return _.filter(records, function(record) {
         return self.removeAllWhiteSpaces(record.name) === textToFind;
       });
@@ -164,7 +167,7 @@
       var startAsMoment = moment(startAsArray);
 
       // format it into a sortable string (2015-07-21T10:19:13)
-      var startAsSortableText = this.startAsMoment.format('YYYY-MM-DDTHH:mm:ss');
+      var startAsSortableText = startAsMoment.format('YYYY-MM-DDTHH:mm:ss');
 
       var name = cellText(1),
           start = startAsSortableText,
