@@ -123,7 +123,7 @@
         return bm.login();
       }).then(function () {
         Log.info(chalk.cyan(`Importing sites.`));
-        return bm.importSites();
+        return bm.importSites(archiveName);
       }).then(function () {
         Log.info(chalk.cyan(`Removing archive.`));
         return bm.deleteSitesArchive(archiveName);

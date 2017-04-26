@@ -82,13 +82,23 @@
     /**
      * HTTP Request BM IMPORT SITES
      */
-    importSites () {
+    importSites (archiveName) {
       const self = this;
 
       return new Promise(function (resolve, reject) {
         let options = {
-            uri: '/ViewSiteImpex-Dispatch'
+            uri: '/ViewSiteImpex-Dispatch',
+            form: {
+                ImportFileName: archiveName,
+                import: 'OK',
+                realmUse: 'false'
+            }
         };
+
+        if (archiveName === undefined || archiveName.length < 1) {
+          let e = new Error('Invalid archive name.');
+          return reject(e);
+        }
 
         self.doRequest(options, MAX_ATTEMPTS, RETRY_DELAY)
           .then(function (body) {
