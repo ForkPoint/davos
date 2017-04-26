@@ -32,19 +32,22 @@
      * @var string archiveName
      * @var array arrayWithGlob example: ['*'] or ['meta*.xml', 'sites/**\/*.xml']
      */
-    compress (archiveName, arrayWithGlob) {
+    compress (root, archiveName, arrayWithGlob, rootPrefix) {
       const self = this;
 
       if (arrayWithGlob === undefined) {
         arrayWithGlob = ['**'];
       }
 
+      if (rootPrefix === undefined) {
+        rootPrefix = '';
+      }
+
       return new Promise(function (compressResolve, compressReject) {
-        let archive = new yazl.ZipFile(),
-          currentRoot = self.config.basePath || process.cwd();
+        let archive = new yazl.ZipFile();
 
         return globby(arrayWithGlob, {
-          cwd: currentRoot,
+          cwd: root,
           dot: true,
           nosort: true,
           absolute: true,
@@ -52,7 +55,7 @@
         }).then((paths) => {
           paths.forEach(function (filePath) {
             let absolutePath = filePath,
-              relativePath = path.relative(currentRoot, absolutePath);
+              relativePath = rootPrefix + path.relative(root, absolutePath);
 
             if (fs.lstatSync(absolutePath).isDirectory()) {
               archive.addEmptyDirectory(relativePath);
@@ -75,11 +78,12 @@
       const self = this;
 
       let webdav = new WebDav(self.config, self.ConfigManager),
+        currentRoot = self.config.basePath || process.cwd(),
         archiveName = 'cartriges_' + self.config.codeVersion + '.zip';
 
       return (function () {
         Log.info(chalk.cyan(`Creating archive of all cartridges.`));
-        return self.compress(archiveName, self.config.cartridge);
+        return self.compress(currentRoot, archiveName, self.config.cartridge);
       })().then(function () {
         Log.info(chalk.cyan(`Uploading archive.`));
         return webdav.put(archiveName);
@@ -106,15 +110,19 @@
 
       let webdav = new WebDav(self.config, self.ConfigManager),
         bm = new BM(self.config, self.ConfigManager),
-        archiveName = 'sites_' + self.config.codeVersion + '.zip';
+        currentRoot = self.config.basePath || process.cwd(),
+        archiveName = 'sites_' + self.config.codeVersion + '.zip',
+        rootPrefix = path.basename(archiveName, '.zip') + '/';
+
+      currentRoot = currentRoot + '/sites';
 
       if (arrayWithGlob === undefined) {
-        arrayWithGlob = ['sites/**/meta*.xml'];
+        arrayWithGlob = ['**/*.xml'];
       }
 
       return (function () {
         Log.info(chalk.cyan(`Creating archive of all cartridges.`));
-        return self.compress(archiveName, arrayWithGlob);
+        return self.compress(currentRoot, archiveName, arrayWithGlob, rootPrefix);
       })().then(function () {
         Log.info(chalk.cyan(`Uploading archive.`));
         return bm.uploadSitesArchive(archiveName);
@@ -122,8 +130,14 @@
         Log.info(chalk.cyan(`Login into BM.`));
         return bm.login();
       }).then(function () {
+        Log.info(chalk.cyan(`Ensure no import currently being processed.`));
+        return Promise.resolve();
+      }).then(function () {
         Log.info(chalk.cyan(`Importing sites.`));
         return bm.importSites(archiveName);
+      }).then(function () {
+        Log.info(chalk.cyan(`Check import progress.`));
+        return Promise.resolve();
       }).then(function () {
         Log.info(chalk.cyan(`Removing archive.`));
         return bm.deleteSitesArchive(archiveName);
