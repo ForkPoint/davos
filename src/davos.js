@@ -119,8 +119,11 @@
         Log.info(chalk.cyan(`Uploading archive.`));
         return bm.uploadSitesArchive(archiveName);
       }).then(function () {
-        Log.info(chalk.cyan(`Starting import procedure...`));
+        Log.info(chalk.cyan(`Login into BM.`));
         return bm.login();
+      }).then(function () {
+        Log.info(chalk.cyan(`Importing sites.`));
+        return bm.importSites();
       }).then(function () {
         Log.info(chalk.cyan(`Removing archive.`));
         return bm.deleteSitesArchive(archiveName);

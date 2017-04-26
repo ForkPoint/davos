@@ -23,8 +23,6 @@
         ? this.ConfigManager.loadConfiguration().getActiveProfile(config)
         : this.ConfigManager.mergeConfiguration(config);
 
-      this.bm = new BMTools();
-
       this.options = {
         baseUrl: 'https://' + this.config.hostname + '/on/demandware.store/Sites-Site/default',
         uri: '/',
@@ -34,6 +32,7 @@
         followRedirect: true
       };
 
+      this.bmTools = new BMTools();
       this.reqMan = new RequestManager(this.options);
 
       return this;
@@ -56,6 +55,7 @@
 
       return new Promise(function (resolve, reject) {
         let options = {
+            method: 'POST',
             uri: '/ViewApplication-ProcessLogin',
             form: {
                 LoginForm_Login: self.config.username,
@@ -65,8 +65,40 @@
         };
 
         self.doRequest(options, MAX_ATTEMPTS, RETRY_DELAY)
-          .then(function () {
-            resolve();
+          .then(function (body) {
+            body = self.bmTools.removeAllWhiteSpaces(body);
+            if (self.bmTools.isLoggedIn(body)) {
+              resolve(body);
+            } else {
+              let e = new Error('Not able to login into business manager.')
+              reject(e);
+            }
+          }, function (err) {
+            reject(err);
+          });
+      });
+    }
+
+    /**
+     * HTTP Request BM IMPORT SITES
+     */
+    importSites () {
+      const self = this;
+
+      return new Promise(function (resolve, reject) {
+        let options = {
+            uri: '/ViewSiteImpex-Dispatch'
+        };
+
+        self.doRequest(options, MAX_ATTEMPTS, RETRY_DELAY)
+          .then(function (body) {
+            body = self.bmTools.removeAllWhiteSpaces(body);
+            if (self.bmTools.isLoggedIn(body)) {
+              resolve(body);
+            } else {
+              let e = new Error('Not authenticated.');
+              reject(e);
+            }
           }, function (err) {
             reject(err);
           });
@@ -96,6 +128,9 @@
       });
     }
 
+    /**
+     * WebDav Request Upload Sites Meta
+     */
     uploadSitesArchive (path) {
       const self = this;
 
@@ -120,6 +155,9 @@
       });
     }
 
+    /**
+     * WebDav Request Delete Sites Meta
+     */
     deleteSitesArchive (path) {
       const self = this;
 
