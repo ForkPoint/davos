@@ -1,6 +1,9 @@
 (function () {
   'use strict';
 
+  // Constants
+  const SITES_META_FOLDER = '/sites';
+
   // Imports
   const fs = require('fs'),
     path = require('path'),
@@ -30,7 +33,7 @@
 
     /**
      * @var string archiveName
-     * @var array arrayWithGlob example: ['*'] or ['meta*.xml', 'sites/**\/*.xml']
+     * @var array arrayWithGlob example: ['*'] or ['meta*.xml', '**\/*.xml']
      */
     compress (root, archiveName, arrayWithGlob, rootPrefix) {
       const self = this;
@@ -114,7 +117,7 @@
         archiveName = 'sites_' + self.config.codeVersion + '.zip',
         rootPrefix = path.basename(archiveName, '.zip') + '/';
 
-      currentRoot = currentRoot + '/sites';
+      currentRoot = currentRoot + SITES_META_FOLDER;
 
       if (arrayWithGlob === undefined) {
         arrayWithGlob = ['**/*.xml'];
@@ -131,13 +134,13 @@
         return bm.login();
       }).then(function () {
         Log.info(chalk.cyan(`Ensure no import currently being processed.`));
-        return Promise.resolve();
+        return bm.ensureNoImport();
       }).then(function () {
         Log.info(chalk.cyan(`Importing sites.`));
         return bm.importSites(archiveName);
       }).then(function () {
         Log.info(chalk.cyan(`Check import progress.`));
-        return Promise.resolve();
+        return bm.checkImportProgress();
       }).then(function () {
         Log.info(chalk.cyan(`Removing archive.`));
         return bm.deleteSitesArchive(archiveName);
