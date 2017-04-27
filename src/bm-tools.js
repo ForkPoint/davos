@@ -31,6 +31,10 @@
       return (!body || body.indexOf('You are currently not logged in') === -1);
     }
 
+    isValidRequest (body) {
+      return (!body || body.indexOf('The request was not validated') === -1);
+    }
+
     /**
      * remove all space and white spaces from string, This is used to compare demandware bm tag elements with
      * string tags which have random white spacing
