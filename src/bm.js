@@ -4,7 +4,13 @@
   // Constants
   const MAX_ATTEMPTS = 3,
     RETRY_DELAY = 300,
-    REQUEST_TIMEOUT = 15000;
+    REQUEST_TIMEOUT = 15000,
+    SITE_IMPORT = {
+      max_attempts: 100,
+      retry_delay: 1000,
+      selector: '#unitSelection ~ table:nth-of-type(3)',
+      label: 'Site Import ({0})'
+    };
 
   // Imports
   const request = require('request');
@@ -76,7 +82,7 @@
 
             self.bmTools.parseCsrfToken(body);
 
-            resolve(body);
+            resolve();
           }, function (err) {
             reject(err);
           });
@@ -105,8 +111,8 @@
 
             let job = self.bmTools.parseBody(body, {
               archiveName: archiveName,
-              selector: '#unitSelection ~ table:nth-of-type(3)',
-              processLabel: 'Site Import ({0})'
+              selector: SITE_IMPORT.selector,
+              processLabel: SITE_IMPORT.label
             });
 
             if (job && job.isRunning) {
@@ -114,7 +120,7 @@
                 return reject(e);
             }
 
-            resolve(body);
+            resolve();
           }, function (err) {
             reject(err);
           });
@@ -151,7 +157,7 @@
 
             self.bmTools.parseCsrfToken(body);
 
-            resolve(body);
+            resolve();
           }, function (err) {
             reject(err);
           });
@@ -161,13 +167,22 @@
     /**
      * HTTP Request BM CHECK IMPORT PROGRESS
      */
-    checkImportProgress (archiveName) {
+    checkImportProgress (archiveName, attemptsLeft) {
       const self = this;
+
+      if (attemptsLeft === undefined) {
+        attemptsLeft = SITE_IMPORT.max_attempts;
+      }
 
       return new Promise(function (resolve, reject) {
         let options = {
             uri: self.bmTools.appendCSRF('/ViewSiteImpex-Status')
         };
+
+        if (attemptsLeft < 0) {
+          let e = new Error('Maximum retries reached. Login to BM for more details.');
+          return reject(e);
+        }
 
         self.doRequest(options, MAX_ATTEMPTS, RETRY_DELAY)
           .then(function (body) {
@@ -180,8 +195,8 @@
 
             let job = self.bmTools.parseBody(body, {
               archiveName: archiveName,
-              selector: '#unitSelection ~ table:nth-of-type(3)',
-              processLabel: 'Site Import ({0})'
+              selector: SITE_IMPORT.selector,
+              processLabel: SITE_IMPORT.label
             });
 
             if (!job) {
@@ -189,7 +204,32 @@
                 return reject(e);
             }
 
-            resolve(body);
+            if (record.isRunning) {
+              Log.info(chalk.cyan('Job still running. Execution time: ' + record.duration));
+              (function () {
+                return new Promise(function (retryResolve, retryReject) {
+                  setTimeout(function () {
+                    retryResolve();
+                  }, SITE_IMPORT.retry_delay);
+                });
+              })().then(function () {
+                return self.checkImportProgress(archiveName, --attemptsLeft);
+              }).then(function () {
+                resolve();
+              }, function (err) {
+                reject(err);
+              });
+            } else if (record.isError) {
+              let e = new Error('Import failed! Login to BM for more details.';);
+              return reject(e);
+            } else if (record.isFinished) {
+              clearProgressMessage();
+              Log.info(chalk.cyan('Finished. ' + (record.dataErrors || 'No') + ' data errors. Duration: ' + record.duration));
+              return resolve();
+            } else {
+              let e = new Error('Unexpected state!');
+              return reject(e);
+            }
           }, function (err) {
             reject(err);
           });
