@@ -160,7 +160,7 @@
         }
 
         if (attemptsLeft < 1) {
-          let e = new Error('Maximum retries reached. Login to BM for more details.');
+          let e = new Error('Maximum retries reached. Unable to import site.');
           return reject(e);
         }
 
@@ -178,7 +178,6 @@
               (function () {
                 return new Promise(function (retryResolve, retryReject) {
                   setTimeout(function () {
-                    console.log(self.bmTools.lastCsrfToken);
                     retryResolve();
                   }, SITE_IMPORT.retry_delay);
                 });
