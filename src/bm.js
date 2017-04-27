@@ -13,7 +13,8 @@
     };
 
   // Imports
-  const request = require('request');
+  const request = require('request'),
+    chalk = require('chalk');
 
   // Locals
   const ConfigManager = require('./config-manager'),
@@ -204,8 +205,8 @@
                 return reject(e);
             }
 
-            if (record.isRunning) {
-              Log.info(chalk.cyan('Job still running. Execution time: ' + record.duration));
+            if (job.isRunning) {
+              Log.info(chalk.cyan('Job still running. Execution time: ' + job.duration));
               (function () {
                 return new Promise(function (retryResolve, retryReject) {
                   setTimeout(function () {
@@ -219,12 +220,11 @@
               }, function (err) {
                 reject(err);
               });
-            } else if (record.isError) {
-              let e = new Error('Import failed! Login to BM for more details.';);
+            } else if (job.isError) {
+              let e = new Error('Import failed! Login to BM for more details.');
               return reject(e);
-            } else if (record.isFinished) {
-              clearProgressMessage();
-              Log.info(chalk.cyan('Finished. ' + (record.dataErrors || 'No') + ' data errors. Duration: ' + record.duration));
+            } else if (job.isFinished) {
+              Log.info(chalk.cyan('Finished. ' + (job.dataErrors || 'No') + ' data errors. Duration: ' + job.duration));
               return resolve();
             } else {
               let e = new Error('Unexpected state!');
