@@ -7,6 +7,7 @@
     REQUEST_TIMEOUT = 15000,
     SITE_IMPORT = {
       max_attempts: 100,
+      max_import_attempts: 1,
       retry_delay: 1000,
       selector: '#unitSelection ~ table:nth-of-type(3)',
       label: 'Site Import ({0})'
@@ -101,6 +102,11 @@
             uri: self.bmTools.appendCSRF('/ViewSiteImpex-Status')
         };
 
+        if (archiveName === undefined || archiveName.length < 1) {
+          let e = new Error('Invalid archive name.');
+          return reject(e);
+        }
+
         self.doRequest(options, MAX_ATTEMPTS, RETRY_DELAY)
           .then(function (body) {
             if (!self.bmTools.isLoggedIn(body)) {
@@ -131,8 +137,12 @@
     /**
      * HTTP Request BM IMPORT SITES
      */
-    importSites (archiveName) {
+    importSites (archiveName, attemptsLeft) {
       const self = this;
+
+      if (attemptsLeft === undefined) {
+        attemptsLeft = SITE_IMPORT.max_import_attempts;
+      }
 
       return new Promise(function (resolve, reject) {
         let options = {
@@ -149,6 +159,11 @@
           return reject(e);
         }
 
+        if (attemptsLeft < 1) {
+          let e = new Error('Maximum retries reached. Login to BM for more details.');
+          return reject(e);
+        }
+
         self.doRequest(options, MAX_ATTEMPTS, RETRY_DELAY)
           .then(function (body) {
             if (!self.bmTools.isLoggedIn(body)) {
@@ -158,7 +173,25 @@
 
             self.bmTools.parseCsrfToken(body);
 
-            resolve();
+            if (!self.bmTools.isValidRequest(body)) {
+              Log.info(chalk.cyan('The request was not validated. Retrying with new csrf token.'));
+              (function () {
+                return new Promise(function (retryResolve, retryReject) {
+                  setTimeout(function () {
+                    console.log(self.bmTools.lastCsrfToken);
+                    retryResolve();
+                  }, SITE_IMPORT.retry_delay);
+                });
+              })().then(function () {
+                return self.importSites(archiveName, --attemptsLeft);
+              }).then(function () {
+                resolve();
+              }, function (err) {
+                reject(err);
+              });
+            } else {
+              resolve();
+            }
           }, function (err) {
             reject(err);
           });
@@ -180,7 +213,12 @@
             uri: self.bmTools.appendCSRF('/ViewSiteImpex-Status')
         };
 
-        if (attemptsLeft < 0) {
+        if (archiveName === undefined || archiveName.length < 1) {
+          let e = new Error('Invalid archive name.');
+          return reject(e);
+        }
+
+        if (attemptsLeft < 1) {
           let e = new Error('Maximum retries reached. Login to BM for more details.');
           return reject(e);
         }
