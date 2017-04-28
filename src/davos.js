@@ -77,6 +77,12 @@
       });
     }
 
+    delete (archiveName) {
+      return del(archiveName).then(function () {
+        Log.info(chalk.cyan(`Removing local archive.`));
+      });
+    }
+
     uploadCartridges () {
       const self = this;
 
@@ -97,12 +103,12 @@
         Log.info(chalk.cyan(`Removing archive.`));
         return webdav.delete(archiveName);
       }).then(function () {
-        return del(archiveName).then(function () {
-          Log.info(chalk.cyan(`Cartriges uploaded. Removing local archive.`));
+        return self.delete(archiveName).then(function () {
+          Log.info(chalk.cyan(`Cartriges uploaded.`));
         });
       }, function (err) {
-        return del(archiveName).then(function () {
-          Log.info(chalk.red(`Error occurred. Removing local archive.`));
+        return self.delete(archiveName).then(function () {
+          Log.info(chalk.red(`Error occurred.`));
           Log.error(err);
         });
       });
@@ -145,12 +151,12 @@
         Log.info(chalk.cyan(`Removing archive.`));
         return bm.deleteSitesArchive(archiveName);
       }).then(function () {
-        return del(archiveName).then(function () {
-          Log.info(chalk.cyan(`Site meta imported. Removing local archive.`));
+        return self.delete(archiveName).then(function () {
+          Log.info(chalk.cyan(`Site meta imported.`));
         });
       }, function (err) {
-        return del(archiveName).then(function () {
-          Log.info(chalk.red(`Error occurred. Removing local archive.`));
+        return self.delete(archiveName).then(function () {
+          Log.info(chalk.red(`Error occurred.`));
           Log.error(err);
         });
       });
