@@ -3,6 +3,7 @@
 
   // Constants
   const SITES_META_FOLDER = '/sites';
+  const META_FOLDER = "/meta";
 
   // Imports
   const fs = require('fs'),
@@ -77,9 +78,9 @@
       });
     }
 
-    delete (archiveName) {
+    delete (archiveName, logMessage = "Removing local archive.") {
       return del(archiveName).then(function () {
-        Log.info(chalk.cyan(`Removing local archive.`));
+        Log.info(chalk.cyan(logMessage));
       });
     }
 
@@ -441,6 +442,87 @@
         });
 
         return replaceResolve();
+      });
+    }
+
+    uploadMeta (filename) {
+      const self = this;
+
+      filename = filename.replace(/\.xml$/, "") + ".xml";
+
+      let webdav = new WebDav(self.config, self.ConfigManager),
+        bm = new BM(self.config, self.ConfigManager),
+        currentRoot = self.config.basePath || process.cwd();
+
+      currentRoot = currentRoot + SITES_META_FOLDER + META_FOLDER;
+
+      console.log(currentRoot);
+
+      Log.info(chalk.cyan("Copying temporary file"));
+      return new Promise((r, e) => {
+        if (fs.existsSync(filename)) {
+          return e("File [" + filename + "] exists in [" + currentRoot + "]: overwrite prevented. Please remove this file and run again.");
+        }
+
+        let ws = fs.createWriteStream(filename);
+        fs.createReadStream(currentRoot + "/" + filename).pipe(ws);
+
+        ws.on("close", function() {
+          this.bytesWritten ? r() : e("Error writing or empty temporary file.")
+        });
+      }).then(function() {
+        Log.info(chalk.cyan("Uploading file to impex."));
+        return bm.uploadSitesArchive(filename);
+      }).then(function () {
+        Log.info(chalk.cyan(`Login into BM.`));
+        return bm.login();
+      }).then(function () {
+        Log.info(chalk.cyan(`Validate XML`));
+        return bm.validateMetaImport(filename);
+      }).then(function(r) {
+        var fs = require('fs');
+        var stream = fs.createWriteStream("dgd.html");
+        stream.once('open', function(fd) {
+          stream.write(r);
+          stream.end();
+        });
+        return self.delete(filename, "Removing temporary file");
+      }).then(function() {
+        Log.info(chalk.cyan(`Removing file from impex.`));
+        return bm.deleteSitesArchive(filename);
+      }).catch(Log.error);
+
+
+      return (function () {
+        Log.info(chalk.cyan(`Creating archive of all cartridges.`));
+        return self.compress(currentRoot, archiveName, arrayWithGlob, rootPrefix);
+      })().then(function () {
+        Log.info(chalk.cyan(`Uploading archive.`));
+        return bm.uploadSitesArchive(archiveName);
+      }).then(function () {
+        Log.info(chalk.cyan(`Login into BM.`));
+        return bm.login();
+      }).then(function () {
+        Log.info(chalk.cyan(`Ensure no import currently being processed.`));
+        return bm.ensureNoImport(archiveName);
+      }).then(function () {
+        Log.info(chalk.cyan(`Importing sites.`));
+        return bm.importSites(archiveName);
+      }).then(function () {
+        Log.info(chalk.cyan(`Check import progress.`));
+        return bm.checkImportProgress(archiveName);
+      }).then(function () {
+        Log.info(chalk.cyan(`Removing archive.`));
+        return bm.deleteSitesArchive(archiveName);
+      }).then(function () {
+        return self.delete(archiveName).then(function () {
+          Log.info(chalk.cyan(`Site meta imported.`));
+        });
+      }, function (err) {
+        return self.delete(archiveName).then(function () {
+          Log.info(chalk.red(`Error occurred.`));
+          Log.error(err);
+        });
       });
     }
   }

@@ -28,7 +28,7 @@
    * @param {Object} config The configuration object used by Davos
    */
   class BM {
-    constructor (config, ConfigManagerInstance) {
+    constructor(config, ConfigManagerInstance) {
       this.ConfigManager = ConfigManagerInstance || new ConfigManager();
       this.config = (Object.keys(this.ConfigManager.config).length === 0)
         ? this.ConfigManager.loadConfiguration().getActiveProfile(config)
@@ -50,7 +50,7 @@
       return this;
     }
 
-    doRequest (options, attemptsLeft, retryDelay) {
+    doRequest(options, attemptsLeft, retryDelay) {
       return this.reqMan.doRequest(options, attemptsLeft, retryDelay)
         .then(function (body) {
           return Promise.resolve(body);
@@ -62,17 +62,17 @@
     /**
      * HTTP Request BM LOGIN
      */
-    login () {
+    login() {
       const self = this;
 
       return new Promise(function (resolve, reject) {
         let options = {
-            uri: '/ViewApplication-ProcessLogin',
-            form: {
-                LoginForm_Login: self.config.username,
-                LoginForm_Password: self.config.password,
-                LoginForm_RegistrationDomain: 'Sites'
-            }
+          uri: '/ViewApplication-ProcessLogin',
+          form: {
+            LoginForm_Login: self.config.username,
+            LoginForm_Password: self.config.password,
+            LoginForm_RegistrationDomain: 'Sites'
+          }
         };
 
         self.doRequest(options, MAX_ATTEMPTS, RETRY_DELAY)
@@ -94,12 +94,12 @@
     /**
      * HTTP Request BM ENSURE NO IMPORT
      */
-    ensureNoImport (archiveName) {
+    ensureNoImport(archiveName) {
       const self = this;
 
       return new Promise(function (resolve, reject) {
         let options = {
-            uri: self.bmTools.appendCSRF('/ViewSiteImpex-Status')
+          uri: self.bmTools.appendCSRF('/ViewSiteImpex-Status')
         };
 
         if (archiveName === undefined || archiveName.length < 1) {
@@ -123,8 +123,8 @@
             });
 
             if (job && job.isRunning) {
-                let e = new Error('Import already running! Duration: ' + job.duration);
-                return reject(e);
+              let e = new Error('Import already running! Duration: ' + job.duration);
+              return reject(e);
             }
 
             resolve();
@@ -137,7 +137,7 @@
     /**
      * HTTP Request BM IMPORT SITES
      */
-    importSites (archiveName, attemptsLeft) {
+    importSites(archiveName, attemptsLeft) {
       const self = this;
 
       if (attemptsLeft === undefined) {
@@ -146,12 +146,12 @@
 
       return new Promise(function (resolve, reject) {
         let options = {
-            uri: self.bmTools.appendCSRF('/ViewSiteImpex-Dispatch'),
-            form: {
-                ImportFileName: archiveName,
-                import: 'OK',
-                realmUse: 'false'
-            }
+          uri: self.bmTools.appendCSRF('/ViewSiteImpex-Dispatch'),
+          form: {
+            ImportFileName: archiveName,
+            import: 'OK',
+            realmUse: 'false'
+          }
         };
 
         if (archiveName === undefined || archiveName.length < 1) {
@@ -198,7 +198,7 @@
     /**
      * HTTP Request BM CHECK IMPORT PROGRESS
      */
-    checkImportProgress (archiveName, attemptsLeft) {
+    checkImportProgress(archiveName, attemptsLeft) {
       const self = this;
 
       if (attemptsLeft === undefined) {
@@ -207,7 +207,7 @@
 
       return new Promise(function (resolve, reject) {
         let options = {
-            uri: self.bmTools.appendCSRF('/ViewSiteImpex-Status')
+          uri: self.bmTools.appendCSRF('/ViewSiteImpex-Status')
         };
 
         if (archiveName === undefined || archiveName.length < 1) {
@@ -236,8 +236,8 @@
             });
 
             if (!job) {
-                let e = new Error('Could not find import job.');
-                return reject(e);
+              let e = new Error('Could not find import job.');
+              return reject(e);
             }
 
             if (job.isRunning) {
@@ -274,15 +274,15 @@
     /**
      * HTTP Request ACTIVATE CODE VERSION
      */
-    activateCodeVersion () {
+    activateCodeVersion() {
       const self = this;
 
       return new Promise(function (resolve, reject) {
         let options = {
-            uri: '/ViewCodeDeployment-Activate',
-            form: {
-                CodeVersionID: self.conf.codeVersions
-            }
+          uri: '/ViewCodeDeployment-Activate',
+          form: {
+            CodeVersionID: self.conf.codeVersions
+          }
         };
 
         self.doRequest(options, MAX_ATTEMPTS, RETRY_DELAY)
@@ -297,20 +297,20 @@
     /**
      * WebDav Request Upload Sites Meta
      */
-    uploadSitesArchive (path) {
+    uploadSitesArchive(path) {
       const self = this;
 
       return new Promise(function (resolve, reject) {
         let options = {
-            method: 'PUT',
-            baseUrl: 'https://' + self.config.hostname + '/on/demandware.servlet/webdav/Sites/Impex/src/instance',
-            uri: path,
-            auth: {
-              user: self.config.username,
-              password: self.config.password
-            },
-            jar: false,
-            timeout: REQUEST_TIMEOUT
+          method: 'PUT',
+          baseUrl: 'https://' + self.config.hostname + '/on/demandware.servlet/webdav/Sites/Impex/src/instance',
+          uri: path,
+          auth: {
+            user: self.config.username,
+            password: self.config.password
+          },
+          jar: false,
+          timeout: REQUEST_TIMEOUT
         };
 
         self.doRequest(options, MAX_ATTEMPTS, RETRY_DELAY)
@@ -325,21 +325,21 @@
     /**
      * WebDav Request Delete Sites Meta
      */
-    deleteSitesArchive (path) {
+    deleteSitesArchive(path) {
       const self = this;
 
       return new Promise(function (resolve, reject) {
         let options = {
-            method: 'DELETE',
-            baseUrl: 'https://' + self.config.hostname + '/on/demandware.servlet/webdav/Sites/Impex/src/instance',
-            uri: path,
-            contentString: null,
-            auth: {
-              user: self.config.username,
-              password: self.config.password
-            },
-            jar: false,
-            timeout: REQUEST_TIMEOUT
+          method: 'DELETE',
+          baseUrl: 'https://' + self.config.hostname + '/on/demandware.servlet/webdav/Sites/Impex/src/instance',
+          uri: path,
+          contentString: null,
+          auth: {
+            user: self.config.username,
+            password: self.config.password
+          },
+          jar: false,
+          timeout: REQUEST_TIMEOUT
         };
 
         self.doRequest(options, MAX_ATTEMPTS, RETRY_DELAY)
@@ -349,6 +349,23 @@
             reject(err);
           });
       });
+    }
+
+    validateMetaImport(filename) {
+      let options = {
+        uri: this.bmTools.appendCSRF("/ViewCustomizationImport-Dispatch"),
+        form: {
+          SelectedFile: filename,
+          ProcessPipelineName: 'ProcessObjectTypeImport',
+          ProcessPipelineStartNode: 'Validate',
+          JobDescription: 'Validate+custommeta+data+definitions',
+          JobName: 'ProcessObjectTypeImpex',
+          validate: ''
+        },
+        timeout: REQUEST_TIMEOUT
+      };
+      
+      return this.doRequest(options, MAX_ATTEMPTS, RETRY_DELAY);
     }
   }
 
