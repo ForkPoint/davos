@@ -170,9 +170,7 @@
               let e = new Error('Not authenticated.');
               return reject(e);
             }
-
             self.bmTools.parseCsrfToken(body);
-
             if (!self.bmTools.isValidRequest(body)) {
               Log.info(chalk.cyan('The request was not validated. Retrying with new csrf token.'));
               (function () {
