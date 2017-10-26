@@ -33,7 +33,7 @@
         timeout: REQUEST_TIMEOUT
       };
 
-      this.reqMan = new RequestManager(this.options);
+      this.reqMan = new RequestManager(this.options, this.ConfigManager);
 
       return this;
     }

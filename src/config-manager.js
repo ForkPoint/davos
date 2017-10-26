@@ -3,14 +3,15 @@
 
   // Constants
   const DEFAULT_CONFIG_NAME = 'davos.json',
+    TMP_DIR = "tmp",
     CONFIG_PROPERTIES = {
       required: ['hostname', 'username', 'password', 'cartridge', 'codeVersion'],
       optional: ['exclude', 'templateReplace']
     },
     GLOB_IGNORED = [
-  		"**/.git/**",
-  		"**/.svn/**",
-  		"**/.sass-cache/**",
+      "**/.git/**",
+      "**/.svn/**",
+      "**/.sass-cache/**",
       "**/node_modules/**"
     ];
 
@@ -25,7 +26,7 @@
   const Log = require('./logger');
 
   class ConfigManager {
-    constructor () {
+    constructor() {
       /* contain all the profiles */
       this.profiles = [];
       /* contain active profile */
@@ -33,13 +34,13 @@
       return this;
     }
 
-    getConfigName () {
+    getConfigName() {
       // @TODO make config name dynamic
       // check files for structure that match config and get first one - if not - throws an error
       return DEFAULT_CONFIG_NAME;
     }
 
-    getActiveProfile (config) {
+    getActiveProfile(config) {
       if (!this.profiles) {
         Log.error(chalk.red(`\nCannot read configuration.`));
         return config;
@@ -70,12 +71,12 @@
       return this.config;
     }
 
-    mergeConfiguration (config) {
+    mergeConfiguration(config) {
       this.config = Object.assign({}, this.config, config);
       return this.config;
     }
 
-    isConfigExisting () {
+    isConfigExisting() {
       let configName = this.getConfigName();
 
       try {
@@ -86,7 +87,7 @@
       }
     }
 
-    validateConfigProperties (config) {
+    validateConfigProperties(config) {
       CONFIG_PROPERTIES.required.forEach(function (property) {
         if (!config.hasOwnProperty(property)) {
           throw {
@@ -102,7 +103,7 @@
       });
     }
 
-    getCartridges (currentRoot) {
+    getCartridges(currentRoot) {
       let result = [];
 
       let paths = globby.sync(['**/cartridge/'], {
@@ -124,7 +125,11 @@
       return result;
     }
 
-    isValidCartridgePath (relativePath) {
+    getTempDir() {
+      return this.config.tmpDir || TMP_DIR;
+    }
+
+    isValidCartridgePath(relativePath) {
       const self = this;
 
       let validCartridge = false;
@@ -138,7 +143,7 @@
       return validCartridge;
     }
 
-    loadConfiguration () {
+    loadConfiguration() {
       //parse the configuration
       let configName = this.getConfigName(),
         fileContents = '',
@@ -161,14 +166,14 @@
       return this;
     }
 
-    saveConfiguration (json) {
+    saveConfiguration(json) {
       let configFileName = this.getConfigName();
 
       fs.writeFileSync(configFileName, JSON.stringify(json, null, '  '), 'UTF-8');
       Log.info(chalk.cyan('\n Configuration saved in ' + configFileName));
     }
 
-    promptError (e) {
+    promptError(e) {
       Log.error(e);
       return 1;
     }

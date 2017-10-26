@@ -33,8 +33,9 @@
   const Log = require('./logger');
 
   class RequestManager {
-    constructor (options) {
+    constructor (options, configManager) {
       this.options = options;
+      this.configManager = configManager;
       return this;
     }
 
@@ -138,7 +139,7 @@
               stream.push(null);
             } else {
               // create file stream (default)
-              stream = fs.createReadStream(options.uri);
+              stream = fs.createReadStream(self.configManager.getTempDir() + "/" + options.uri);
             }
             stream.pipe(req);
             stream.on('end', function () {

@@ -24,7 +24,7 @@
     Log = require('./logger');
 
   class Davos {
-    constructor (config, ConfigManagerInstance) {
+    constructor(config, ConfigManagerInstance) {
       this.ConfigManager = ConfigManagerInstance || new ConfigManager();
       this.config = (Object.keys(this.ConfigManager.config).length === 0)
         ? this.ConfigManager.loadConfiguration().getActiveProfile(config)
@@ -36,7 +36,7 @@
      * @var string archiveName
      * @var array arrayWithGlob example: ['*'] or ['meta*.xml', '**\/*.xml']
      */
-    compress (root, archiveName, arrayWithGlob, rootPrefix) {
+    compress(root, archiveName, arrayWithGlob, rootPrefix) {
       const self = this;
 
       if (arrayWithGlob === undefined) {
@@ -69,7 +69,7 @@
           });
           archive.end();
           archive.outputStream
-            .pipe(fs.createWriteStream(archiveName))
+            .pipe(fs.createWriteStream(self.ConfigManager.getTempDir() + "/" + archiveName))
             .on('close', function () {
               Log.info(chalk.cyan('Archive created.'));
               compressResolve();
@@ -78,13 +78,13 @@
       });
     }
 
-    delete (archiveName, logMessage = "Removing local archive.") {
-      return del(archiveName).then(function () {
+    delete(archiveName, logMessage = "Removing local archive.") {
+      return del(this.ConfigManager.getTempDir() + "/" + archiveName).then(function () {
         Log.info(chalk.cyan(logMessage));
       });
     }
 
-    uploadCartridges () {
+    uploadCartridges() {
       const self = this;
 
       let webdav = new WebDav(self.config, self.ConfigManager),
@@ -115,7 +115,7 @@
       });
     }
 
-    uploadSitesMeta (arrayWithGlob) {
+    uploadSitesMeta(arrayWithGlob) {
       const self = this;
 
       let webdav = new WebDav(self.config, self.ConfigManager),
@@ -163,7 +163,7 @@
       });
     }
 
-    activateCodeVersion () {
+    activateCodeVersion() {
       const self = this;
 
       let webdav = new WebDav(self.config, self.ConfigManager);
@@ -180,7 +180,7 @@
       });
     }
 
-    watch () {
+    watch() {
       const self = this;
 
       Log.info('Waiting for initial scan completion');
@@ -205,119 +205,119 @@
         });
 
       watcher
-          .on('ready', () => {
-            Log.info('Initial scan complete. Ready for changes');
-            isFirstUseFiles = false;
-            isFirstUseDirectories = false;
-          })
-          .on('add', p => {
-            hash = md5File.sync(p);
+        .on('ready', () => {
+          Log.info('Initial scan complete. Ready for changes');
+          isFirstUseFiles = false;
+          isFirstUseDirectories = false;
+        })
+        .on('add', p => {
+          hash = md5File.sync(p);
 
-            watchHashList.push({
+          watchHashList.push({
+            filePath: p,
+            md5sum: hash
+          });
+
+          if (!isFirstUseFiles) {
+            Log.info(`File ${p} has been added`);
+
+            queue.place(function () {
+              return webdav.put(p)
+                .then(function () {
+                  Log.info(chalk.cyan(`Successfully uploaded: ${p}`));
+                  queue.next();
+                }, function (err) {
+                  Log.error(err);
+                  queue.next();
+                });
+            });
+          }
+        })
+        .on('addDir', p => {
+          if (!isFirstUseDirectories) {
+            Log.info(`Directory ${p} has been added`);
+
+            queue.place(function () {
+              return webdav.mkcol(p)
+                .then(function () {
+                  Log.info(chalk.cyan(`Successfully uploaded: ${p}`));
+                  queue.next();
+                }, function (err) {
+                  Log.error(err);
+                  queue.next();
+                });
+            });
+          }
+        })
+        .on('change', (p) => { // arguments: p, stats
+          let changedFile = watchHashList.find(x => x.filePath === p);
+
+          hash = md5File.sync(p);
+
+          if (!changedFile) {
+            changedFile = {
               filePath: p,
               md5sum: hash
-            });
+            };
+            watchHashList.push(changedFile);
+          }
 
-            if (!isFirstUseFiles) {
-              Log.info(`File ${p} has been added`);
-
-              queue.place(function () {
-                return webdav.put(p)
-                  .then(function () {
-                    Log.info(chalk.cyan(`Successfully uploaded: ${p}`));
-                    queue.next();
-                  }, function(err) {
-                    Log.error(err);
-                    queue.next();
-                  });
-              });
-            }
-          })
-          .on('addDir', p => {
-            if (!isFirstUseDirectories) {
-              Log.info(`Directory ${p} has been added`);
-
-              queue.place(function () {
-                return webdav.mkcol(p)
-                  .then(function () {
-                    Log.info(chalk.cyan(`Successfully uploaded: ${p}`));
-                    queue.next();
-                  }, function(err) {
-                    Log.error(err);
-                    queue.next();
-                  });
-              });
-            }
-          })
-          .on('change', (p) => { // arguments: p, stats
-            let changedFile = watchHashList.find(x => x.filePath === p);
-
-            hash = md5File.sync(p);
-
-            if (!changedFile) {
-              changedFile = {
-                filePath: p,
-                md5sum: hash
-              };
-              watchHashList.push(changedFile);
-            }
-
-            if (changedFile.md5sum !== hash) {
-              changedFile.md5sum = hash;
-              Log.info(`File ${p} has been changed`);
-              queue.place(function () {
-                return webdav.put(p)
-                  .then(function () {
-                    Log.info(chalk.cyan(`Successfully uploaded: ${p}`));
-                    queue.next();
-                  }, function(err) {
-                    Log.debug(err);
-                    queue.next();
-                  });
-              });
-            }
-          })
-          .on('unlink', path => {
-            let removedFile = watchHashList.find(x => x.filePath === path),
-              indexOfRemovedFile = watchHashList.indexOf(removedFile);
-
-            if (indexOfRemovedFile != -1) {
-              watchHashList.splice(indexOfRemovedFile, 1);
-            }
-
-            Log.info(`File ${path} has been removed`);
-
+          if (changedFile.md5sum !== hash) {
+            changedFile.md5sum = hash;
+            Log.info(`File ${p} has been changed`);
             queue.place(function () {
-              return webdav.delete(path)
-                .then(function() {
-                  Log.info(chalk.cyan(`Successfully deleted: ${path}`));
-                  queue.next();
-                }, function(err) {
-                  Log.error(err);
-                  queue.next();
-                });
-            });
-          })
-          .on('unlinkDir', path => {
-            Log.info(`Directory ${path} has been removed`);
-
-            queue.place(function () {
-              return webdav.delete(path)
+              return webdav.put(p)
                 .then(function () {
-                  Log.info(chalk.cyan(`Successfully deleted: ${path}`));
+                  Log.info(chalk.cyan(`Successfully uploaded: ${p}`));
                   queue.next();
-                }, function(err) {
-                  Log.error(err);
+                }, function (err) {
+                  Log.debug(err);
                   queue.next();
                 });
             });
-          })
-          .on('error', function(err) {
-            Log.error('Error while watching with chokidar:', err, '\nRestarting watch...');
+          }
+        })
+        .on('unlink', path => {
+          let removedFile = watchHashList.find(x => x.filePath === path),
+            indexOfRemovedFile = watchHashList.indexOf(removedFile);
+
+          if (indexOfRemovedFile != -1) {
+            watchHashList.splice(indexOfRemovedFile, 1);
+          }
+
+          Log.info(`File ${path} has been removed`);
+
+          queue.place(function () {
+            return webdav.delete(path)
+              .then(function () {
+                Log.info(chalk.cyan(`Successfully deleted: ${path}`));
+                queue.next();
+              }, function (err) {
+                Log.error(err);
+                queue.next();
+              });
           });
+        })
+        .on('unlinkDir', path => {
+          Log.info(`Directory ${path} has been removed`);
+
+          queue.place(function () {
+            return webdav.delete(path)
+              .then(function () {
+                Log.info(chalk.cyan(`Successfully deleted: ${path}`));
+                queue.next();
+              }, function (err) {
+                Log.error(err);
+                queue.next();
+              });
+          });
+        })
+        .on('error', function (err) {
+          Log.error('Error while watching with chokidar:', err, '\nRestarting watch...');
+        });
     }
 
-    sync () {
+    sync() {
       const self = this;
 
       let webdav = new WebDav(self.config, self.ConfigManager),
@@ -328,74 +328,74 @@
       }
 
       webdav.propfind()
-          .then(function(res) {
-            let doc = new xmldoc.XmlDocument(res),
-              responseNodes = doc.childrenNamed('response'),
-              nodesLen = responseNodes.length,
-              cartridges = self.config.cartridge,
-              cartridgesOnServer = [],
-              localCartridges = [],
-              differentCartridges = [],
-              hasMatchedCartridges = false;
+        .then(function (res) {
+          let doc = new xmldoc.XmlDocument(res),
+            responseNodes = doc.childrenNamed('response'),
+            nodesLen = responseNodes.length,
+            cartridges = self.config.cartridge,
+            cartridgesOnServer = [],
+            localCartridges = [],
+            differentCartridges = [],
+            hasMatchedCartridges = false;
 
-            for (let i = 0; i < nodesLen; i++) {
-              if (i === 0) {
-                continue;
-              }
-              cartridgesOnServer.push(responseNodes[i].valueWithPath('propstat.prop.displayname'));
+          for (let i = 0; i < nodesLen; i++) {
+            if (i === 0) {
+              continue;
             }
+            cartridgesOnServer.push(responseNodes[i].valueWithPath('propstat.prop.displayname'));
+          }
 
-            cartridges.forEach(function (cartridge) {
-              let arr = cartridge.split(path.sep);
-              localCartridges.push(arr[arr.length - 1]);
-            });
-
-            let cartridgesOnServerLen = cartridgesOnServer.length;
-
-            for (let i = 0; i < cartridgesOnServerLen; i++) {
-              let currentServerCartridge = cartridgesOnServer[i],
-                localCartridgesLen = localCartridges.length;
-
-              for (let j = 0; j < localCartridgesLen; j++) {
-                let currentLocalCartridge = localCartridges[j],
-                  hasMatchedCartridges = (currentServerCartridge === currentLocalCartridge);
-
-                if (hasMatchedCartridges) {
-                  break;
-                }
-              }
-
-              if (!hasMatchedCartridges) {
-                differentCartridges.push(currentServerCartridge);
-              }
-            }
-
-            return new Promise(function(resolve, reject) {
-              if (differentCartridges.length > 0) {
-                Log.info(`\nThere are cartridges on the server that do not exist in your local cartridges: ${chalk.cyan(differentCartridges)}`);
-
-                if (clearRemoteOnlyCartridges) {
-                  Log.info(`Deleting cartridges ${differentCartridges}`);
-                  resolve(differentCartridges);
-                } else {
-                  reject(`Cartridges were not deleted`);
-                }
-              } else {
-                reject(`\nThere is no defference between the cartridges on the server and your local cartridges`);
-              }
-            });
-          }).then(function (res) {
-            res.forEach(function (cartridge) {
-              return webdav.delete(cartridge);
-            });
-          }).then(function () {
-            Log.info('Cartridges were deleted');
-          }).catch(function(err) {
-            Log.info(err);
+          cartridges.forEach(function (cartridge) {
+            let arr = cartridge.split(path.sep);
+            localCartridges.push(arr[arr.length - 1]);
           });
+
+          let cartridgesOnServerLen = cartridgesOnServer.length;
+
+          for (let i = 0; i < cartridgesOnServerLen; i++) {
+            let currentServerCartridge = cartridgesOnServer[i],
+              localCartridgesLen = localCartridges.length;
+
+            for (let j = 0; j < localCartridgesLen; j++) {
+              let currentLocalCartridge = localCartridges[j],
+                hasMatchedCartridges = (currentServerCartridge === currentLocalCartridge);
+
+              if (hasMatchedCartridges) {
+                break;
+              }
+            }
+
+            if (!hasMatchedCartridges) {
+              differentCartridges.push(currentServerCartridge);
+            }
+          }
+
+          return new Promise(function (resolve, reject) {
+            if (differentCartridges.length > 0) {
+              Log.info(`\nThere are cartridges on the server that do not exist in your local cartridges: ${chalk.cyan(differentCartridges)}`);
+
+              if (clearRemoteOnlyCartridges) {
+                Log.info(`Deleting cartridges ${differentCartridges}`);
+                resolve(differentCartridges);
+              } else {
+                reject(`Cartridges were not deleted`);
+              }
+            } else {
+              reject(`\nThere is no defference between the cartridges on the server and your local cartridges`);
+            }
+          });
+        }).then(function (res) {
+          res.forEach(function (cartridge) {
+            return webdav.delete(cartridge);
+          });
+        }).then(function () {
+          Log.info('Cartridges were deleted');
+        }).catch(function (err) {
+          Log.info(err);
+        });
     }
 
-    replaceTemplateInfo () {
+    replaceTemplateInfo() {
       const self = this;
 
       return new Promise(function (replaceResolve, replaceReject) {
@@ -445,10 +445,13 @@
       });
     }
 
-    uploadMeta (filename) {
+    uploadMeta(pattern) {
       const self = this;
+      const filename = "davos-meta-bundle.xml";
 
-      filename = filename.replace(/\.xml$/, "") + ".xml";
+      if (pattern === undefined) {
+        pattern = "*";
+      }
 
       let webdav = new WebDav(self.config, self.ConfigManager),
         bm = new BM(self.config, self.ConfigManager),
@@ -456,73 +459,43 @@
 
       currentRoot = currentRoot + SITES_META_FOLDER + META_FOLDER;
 
-      console.log(currentRoot);
-
-      Log.info(chalk.cyan("Copying temporary file"));
       return new Promise((r, e) => {
-        if (fs.existsSync(filename)) {
-          return e("File [" + filename + "] exists in [" + currentRoot + "]: overwrite prevented. Please remove this file and run again.");
-        }
+        globby(currentRoot + "/" + pattern).then(files => {
+          Log.info(chalk.cyan("Creating bundle from " + files.length + " files."));
 
-        let ws = fs.createWriteStream(filename);
-        fs.createReadStream(currentRoot + "/" + filename).pipe(ws);
+          const xmlm = require("xmlappend");
 
-        ws.on("close", function() {
-          this.bytesWritten ? r() : e("Error writing or empty temporary file.")
+          fs.writeFile(this.ConfigManager.getTempDir() + "/" + filename, (xmlm(...files.map(file => {
+            return fs.readFileSync(file).toString();
+          }))), function(err) {
+            err ? e(err) : r();
+          });
         });
-      }).then(function() {
+      }).then(function () {
         Log.info(chalk.cyan("Uploading file to impex."));
-        return bm.uploadSitesArchive(filename);
+        return bm.uploadMeta(filename);
       }).then(function () {
         Log.info(chalk.cyan(`Login into BM.`));
         return bm.login();
       }).then(function () {
         Log.info(chalk.cyan(`Validate XML`));
         return bm.validateMetaImport(filename);
-      }).then(function(r) {
-        var fs = require('fs');
-        var stream = fs.createWriteStream("dgd.html");
-        stream.once('open', function(fd) {
-          stream.write(r);
-          stream.end();
-        });
-        return self.delete(filename, "Removing temporary file");
-      }).then(function() {
-        Log.info(chalk.cyan(`Removing file from impex.`));
-        return bm.deleteSitesArchive(filename);
-      }).catch(Log.error);
-
-
-      return (function () {
-        Log.info(chalk.cyan(`Creating archive of all cartridges.`));
-        return self.compress(currentRoot, archiveName, arrayWithGlob, rootPrefix);
-      })().then(function () {
-        Log.info(chalk.cyan(`Uploading archive.`));
-        return bm.uploadSitesArchive(archiveName);
       }).then(function () {
-        Log.info(chalk.cyan(`Login into BM.`));
-        return bm.login();
+        Log.info(chalk.cyan(`Check validation progress.`));
+        return bm.checkImportProgress(filename, undefined, "metaValidation");
       }).then(function () {
-        Log.info(chalk.cyan(`Ensure no import currently being processed.`));
-        return bm.ensureNoImport(archiveName);
-      }).then(function () {
-        Log.info(chalk.cyan(`Importing sites.`));
-        return bm.importSites(archiveName);
+        Log.info(chalk.cyan(`Initialize import sequence`));
+        return bm.importMeta(filename);
       }).then(function () {
         Log.info(chalk.cyan(`Check import progress.`));
-        return bm.checkImportProgress(archiveName);
+        return bm.checkImportProgress(filename, undefined, "metaImport");
       }).then(function () {
-        Log.info(chalk.cyan(`Removing archive.`));
-        return bm.deleteSitesArchive(archiveName);
+        return self.delete(filename, "Removing temporary file");
       }).then(function () {
-        return self.delete(archiveName).then(function () {
-          Log.info(chalk.cyan(`Site meta imported.`));
-        });
-      }, function (err) {
-        return self.delete(archiveName).then(function () {
-          Log.info(chalk.red(`Error occurred.`));
-          Log.error(err);
-        });
+        Log.info(chalk.cyan(`Removing file from impex.`));
+        return bm.deleteMeta(filename);
+      }).catch(error => {
+        Log.error(error.toString());
       });
     }
   }

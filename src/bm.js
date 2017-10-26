@@ -4,14 +4,7 @@
   // Constants
   const MAX_ATTEMPTS = 3,
     RETRY_DELAY = 300,
-    REQUEST_TIMEOUT = 15000,
-    SITE_IMPORT = {
-      max_attempts: 100,
-      max_import_attempts: 1,
-      retry_delay: 1000,
-      selector: '#unitSelection ~ table:nth-of-type(3)',
-      label: 'Site Import ({0})'
-    };
+    REQUEST_TIMEOUT = 15000;
 
   // Imports
   const request = require('request'),
@@ -45,12 +38,44 @@
       };
 
       this.bmTools = new BMTools();
-      this.reqMan = new RequestManager(this.options);
+      this.reqMan = new RequestManager(this.options, this.ConfigManager);
 
       return this;
     }
 
-    doRequest(options, attemptsLeft, retryDelay) {
+    getCheckProgressConfig(type) {
+      switch (type) {
+        case "site":
+          return {
+            uri: '/ViewSiteImpex-Status',
+            max_attempts: 100,
+            max_import_attempts: 1,
+            retry_delay: 1000,
+            selector: '#unitSelection ~ table:nth-of-type(3)',
+            label: 'Site Import ({0})'
+          };
+        case "metaValidation":
+          return {
+            uri: "/ViewCustomizationImpex-Start",
+            max_attempts: 100,
+            max_import_attempts: 1,
+            retry_delay: 1000,
+            selector: 'form[name="ImpexForm"] > table:nth-child(6)',
+            label: 'Meta Data Validation <{0}>'
+          }
+        case "metaImport":
+          return {
+            uri: "/ViewCustomizationImpex-Start",
+            max_attempts: 100,
+            max_import_attempts: 1,
+            retry_delay: 1000,
+            selector: 'form[name="ImpexForm"] > table:nth-child(6)',
+            label: 'Meta Data Import <{0}>'
+          }
+      }
+    }
+
+    doRequest(options, attemptsLeft = MAX_ATTEMPTS, retryDelay = RETRY_DELAY) {
       return this.reqMan.doRequest(options, attemptsLeft, retryDelay)
         .then(function (body) {
           return Promise.resolve(body);
@@ -96,6 +121,7 @@
      */
     ensureNoImport(archiveName) {
       const self = this;
+      const SITE_IMPORT = this.getCheckProgressConfig("site");
 
       return new Promise(function (resolve, reject) {
         let options = {
@@ -139,6 +165,7 @@
      */
     importSites(archiveName, attemptsLeft) {
       const self = this;
+      const SITE_IMPORT = this.getCheckProgressConfig("site");
 
       if (attemptsLeft === undefined) {
         attemptsLeft = SITE_IMPORT.max_import_attempts;
@@ -198,16 +225,17 @@
     /**
      * HTTP Request BM CHECK IMPORT PROGRESS
      */
-    checkImportProgress(archiveName, attemptsLeft) {
+    checkImportProgress(archiveName, attemptsLeft, importConfig = "site") {
       const self = this;
+      const config = this.getCheckProgressConfig(importConfig);
 
       if (attemptsLeft === undefined) {
-        attemptsLeft = SITE_IMPORT.max_attempts;
+        attemptsLeft = config.max_attempts;
       }
 
       return new Promise(function (resolve, reject) {
         let options = {
-          uri: self.bmTools.appendCSRF('/ViewSiteImpex-Status')
+          uri: self.bmTools.appendCSRF(config.uri)
         };
 
         if (archiveName === undefined || archiveName.length < 1) {
@@ -231,8 +259,8 @@
 
             let job = self.bmTools.parseBody(body, {
               archiveName: archiveName,
-              selector: SITE_IMPORT.selector,
-              processLabel: SITE_IMPORT.label
+              selector: config.selector,
+              processLabel: config.label
             });
 
             if (!job) {
@@ -246,7 +274,7 @@
                 return new Promise(function (retryResolve, retryReject) {
                   setTimeout(function () {
                     retryResolve();
-                  }, SITE_IMPORT.retry_delay);
+                  }, config.retry_delay);
                 });
               })().then(function () {
                 return self.checkImportProgress(archiveName, --attemptsLeft);
@@ -298,12 +326,20 @@
      * WebDav Request Upload Sites Meta
      */
     uploadSitesArchive(path) {
+      return this.uploadImpex(path, "/src/instance");
+    }
+
+    uploadMeta(path) {
+      return this.uploadImpex(path, "/src/customization");
+    }
+
+    uploadImpex(path, location) {
       const self = this;
 
       return new Promise(function (resolve, reject) {
         let options = {
           method: 'PUT',
-          baseUrl: 'https://' + self.config.hostname + '/on/demandware.servlet/webdav/Sites/Impex/src/instance',
+          baseUrl: 'https://' + self.config.hostname + '/on/demandware.servlet/webdav/Sites/Impex' + location,
           uri: path,
           auth: {
             user: self.config.username,
@@ -326,12 +362,20 @@
      * WebDav Request Delete Sites Meta
      */
     deleteSitesArchive(path) {
+      return this.deleteImpex(path, "/src/instance");
+    }
+
+    deleteMeta(path) {
+      return this.deleteImpex(path, "/src/customization");
+    }
+
+    deleteImpex(path, location) {
       const self = this;
 
       return new Promise(function (resolve, reject) {
         let options = {
           method: 'DELETE',
-          baseUrl: 'https://' + self.config.hostname + '/on/demandware.servlet/webdav/Sites/Impex/src/instance',
+          baseUrl: 'https://' + self.config.hostname + '/on/demandware.servlet/webdav/Sites/Impex' + location,
           uri: path,
           contentString: null,
           auth: {
@@ -364,8 +408,90 @@
         },
         timeout: REQUEST_TIMEOUT
       };
-      
+
       return this.doRequest(options, MAX_ATTEMPTS, RETRY_DELAY);
+    }
+
+    importMeta(filename) {
+      var cheerio = require('cheerio'),
+        self = this;
+
+      /**
+       * Selects the first completed validation for import
+       */
+      function selectValidationJob(body) {
+        var $ = cheerio.load(body);
+
+        if (!self.bmTools.isLoggedIn(body)) {
+          throw 'Not able to login into business manager';
+        }
+
+        self.bmTools.parseCsrfToken(body);
+
+        // Check if validation has been done on this file: Prepare label text
+        var archiveLabel = 'Meta Data Validation <{0}>'.replace('{0}', filename),
+          $td = $('form[name="ImpexForm"] > table:nth-child(6) > tr > td:nth-child(2)'),
+          importLink;
+
+        // Compare target label text with actual result, strip whitespace (to ignore line breaks etc.)
+        var record = $td.filter(function () {
+          var normalizedTargetLabel = self.bmTools.removeAllWhiteSpaces(archiveLabel);
+          var normalizedActualLabel = self.bmTools.removeAllWhiteSpaces($(this).text());
+
+          return normalizedActualLabel === normalizedTargetLabel;
+        });
+
+        if (!record || record.length === 0) {
+          throw 'No validation task found for ' + filename;
+        }
+
+        importLink = $(record).find('.selection_link').first().attr('href');
+
+        Log.info(chalk.cyan('Found validation task'));
+
+        // Go to validation form page in order to execute import process
+        return self.doRequest({
+          baseUrl: self.bmTools.appendCSRF(importLink),
+          uri: ""
+        }).then(importMeta);
+      }
+      /**
+       * Execute meta data import for the validation file
+       */
+      function importMeta(body) {
+        var $ = cheerio.load(body);
+
+        self.bmTools.parseCsrfToken(body);
+
+        // if confirm import is disabled this validation import is invalid
+        if ($('button[name="confirmImport"]').attr('disabled')) {
+          throw 'Validation errors have been found, unable to import';
+        }
+
+        var formAction = $('form[name="ValidateFileForm"]').attr('action'),
+          form = {
+            SelectedFile: $('input[name="SelectedFile"]').attr('value'),
+            JobConfigurationUUID: $('input[name="JobConfigurationUUID"]').attr('value'),
+            ProcessPipelineName: $('input[name="ProcessPipelineName"]').attr('value'),
+            ProcessPipelineStartNode: $('input[name="ProcessPipelineStartNode"]').attr('value'),
+            JobName: $('input[name="JobName"]').attr('value'),
+            startImport: '',
+            // TODO possibly enable this, make customizable
+            // ClearAttributeDefinitions: true
+          };
+
+        Log.info(chalk.cyan('Importing meta data file'));
+
+        return self.doRequest({
+          baseUrl: self.bmTools.appendCSRF(formAction),
+          uri: "",
+          form: form
+        });
+      }
+
+      return this.doRequest({
+        uri: this.bmTools.appendCSRF(this.getCheckProgressConfig("metaImport").uri)
+      }).then(selectValidationJob);
     }
   }
 

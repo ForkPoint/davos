@@ -38,6 +38,7 @@
     "del": "^2.2.2",
     "globby": "^6.1.0",
     "md5-file": "^3.1.1",
+    "mergexml": "^1.1.2",
     "moment": "^2.18.1",
     "multimatch": "^2.1.0",
     "progress": "^1.1.8",
@@ -46,6 +47,7 @@
     "sync-queue": "0.0.2",
     "underscore": "^1.8.3",
     "winston": "^2.3.0",
+    "xmlappend": "^1.0.4",
     "xmldoc": "^1.0.0",
     "yazl": "^2.4.2"
   },
