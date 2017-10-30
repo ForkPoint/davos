@@ -48,7 +48,9 @@
     "underscore": "^1.8.3",
     "winston": "^2.3.0",
     "xmlappend": "^1.0.4",
-    "xmldoc": "^1.0.0",
+    "xmldoc": "^1.1.0",
+    "xmldom": "^0.1.27",
+    "xpath": "0.0.24",
     "yazl": "^2.4.2"
   },
   "devDependencies": {

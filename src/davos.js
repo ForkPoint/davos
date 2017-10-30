@@ -453,8 +453,7 @@
         pattern = "*";
       }
 
-      let webdav = new WebDav(self.config, self.ConfigManager),
-        bm = new BM(self.config, self.ConfigManager),
+      let bm = new BM(self.config, self.ConfigManager),
         currentRoot = self.config.basePath || process.cwd();
 
       currentRoot = currentRoot + SITES_META_FOLDER + META_FOLDER;
@@ -467,7 +466,7 @@
 
           fs.writeFile(this.ConfigManager.getTempDir() + "/" + filename, (xmlm(...files.map(file => {
             return fs.readFileSync(file).toString();
-          }))), function(err) {
+          }))), function (err) {
             err ? e(err) : r();
           });
         });
@@ -497,6 +496,117 @@
       }).catch(error => {
         Log.error(error.toString());
       });
+    }
+
+    splitMetaBundle(pattern = "*", xpath = "/metadata/*") {
+      const x = require("xpath");
+      const xdom = require("xmldom");
+
+      let currentRoot = (this.config.basePath || process.cwd()) + SITES_META_FOLDER + META_FOLDER;
+
+      function cloneAttribute(cloneInstance, source, attribute) {
+        let id = attribute.getAttribute("attribute-id");
+        let attrType;
+
+        switch (cloneInstance.nodeName) {
+          case "custom-type":
+            attrType = "";
+            break;
+
+          case "type-extension":
+            attrType = (attribute.getAttribute("system") === "true" ? "system" : "custom") + "-";
+            break;
+        }
+
+        Array.from(source.getElementsByTagName(attrType + "attribute-definitions")[0].childNodes)
+          .filter(ad => ad.nodeName === "attribute-definition" && ad.getAttribute("attribute-id") === id)
+          .forEach(ad => {
+            cloneInstance.getElementsByTagName(attrType + "attribute-definitions")[0]
+              .appendChild(ad.cloneNode(true));
+          });
+      }
+
+      return new Promise((r, e) => {
+        globby(currentRoot + "/" + pattern).then(files => {
+          Log.info(chalk.cyan("Splitting " + files.length + " files."));
+
+          let objects = 0;
+          let groups = 0;
+          const template = fs.readFileSync(__dirname + "/../res/metadata.template").toString();
+
+          Promise.all(files.map(file => new Promise((fr, fe) => {
+            fs.readFile(file, (err, xml) => {
+              if (err) {
+                fe(err);
+                throw err;
+              }
+
+              let document = new xdom.DOMParser().parseFromString(xml.toString().replace('xmlns="http://www.demandware.com/xml/impex/metadata/2006-10-31"', ''));
+              let nodes = x.select(xpath, document);
+
+              nodes.map(node => {
+                switch (node.nodeName) {
+                  case "custom-type":
+                  case "type-extension":
+                    break;
+
+                  default:
+                    return Log.warn(chalk.yellow("Selected element was not a custom-type or type-extension - skipping."));
+                }
+
+                let clone = node.cloneNode();
+                objects++;
+
+                Array.from(node.childNodes).forEach(child => {
+                  let childClone;
+
+                  switch (child.nodeName) {
+                    case "system-attribute-definitions":
+                    case "custom-attribute-definitions":
+                    case "attribute-definitions":
+                    case "group-definitions":
+                      childClone = child.cloneNode();
+                      break;
+
+                    default:
+                      childClone = child.cloneNode(true);
+                  }
+
+                  clone.appendChild(childClone);
+                });
+
+                // IMPORTANT: DO NOT modify "clone" and "node" variables within the promises !!!
+
+                return Promise.all(Array.from((node.getElementsByTagName("group-definitions")[0] || {
+                  childNodes: []
+                }).childNodes).filter(group => group.nodeName === "attribute-group")
+                  .map(group => new Promise((r1, e1) => {
+
+                    let cloneInstance = clone.cloneNode(true);
+                    groups++;
+
+                    // no need to check if group-definitions exists because if
+                    // code has reached this point it means it does.
+                    cloneInstance.getElementsByTagName("group-definitions")[0].appendChild(group.cloneNode(true));
+
+                    Array.from(group.childNodes)
+                      .filter(attribute => attribute.nodeName === "attribute")
+                      .map(attribute => {
+                        cloneAttribute(cloneInstance, node, attribute);
+                      });
+
+                    fs.writeFile(currentRoot + "/" + (cloneInstance.nodeName === "custom-type" ? "custom" : "system") + "." + cloneInstance.getAttribute("type-id") + "." + (this.config.projectID || "projectID") +"." + group.getAttribute("group-id") + ".xml", template.replace("{{ objects }}", cloneInstance.toString()), function (err) {
+                      err ? e1(err) : r1("done");
+                    });
+                  }))).then(fr).catch(fe);
+              });
+            });
+          }))).then(responses => {
+            Log.info(chalk.cyan("Splitting complete. Created " + groups + " files from " + objects + " objects."))
+            Promise.resolve();
+          });
+        });
+      })
     }
   }
 
