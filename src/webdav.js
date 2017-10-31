@@ -108,14 +108,14 @@
     /**
      * WebDav PUT
      */
-    put (path) {
+    put (path, options = {}) {
       const self = this;
 
       return new Promise(function (resolve, reject) {
-        let options = {
+        options = Object.assign({
           method: 'PUT',
           uri: path
-        };
+        }, options);
 
         self.doRequest(options, MAX_ATTEMPTS, RETRY_DELAY)
           .then(function () {

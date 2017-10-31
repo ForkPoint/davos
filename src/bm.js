@@ -346,7 +346,8 @@
             password: self.config.password
           },
           jar: false,
-          timeout: REQUEST_TIMEOUT
+          timeout: REQUEST_TIMEOUT,
+          fromTmpDir: true
         };
 
         self.doRequest(options, MAX_ATTEMPTS, RETRY_DELAY)

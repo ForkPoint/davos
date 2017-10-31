@@ -96,7 +96,9 @@
         return self.compress(currentRoot, archiveName, self.config.cartridge);
       })().then(function () {
         Log.info(chalk.cyan(`Uploading archive.`));
-        return webdav.put(archiveName);
+        return webdav.put(archiveName, {
+          fromTmpDir: true
+        });
       }).then(function () {
         Log.info(chalk.cyan(`Unzipping archive.`));
         return webdav.unzip(archiveName);

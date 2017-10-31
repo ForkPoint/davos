@@ -139,7 +139,7 @@
               stream.push(null);
             } else {
               // create file stream (default)
-              stream = fs.createReadStream(self.configManager.getTempDir() + "/" + options.uri);
+              stream = fs.createReadStream((options.fromTmpDir ? (self.configManager.getTempDir() + "/") : "") + options.uri);
             }
             stream.pipe(req);
             stream.on('end', function () {
