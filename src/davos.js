@@ -637,7 +637,9 @@
 
               Promise.all(nodes.map(node => new Promise((fp, fe) => {
 
-                fs.writeFile(dir + "/library." + node.getAttribute("content-id") + "." + (this.config.projectID || "projectID") + ".xml", template.replace("{{ libraryid }}", library.hasAttribute("library-id") ? ('library-id="' + library.getAttribute("library-id") + '"') : "").replace("{{ objects }}", node.toString().replace(/\$/g, "$$$")), function (err) {
+                fs.writeFile(dir + "/library." + node.getAttribute("content-id") + "." + (this.config.projectID || "projectID") + ".xml", template.replace("{{ libraryid }}", library.hasAttribute("library-id") ? ('library-id="' + library.getAttribute("library-id") + '"') : "").replace("{{ objects }}", (function(replacement) {
+                  return () => replacement;
+                })(node.toString())), function (err) {
                   err ? fe(err) : fp()
                 });
               }))).then(results => {
