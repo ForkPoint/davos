@@ -595,7 +595,7 @@
                         cloneAttribute(cloneInstance, node, attribute);
                       });
 
-                    fs.writeFile(currentRoot + "/" + (cloneInstance.nodeName === "custom-type" ? "custom" : "system") + "." + cloneInstance.getAttribute("type-id") + "." + (this.config.projectID || "projectID") +"." + group.getAttribute("group-id") + ".xml", template.replace("{{ objects }}", cloneInstance.toString()), function (err) {
+                    fs.writeFile(currentRoot + "/" + (cloneInstance.nodeName === "custom-type" ? "custom" : "system") + "." + cloneInstance.getAttribute("type-id") + "." + (this.config.projectID || "projectID") + "." + group.getAttribute("group-id") + ".xml", template.replace("{{ objects }}", cloneInstance.toString()), function (err) {
                       err ? e1(err) : r1("done");
                     });
                   }))).then(fr).catch(fe);
@@ -607,6 +607,99 @@
           });
         });
       })
+    }
+
+    splitLibraryBundle(pattern = "/libraries/*") {
+      const x = require("xpath");
+      const xdom = require("xmldom");
+
+      let currentRoot = (this.config.basePath || process.cwd()) + SITES_META_FOLDER;
+
+      const template = fs.readFileSync(__dirname + "/../res/library.template").toString();
+
+      return globby(currentRoot + pattern + "/library.xml").then(files => {
+        return Promise.all(files.map(file => {
+          let dir = path.dirname(file);
+
+          return new Promise((r, e) => {
+            fs.readFile(file, (err, xml) => {
+              if (err) {
+                return e(err);
+              }
+
+              let document = new xdom.DOMParser().parseFromString(xml.toString().replace('xmlns="http://www.demandware.com/xml/impex/library/2006-10-31"', ''));
+              let nodes = x.select("//content", document);
+              let library = document.getElementsByTagName("library")[0];
+
+              if (!library) {
+                return e(new Error("Not a library"));
+              }
+
+              Promise.all(nodes.map(node => new Promise((fp, fe) => {
+
+                fs.writeFile(dir + "/library." + node.getAttribute("content-id") + "." + (this.config.projectID || "projectID") + ".xml", template.replace("{{ libraryid }}", library.hasAttribute("library-id") ? ('library-id="' + library.getAttribute("library-id") + '"') : "").replace("{{ objects }}", node.toString().replace(/\$/g, "$$$")), function (err) {
+                  err ? fe(err) : fp()
+                });
+              }))).then(results => {
+                r();
+              }).catch(e);
+            });
+          });
+        })).then(results => {
+          return Promise.resolve();
+        });
+      });
+    }
+
+    mergeLibraries(pattern) {
+      const xdom = require("xmldom");
+      const x = require("xpath");
+      const xmlm = require("xmlappend");
+
+      let currentRoot = (this.config.basePath || process.cwd()) + SITES_META_FOLDER;
+      let dir;
+
+      return globby(currentRoot + pattern + "/*.xml").then(files => {
+        
+        return Promise.all(files.map(file => {
+          dir = path.dirname(file);          
+
+          return new Promise((r, e) => {
+            fs.readFile(file, (err, xml) => {
+              if (err) {
+                return e(err);
+              }
+              
+              let document = new xdom.DOMParser().parseFromString(xml.toString().replace('xmlns="http://www.demandware.com/xml/impex/library/2006-10-31"', ''));
+              let nodes = x.select("//content", document);
+              let library = document.getElementsByTagName("library")[0];
+
+              if (!library) {
+                return e(new Error("Not a library"));
+              }
+
+              if (nodes.length > 1) {
+                Log.warn(chalk.yellow("Library " + file + " contains more than 1 content tag thus is considered a bundle and will be skipped"));
+
+                return r("");
+              }
+
+              r(xml.toString());
+            });
+          });
+        })).then(contents => {
+          
+          if (dir) {
+            return new Promise((r, e) => {
+              fs.writeFile(dir + "/library.bundle.xml", xmlm(...contents.filter(c => !!c)), function (err) {
+                err ? e(err) : r();
+              });
+            });
+          }
+
+          return Promise.resolve();
+        });
+      });
     }
   }
 
