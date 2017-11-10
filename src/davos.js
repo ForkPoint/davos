@@ -2,7 +2,7 @@
   'use strict';
 
   // Constants
-  const SITES_META_FOLDER = '/sites';
+  let SITES_META_FOLDER = '/sites';
   const META_FOLDER = "/meta";
 
   // Imports
@@ -29,6 +29,9 @@
       this.config = (Object.keys(this.ConfigManager.config).length === 0)
         ? this.ConfigManager.loadConfiguration().getActiveProfile(config)
         : this.ConfigManager.mergeConfiguration(config);
+
+      SITES_META_FOLDER = "/" + (this.config.metaDir || "sites");
+
       return this;
     }
 
@@ -578,7 +581,7 @@
           }
 
           let clone = node.cloneNode();
-          
+
           Array.from(node.childNodes).forEach(child => {
             let childClone;
 
@@ -624,15 +627,13 @@
       });
     }
 
-    mergeLibraries(pattern) {
-      const xdom = require("xmldom");
-      const x = require("xpath");
+    merge(pattern, out) {
       const xmlm = require("xmlappend");
 
       let currentRoot = (this.config.basePath || process.cwd()) + SITES_META_FOLDER;
       let dir;
 
-      return globby(currentRoot + pattern + "/*.xml").then(files => {
+      return globby(currentRoot + pattern).then(files => {
 
         return Promise.all(files.map(file => {
           dir = path.dirname(file);
@@ -643,20 +644,6 @@
                 return e(err);
               }
 
-              let document = new xdom.DOMParser().parseFromString(xml.toString().replace('xmlns="http://www.demandware.com/xml/impex/library/2006-10-31"', ''));
-              let nodes = x.select("//content", document);
-              let library = document.getElementsByTagName("library")[0];
-
-              if (!library) {
-                return e(new Error("Not a library"));
-              }
-
-              if (nodes.length > 1) {
-                Log.warn(chalk.yellow("Library " + file + " contains more than 1 content tag thus is considered a bundle and will be skipped"));
-
-                return r("");
-              }
-
               r(xml.toString());
             });
           });
@@ -664,7 +651,7 @@
 
           if (dir) {
             return new Promise((r, e) => {
-              fs.writeFile(dir + "/library.bundle.xml", xmlm(...contents.filter(c => !!c)), function (err) {
+              fs.writeFile(out || (dir + "/bundle.xml"), xmlm(...contents.filter(c => !!c)), function (err) {
                 err ? e(err) : r();
               });
             });
