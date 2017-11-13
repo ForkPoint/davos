@@ -633,7 +633,7 @@
       let currentRoot = (this.config.basePath || process.cwd()) + SITES_META_FOLDER;
       let dir;
 
-      return globby(path.resolve(currentRoot, pattern)).then(files => {
+      return globby(path.join(currentRoot, pattern)).then(files => {
 
         return Promise.all(files.map(file => {
           dir = path.dirname(file);
