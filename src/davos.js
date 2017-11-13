@@ -450,7 +450,7 @@
       });
     }
 
-    uploadMeta(pattern) {
+    uploadMeta(pattern = this.config.pattern) {
       const self = this;
       const filename = "davos-meta-bundle.xml";
 
@@ -507,7 +507,7 @@
       const x = require("xpath");
       const xdom = require("xmldom");
       const template = fs.readFileSync(__dirname + "/../resources/" + cfg.template + ".template").toString();
-      const filepath = (this.config.basePath || process.cwd()) + SITES_META_FOLDER + fpath;
+      const filepath = path.join((this.config.basePath || process.cwd()), SITES_META_FOLDER, fpath);
 
       return new Promise((r, e) => {
         fs.readFile(filepath, (err, xml) => {
@@ -528,7 +528,7 @@
     }
 
     // fpath must point to a library.xml file
-    splitLibraryBundle(fpath, out) {
+    splitLibraryBundle(fpath = this.config._[1], out = this.config.out) {
       return this.splitBundle(fpath, "//content", out, {
         template: "library",
         ns: "http://www.demandware.com/xml/impex/library/2006-10-31",
@@ -544,7 +544,7 @@
       });
     }
 
-    splitMetaBundle(fpath, xpath = "/metadata/*", out) {
+    splitMetaBundle(fpath = this.config._[1], xpath = "/metadata/*", out = this.config.out) {
       function cloneAttribute(cloneInstance, source, attribute) {
         let id = attribute.getAttribute("attribute-id");
         let attrType;
@@ -627,13 +627,13 @@
       });
     }
 
-    merge(pattern, out) {
+    merge(pattern = this.config._[1], out = this.config.out) {
       const xmlm = require("xmlappend");
 
       let currentRoot = (this.config.basePath || process.cwd()) + SITES_META_FOLDER;
       let dir;
 
-      return globby(currentRoot + pattern).then(files => {
+      return globby(path.resolve(currentRoot, pattern)).then(files => {
 
         return Promise.all(files.map(file => {
           dir = path.dirname(file);
