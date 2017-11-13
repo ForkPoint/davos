@@ -1,201 +1,197 @@
-/*jshint esversion: 6 */
-(function(){
-	'use strict';
+(function () {
+  'use strict';
 
-	//Constants
-	const REQUEST_TIMEOUT = 15000,
-		MAX_ATTEMPTS = 3,
-		RETRY_DELAY = 300;
+  // Constants
+  const MAX_ATTEMPTS = 3,
+    RETRY_DELAY = 300,
+    REQUEST_TIMEOUT = 15000;
 
-	const ERR_CODES = [
-		'EADDRINFO',
-		'ETIMEDOUT',
-		'ECONNRESET',
-		'ESOCKETTIMEDOUT',
-		'ENOTFOUND',
-		'EADDRNOTAVAIL',
-		'ECONNREFUSED'
-	];
+  // Locals
+  const ConfigManager = require('./config-manager'),
+    RequestManager = require('./request-manager'),
+    Log = require('./logger');
 
-	//Imports
-	const configHelper = require('./config'),
-		log = require('./logger'),
+  /**
+   * A WebDav client realizing DELETE, PUT, UNZIP, MKCOL, PROPFIND
+   * @param {Object} config The configuration object used by Davos
+   */
+  class WebDav {
+    constructor (config, ConfigManagerInstance) {
+      this.ConfigManager = ConfigManagerInstance || new ConfigManager();
+      this.config = (Object.keys(this.ConfigManager.config).length === 0)
+        ? this.ConfigManager.loadConfiguration().getActiveProfile(config)
+        : this.ConfigManager.mergeConfiguration(config);
 
-		fs = require('fs'),
-		path = require('path'),
-		_ = require('underscore'),
-		request = require('request').defaults({
-			pool: {
-				maxSockets: Infinity
-			},
-			strictSSL: false,
-			agent: false,
-			followRedirect: false,
-			jar: false
-		});
+      this.options = {
+        baseUrl: 'https://' + this.config.hostname + '/on/demandware.servlet/webdav/Sites/Cartridges/' + this.config.codeVersion,
+        uri: '/',
+        contentString: null,
+        auth: {
+          user: this.config.username,
+          password: this.config.password
+        },
+        timeout: REQUEST_TIMEOUT
+      };
 
-	//require('request-debug')(request);
+      this.reqMan = new RequestManager(this.options, this.ConfigManager);
 
-	/**
-	 * A WebDav client realizing DELETE, PUT, UNZIP, MKCOL, PROPFIND
-	 * @param {Object} config The configuration object used by Davos
-	 */
-	var WebDav = function(config) {
+      return this;
+    }
 
-		//Initialize
+  doRequest (options, attemptsLeft, retryDelay) {
+      return this.reqMan.doRequest(options, attemptsLeft, retryDelay);
+    }
 
-		configHelper.validateConfigProperties(config);
+    /**
+     * WebDav DELETE
+     */
+    delete (path) {
+      const self = this;
 
-		const baseOptions = {
-			baseUrl: 'https://' + config.hostname + '/on/demandware.servlet/webdav/Sites/Cartridges/' + config.codeVersion,
-			uri: '/',
-			auth: {
-				user: config.username,
-				password: config.password
-			},
-			timeout: REQUEST_TIMEOUT
-		};
+      return new Promise(function (resolve, reject) {
+        let options = {
+          method: 'DELETE',
+          uri: path
+        };
 
-		//Private
+        self.doRequest(options, MAX_ATTEMPTS, RETRY_DELAY)
+          .then(function () {
+            resolve();
+          }, function (err) {
+            reject(err);
+          });
+      });
+    }
 
-		function getUriPath(targetPath) {
-			let i,
-				previous,
-				current,
-				dirs = targetPath.split(path.sep),
-				len = dirs.length;
-			for (i = 0; i < len; i += 1) {
-				current = dirs[i];
-				if (current === 'cartridge') {
-					break;
-				}
-				previous = current;
-			}
-			return '/' + targetPath.slice(targetPath.indexOf(previous));
-		}
+    /**
+     * WebDav MKCOL
+     */
+    mkcol (path) {
+      const self = this;
 
-		function doRequest(options, path, attemptsLeft, retryDelay, reject, resolve, lastError) {
-			var req = null,
-				stream = null;
+      return new Promise(function (resolve, reject) {
+        let options = {
+          method: 'MKCOL',
+          uri: path
+        };
 
-			if (attemptsLeft === MAX_ATTEMPTS) {
-				options = Object.assign(options, baseOptions);
-			}
+        self.doRequest(options, MAX_ATTEMPTS, RETRY_DELAY)
+          .then(function () {
+            resolve();
+          }, function (err) {
+            reject(err);
+          });
+      });
+    }
 
-			if (attemptsLeft <= 0) {
-				reject((lastError !== null ? lastError : new Error('The request to ' + path + ' could not be processed!')));
-			} else {
+    /**
+     * WebDav GET CONTENT
+     */
+    getContent (path) {
+      const self = this;
 
-				if(!!path) {
-					options.uri = getUriPath(path);
-				}
-				var signature = options.method + ' :: ' + options.uri
-				req = request(options, function(error, response, body) {
-					if(attemptsLeft < MAX_ATTEMPTS) {
-						log.debug('Trying to ' + signature + ' for the ' + (MAX_ATTEMPTS - attemptsLeft) + ' time out of ' + MAX_ATTEMPTS + ' tries left.');
-					}
+      return new Promise(function (resolve, reject) {
+        let options = {
+          method: 'GET',
+          uri: path
+        };
 
-					var e = null;
-					if ((error && _.contains(ERR_CODES, error.code))) {
-						log.error('Got ' + error.code + ' scheduling a retry after ' + retryDelay + 'ms');
-						if (!!stream) {
-							stream.close();
-						}
-						//abort current request
-						req.abort();
+        self.doRequest(options, MAX_ATTEMPTS, RETRY_DELAY)
+          .then(function () {
+            resolve();
+          }, function (err) {
+            reject(err);
+          });
+      });
+    }
 
-						//schedule a retry
-						setTimeout((function() {
-							doRequest(options, path, --attemptsLeft, retryDelay, reject, resolve, e);
-						}), retryDelay);
+    /**
+     * WebDav PUT
+     */
+    put (path, options = {}) {
+      const self = this;
 
-					} else if (!error && response.statusCode >= 400 && response.statusCode !== 404) {
-						log.error( response.statusMessage + ' ' + response.statusCode + ". Could not " + signature + " :: skipping file.");
-						e = new Error(response.statusMessage + ' ' + response.statusCode);
-						e.code = response.statusCode;
-						return reject(null);
-					} else if (!error && (200 <= response.statusCode && response.statusCode < 300)) {
-						log.debug('Succesfully actioned ' + path);
-						return resolve(body);
-					} else if (!!response && response.statusCode === 404 && options.method === 'DELETE') {
-						log.info('File ' + options.uri + ' was not found, maybe already deleted.');
-						return resolve(body);
-					} else if (error) {
-						e = new Error(error);
-						e.code = error.code;
-						return reject(e);
-					} else {
-						e = new Error('Unspecified error occurred...' + response.statusCode);
-						e.code = response.statusCode;
-						return reject(e);
-					}
-				});
-				if (options.method === 'PUT') {
-					try {
-						stream = fs.createReadStream(path);
-						stream.pipe(req);
-						stream.on('end', function() {
-								stream.close();
-							});
-					} catch (e) {
-						log.error('There was an error reading the fs stream from ' + path + ' :: ' + e.code);
-						return reject(e);
-					}
-				}
-			}
-		}
+      return new Promise(function (resolve, reject) {
+        options = Object.assign({
+          method: 'PUT',
+          uri: path
+        }, options);
 
-		//pass a refference to the parent
-		var that = this;
+        self.doRequest(options, MAX_ATTEMPTS, RETRY_DELAY)
+          .then(function () {
+            resolve();
+          }, function (err) {
+            reject(err);
+          });
+      });
+    }
 
-		//Public
-		return {
-			delete: function(path) {
-				return new Promise(function(resolve, reject) {
-					var options = {
-						method: 'DELETE'
-					};
-					doRequest(options, path, MAX_ATTEMPTS, RETRY_DELAY, reject, resolve);
-				});
-			},
-			mkcol: function(path) {
-				return new Promise(function(resolve, reject) {
-					var options = {
-						method: 'MKCOL'
-					};
-					doRequest(options, path, MAX_ATTEMPTS, RETRY_DELAY, reject, resolve);
-				});
-			},
-			put: function(path) {
-				return new Promise(function(resolve, reject) {
-					var options = {
-						method: 'PUT'
-					};
-					doRequest(options, path, MAX_ATTEMPTS, RETRY_DELAY, reject, resolve);
-				});
-			},
-			unzip: function(path) {
-				return new Promise(function(resolve, reject) {
-					var options = {
-						method: 'POST',
-						form: {
-							method: 'UNZIP'
-						}
-					};
-					doRequest(options, path, MAX_ATTEMPTS, RETRY_DELAY, reject, resolve);
-				});
-			},
-			propfind: function() {
-				return new Promise(function(resolve, reject) {
-					var options = {
-						method: 'PROPFIND'
-					};
-					doRequest(options, null, MAX_ATTEMPTS, RETRY_DELAY, reject, resolve);
-				});
-			}
-		};
-	};
-	module.exports = function(configuration) {
-		return new WebDav(configuration);
-	};
+    /**
+     * WebDav PUT CONTENT
+     */
+    putContent (path, content) {
+      const self = this;
+
+      return new Promise(function (resolve, reject) {
+        let options = {
+          method: 'PUT',
+          uri: path,
+          contentString: content
+        };
+
+        self.doRequest(options, MAX_ATTEMPTS, RETRY_DELAY)
+          .then(function () {
+            resolve();
+          }, function (err) {
+            reject(err);
+          });
+      });
+    }
+
+    /**
+     * WebDav UNZIP
+     */
+    unzip (path) {
+      const self = this;
+
+      return new Promise(function (resolve, reject) {
+        let options = {
+          method: 'POST',
+          uri: path,
+          form: {
+            method: 'UNZIP'
+          }
+        };
+
+        self.doRequest(options, MAX_ATTEMPTS, RETRY_DELAY)
+          .then(function () {
+            resolve();
+          }, function (err) {
+            reject(err);
+          });
+      });
+    }
+
+    /**
+     * WebDav PROPFIND
+     */
+    propfind () {
+      const self = this;
+
+      return new Promise(function (resolve, reject) {
+        let options = {
+          method: 'PROPFIND'
+        };
+
+        self.doRequest(options, MAX_ATTEMPTS, RETRY_DELAY)
+          .then(function () {
+            resolve();
+          }, function (err) {
+            reject(err);
+          });
+      });
+    }
+  }
+
+  module.exports = WebDav;
 }());
