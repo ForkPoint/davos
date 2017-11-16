@@ -2,7 +2,8 @@
   'use strict';
 
   // Constants
-  let SITES_META_FOLDER = '/sites';
+  let SITES_META_FOLDER = '/sites/site_template';
+  let CARTRIDGES_FOLDER = "/cartridges";
   const META_FOLDER = "/meta";
 
   // Imports
@@ -30,7 +31,9 @@
         ? this.ConfigManager.loadConfiguration().getActiveProfile(config)
         : this.ConfigManager.mergeConfiguration(config);
 
-      SITES_META_FOLDER = "/" + (this.config.metaDir || "sites");
+      if (this.config.metaDir) {
+        SITES_META_FOLDER = this.config.metaDir;
+      }
 
       return this;
     }
@@ -63,7 +66,6 @@
           paths.forEach(function (filePath) {
             let absolutePath = filePath,
               relativePath = rootPrefix + path.relative(root, absolutePath);
-
             if (fs.lstatSync(absolutePath).isDirectory()) {
               archive.addEmptyDirectory(relativePath);
             } else {
@@ -96,7 +98,7 @@
 
       return (function () {
         Log.info(chalk.cyan(`Creating archive of all cartridges.`));
-        return self.compress(currentRoot, archiveName, self.config.cartridge);
+        return self.compress(path.join(currentRoot, CARTRIDGES_FOLDER), archiveName, self.config.cartridge.map(name => name + "/**"));
       })().then(function () {
         Log.info(chalk.cyan(`Uploading archive.`));
         return webdav.put(archiveName, {

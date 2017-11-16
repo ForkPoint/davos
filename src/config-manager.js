@@ -61,13 +61,6 @@
 
       this.validateConfigProperties(this.config);
 
-      this.config.cartridge.forEach(function (cartridge) {
-        if (cartridge.indexOf('\\') > -1 || cartridge.indexOf('**') < 0) {
-          Log.warn(chalk.yellow(`\nYour cartrige format is not valid. Please fix it.`));
-          process.exit();
-        }
-      });
-
       return this.config;
     }
 
@@ -106,6 +99,8 @@
     getCartridges(currentRoot) {
       let result = [];
 
+      currentRoot = path.join(currentRoot, "/cartridges")
+
       let paths = globby.sync(['**/cartridge/'], {
         cwd: currentRoot,
         dot: true,
@@ -119,14 +114,22 @@
           relativeCartridgePath = path.relative(currentRoot, absolutePath),
           relativePath = path.dirname(relativeCartridgePath).replace(/\\/g, '/');
 
-        result.push(relativePath + '/**');
+        result.push(relativePath);
       });
 
       return result;
     }
 
     getTempDir() {
-      return this.config.tmpDir || TMP_DIR;
+      let dir = this.config.tmpDir || TMP_DIR;
+
+      try {
+        fs.mkdirSync(dir);
+      } catch (e) {
+
+      }
+
+      return dir;
     }
 
     isValidCartridgePath(relativePath) {
