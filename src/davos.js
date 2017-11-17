@@ -2,7 +2,6 @@
   'use strict';
 
   // Constants
-  let SITES_META_FOLDER = '/sites/site_template';
   let CARTRIDGES_FOLDER = "/cartridges";
   const META_FOLDER = "/meta";
 
@@ -27,15 +26,22 @@
   class Davos {
     constructor(config, ConfigManagerInstance) {
       this.ConfigManager = ConfigManagerInstance || new ConfigManager();
+
+      this.syncConfig(config);
+
+      return this;
+    }
+
+    syncConfig(config) {
       this.config = (Object.keys(this.ConfigManager.config).length === 0)
         ? this.ConfigManager.loadConfiguration().getActiveProfile(config)
         : this.ConfigManager.mergeConfiguration(config);
 
-      if (this.config.metaDir) {
-        SITES_META_FOLDER = this.config.metaDir;
+      if (this.config && this.config.metaDir) {
+        this.SITES_META_FOLDER = this.config.metaDir;
+      } else {
+        this.SITES_META_FOLDER = '/sites/site_template'
       }
-
-      return this;
     }
 
     /**
@@ -131,14 +137,14 @@
         archiveName = 'sites_' + self.config.codeVersion + '.zip',
         rootPrefix = path.basename(archiveName, '.zip') + '/';
 
-      currentRoot = currentRoot + SITES_META_FOLDER;
+      currentRoot = currentRoot + this.SITES_META_FOLDER;
 
       if (arrayWithGlob === undefined) {
         arrayWithGlob = ['**/*.xml'];
       }
 
       return (function () {
-        Log.info(chalk.cyan(`Creating archive of all cartridges.`));
+        Log.info(chalk.cyan(`Creating archive of sites.`));
         return self.compress(currentRoot, archiveName, arrayWithGlob, rootPrefix);
       })().then(function () {
         Log.info(chalk.cyan(`Uploading archive.`));
@@ -463,7 +469,7 @@
       let bm = new BM(self.config, self.ConfigManager),
         currentRoot = self.config.basePath || process.cwd();
 
-      currentRoot = currentRoot + SITES_META_FOLDER + META_FOLDER;
+      currentRoot = currentRoot + this.SITES_META_FOLDER + META_FOLDER;
 
       return new Promise((r, e) => {
         globby(currentRoot + "/" + pattern).then(files => {
@@ -509,7 +515,7 @@
       const x = require("xpath");
       const xdom = require("xmldom");
       const template = fs.readFileSync(__dirname + "/../resources/" + cfg.template + ".template").toString();
-      const filepath = path.join((this.config.basePath || process.cwd()), SITES_META_FOLDER, fpath);
+      const filepath = path.join((this.config.basePath || process.cwd()), this.SITES_META_FOLDER, fpath);
 
       return new Promise((r, e) => {
         fs.readFile(filepath, (err, xml) => {
@@ -632,7 +638,7 @@
     merge(pattern = this.config._[1], out = this.config.out) {
       const xmlm = require("xmlappend");
 
-      let currentRoot = (this.config.basePath || process.cwd()) + SITES_META_FOLDER;
+      let currentRoot = (this.config.basePath || process.cwd()) + this.SITES_META_FOLDER;
       let dir;
 
       return globby(path.join(currentRoot, pattern)).then(files => {

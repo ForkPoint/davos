@@ -49,7 +49,7 @@
       let activeProfile = this.profiles.find(x => x.active === true);
 
       if (!activeProfile) {
-        Log.error(chalk.red(`\nThere is no active profile in your configuration [${configPath}].`));
+        Log.error(chalk.red(`\nThere is no active profile in your configuration.`));
         return config;
       }
 

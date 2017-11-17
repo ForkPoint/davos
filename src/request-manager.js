@@ -72,11 +72,7 @@
           if (!error) {
             responseBody = body;
 
-            if (options.method === 'PUT') {
-              // see after req() body condition with === 'PUT'
-            } else {
-              resolve(body);
-            }
+            resolve(body);
           }
         }).on('response', function(response) {
           if (response.statusCode === 404) {
@@ -142,19 +138,12 @@
               stream = fs.createReadStream((options.fromTmpDir ? (self.configManager.getTempDir() + "/") : "") + options.uri);
             }
             stream.pipe(req);
-            stream.on('end', function () {
-              resolve(responseBody);
-            });
           } catch (e) {
             let errComment = (options.contentString) ? 'options.contentString' : options.uri;
             Log.error('There was an error reading the stream from ' + errComment + ' :: ' + e.code);
             reject(e);
           }
         }
-      }).then(function (body) {
-        return Promise.resolve(body);
-      }, function (error) {
-        return Promise.reject(error);
       });
     }
   }
