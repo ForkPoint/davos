@@ -32,6 +32,9 @@
   // Locals
   const Log = require('./logger');
 
+  /**
+   * A request manager creating requests for given number of attempts
+   */
   class RequestManager {
     constructor (options, configManager) {
       this.options = options;
@@ -39,6 +42,12 @@
       return this;
     }
 
+    /**
+     * A request maker
+     * @param {Object} options The options for the request
+     * @param {Number} attemptsLeft The number of attempts for the request
+     * @param {Number} retryDelay The timeout after which new request should be made
+     */
     doRequest (options, attemptsLeft, retryDelay) {
       const self = this;
 

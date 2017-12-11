@@ -23,7 +23,16 @@
     BM = require('./bm'),
     Log = require('./logger');
 
+  /**
+   * A davos class
+   */
   class Davos {
+    /**
+     * Creates a davos
+     * @param {Object} config The configuration object used by Davos
+     * @param {Object} ConfigManagerInstance The passed ConfigManagerInstance
+     * object or newly created
+     */
     constructor(config, ConfigManagerInstance) {
       this.ConfigManager = ConfigManagerInstance || new ConfigManager();
 
@@ -32,6 +41,10 @@
       return this;
     }
 
+    /**
+     * Sets the sites meta folder
+     * @param {Object} config The configuration object used by Davos
+     */
     syncConfig(config) {
       this.config = (Object.keys(this.ConfigManager.config).length === 0)
         ? this.ConfigManager.loadConfiguration().getActiveProfile(config)
@@ -45,8 +58,11 @@
     }
 
     /**
-     * @var string archiveName
-     * @var array arrayWithGlob example: ['*'] or ['meta*.xml', '**\/*.xml']
+     * Compresses a file
+     * @param {String} root The root directory
+     * @param {String} archiveName The name of the archive file
+     * @param {Array} arrayWithGlob Example: ['*'] or ['meta*.xml', '**\/*.xml']
+     * @param {String} rootPrefix The prefix for the root directory
      */
     compress(root, archiveName, arrayWithGlob, rootPrefix) {
       const self = this;
@@ -89,12 +105,20 @@
       });
     }
 
+    /**
+     * Deletes a file
+     * @param {String} archiveName The name of the archive file
+     * @param {String} logMessage The display message
+     */
     delete(archiveName, logMessage = "Removing local archive.") {
       return del(this.ConfigManager.getTempDir() + "/" + archiveName).then(function () {
         Log.info(chalk.cyan(logMessage));
       });
     }
 
+    /**
+     * Uploads all cartridges
+     */
     uploadCartridges() {
       const self = this;
 
@@ -128,6 +152,10 @@
       });
     }
 
+    /**
+     * Uploads .zip with meta files
+     * @param {Array} arrayWithGlob Example: ['*'] or ['meta*.xml', '**\/*.xml']
+     */
     uploadSitesMeta(arrayWithGlob) {
       const self = this;
 
@@ -176,6 +204,9 @@
       });
     }
 
+    /**
+     * Activates code version in the business manager
+     */
     activateCodeVersion() {
       const self = this;
 
@@ -193,6 +224,9 @@
       });
     }
 
+    /**
+     * Watches for files changes and uploads them
+     */
     watch() {
       const self = this;
 
@@ -330,6 +364,9 @@
         });
     }
 
+    /**
+     * Syncs the remote and local files
+     */
     sync() {
       const self = this;
 
@@ -408,6 +445,9 @@
         });
     }
 
+    /**
+     * Replaces default templates, if configuration exists
+     */
     replaceTemplateInfo() {
       const self = this;
 
@@ -458,6 +498,10 @@
       });
     }
 
+    /**
+     * Uploads meta files
+     * @param {String} pattern Example: '*' or 'meta*.xml'
+     */
     uploadMeta(pattern = this.config.pattern) {
       const self = this;
       const filename = "davos-meta-bundle.xml";
@@ -511,6 +555,13 @@
       });
     }
 
+    /**
+     * Splits one bundle file to separate files
+     * @param {String} fpath The path where the file is located
+     * @param {String} xpath Example: "/metadata/*"
+     * @param {String} out The output path where files will be located
+     * @param {Object} cfg The configuration object
+     */
     splitBundle(fpath, xpath, out, cfg) {
       const x = require("xpath");
       const xdom = require("xmldom");
@@ -535,7 +586,11 @@
       });
     }
 
-    // fpath must point to a library.xml file
+    /**
+     * Splits library xml bundle file to separate files
+     * @param {String} fpath The path where the library.xml is located
+     * @param {String} out The output path where files will be located
+     */
     splitLibraryBundle(fpath = this.config._[1], out = this.config.out) {
       return this.splitBundle(fpath, "//content", out, {
         template: "library",
@@ -552,6 +607,12 @@
       });
     }
 
+    /**
+     * Splits metadata xml bundle file to separate files
+     * @param {String} fpath The path where the library.xml is located
+     * @param {String} xpath Example: "/metadata/*"
+     * @param {String} out The output path where files will be located
+     */
     splitMetaBundle(fpath = this.config._[1], xpath = "/metadata/*", out = this.config.out) {
       function cloneAttribute(cloneInstance, source, attribute) {
         let id = attribute.getAttribute("attribute-id");
@@ -635,6 +696,11 @@
       });
     }
 
+    /**
+     * Merges separate files to xml bundle file
+     * @param {String} pattern The patter of the file names, example: *.xml
+     * @param {String} out The output path where file will be located
+     */
     merge(pattern = this.config._[1], out = this.config.out) {
       const xmlm = require("xmlappend");
 

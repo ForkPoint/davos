@@ -17,10 +17,15 @@
     Log = require('./logger');
 
   /**
-   * A WebDav client realizing DELETE, PUT, UNZIP, MKCOL, PROPFIND
-   * @param {Object} config The configuration object used by Davos
+   * A business manager class
    */
   class BM {
+    /**
+     * Creates a business manager
+     * @param {Object} config The configuration object used by Davos
+     * @param {Object} ConfigManagerInstance The passed ConfigManagerInstance
+     * object or newly created
+     */
     constructor(config, ConfigManagerInstance) {
       this.ConfigManager = ConfigManagerInstance || new ConfigManager();
       this.config = (Object.keys(this.ConfigManager.config).length === 0)
@@ -43,6 +48,11 @@
       return this;
     }
 
+    /**
+     * Gets the progress configuration
+     * @param {String} type The type of the configuration
+     * @return {Object} The configuration object 
+     */
     getCheckProgressConfig(type) {
       switch (type) {
         case "site":
@@ -75,6 +85,12 @@
       }
     }
 
+    /**
+     * BM request maker
+     * @param {Object} options The options for the request
+     * @param {Number} attemptsLeft The number of attempts for the request
+     * @param {Number} retryDelay The timeout after which new request should be made
+     */
     doRequest(options, attemptsLeft = MAX_ATTEMPTS, retryDelay = RETRY_DELAY) {
       return this.reqMan.doRequest(options, attemptsLeft, retryDelay)
         .then(function (body) {
@@ -118,6 +134,7 @@
 
     /**
      * HTTP Request BM ENSURE NO IMPORT
+     * @param {String} archiveName The name of the archive file
      */
     ensureNoImport(archiveName) {
       const self = this;
@@ -161,7 +178,9 @@
     }
 
     /**
-     * HTTP Request BM IMPORT SITES
+     * HTTP Request BM ENSURE NO IMPORT
+     * @param {String} archiveName The name of the archive file
+     * @param {Number} attemptsLeft The number of maximum retries
      */
     importSites(archiveName, attemptsLeft) {
       const self = this;
@@ -224,6 +243,9 @@
 
     /**
      * HTTP Request BM CHECK IMPORT PROGRESS
+     * @param {String} archiveName The name of the archive file
+     * @param {Number} attemptsLeft The number of maximum retries
+     * @param {String} importConfig The type of the config
      */
     checkImportProgress(archiveName, attemptsLeft, importConfig = "site") {
       const self = this;
@@ -324,15 +346,25 @@
 
     /**
      * WebDav Request Upload Sites Meta
+     * @param {String} path The path of the file
      */
     uploadSitesArchive(path) {
       return this.uploadImpex(path, "/src/instance");
     }
 
+    /**
+     * WebDav Request Upload Meta
+     * @param {String} path The path of the file
+     */
     uploadMeta(path) {
       return this.uploadImpex(path, "/src/customization");
     }
 
+    /**
+     * WebDav Request Upload 
+     * @param {String} path The path of the file
+     * @param {String} location The location of the file
+     */
     uploadImpex(path, location) {
       const self = this;
 
@@ -361,15 +393,25 @@
 
     /**
      * WebDav Request Delete Sites Meta
+     * @param {String} path The path of the file
      */
     deleteSitesArchive(path) {
       return this.deleteImpex(path, "/src/instance");
     }
 
+    /**
+     * WebDav Request Delete Sites Meta
+     * @param {String} path The path of the file
+     */
     deleteMeta(path) {
       return this.deleteImpex(path, "/src/customization");
     }
 
+    /**
+     * WebDav Request Delete Sites Meta
+     * @param {String} path The path of the file
+     * @param {String} location The location of the file
+     */
     deleteImpex(path, location) {
       const self = this;
 
@@ -396,6 +438,10 @@
       });
     }
 
+    /**
+     * Meta import validator
+     * @param {String} filename The file to be validated
+     */
     validateMetaImport(filename) {
       let options = {
         uri: this.bmTools.appendCSRF("/ViewCustomizationImport-Dispatch"),
@@ -413,12 +459,17 @@
       return this.doRequest(options, MAX_ATTEMPTS, RETRY_DELAY);
     }
 
+    /**
+     * Import meta file
+     * @param {String} filename The file to be imported
+     */
     importMeta(filename) {
       var cheerio = require('cheerio'),
         self = this;
 
       /**
        * Selects the first completed validation for import
+       * @param {String} body The HTML of the page
        */
       function selectValidationJob(body) {
         var $ = cheerio.load(body);
@@ -456,8 +507,10 @@
           uri: ""
         }).then(importMeta);
       }
+      
       /**
        * Execute meta data import for the validation file
+       * @param {String} body The HTML of the page
        */
       function importMeta(body) {
         var $ = cheerio.load(body);

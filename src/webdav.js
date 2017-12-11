@@ -12,10 +12,15 @@
     Log = require('./logger');
 
   /**
-   * A WebDav client realizing DELETE, PUT, UNZIP, MKCOL, PROPFIND
-   * @param {Object} config The configuration object used by Davos
+   * A webdav client realizing DELETE, PUT, UNZIP, MKCOL, PROPFIND
    */
   class WebDav {
+    /**
+     * Creates a webdav client
+     * @param {Object} config The configuration object used by Davos
+     * @param {Object} ConfigManagerInstance The passed ConfigManagerInstance
+     * object or newly created
+     */
     constructor (config, ConfigManagerInstance) {
       this.ConfigManager = ConfigManagerInstance || new ConfigManager();
       this.config = (Object.keys(this.ConfigManager.config).length === 0)
@@ -38,12 +43,19 @@
       return this;
     }
 
-  doRequest (options, attemptsLeft, retryDelay) {
+    /**
+     * WebDav request maker
+     * @param {Object} options The options for the request
+     * @param {Number} attemptsLeft The number of attempts for the request
+     * @param {Number} retryDelay The timeout after which new request should be made
+     */
+    doRequest (options, attemptsLeft, retryDelay) {
       return this.reqMan.doRequest(options, attemptsLeft, retryDelay);
     }
 
     /**
      * WebDav DELETE
+     * @param {String} path The path to the file
      */
     delete (path) {
       const self = this;
@@ -65,6 +77,7 @@
 
     /**
      * WebDav MKCOL
+     * @param {String} path The path to the file
      */
     mkcol (path) {
       const self = this;
@@ -86,6 +99,7 @@
 
     /**
      * WebDav GET CONTENT
+     * @param {String} path The path to the file
      */
     getContent (path) {
       const self = this;
@@ -107,6 +121,8 @@
 
     /**
      * WebDav PUT
+     * @param {String} path The path to the file
+     * @param {Object} options The passed options or empty object
      */
     put (path, options = {}) {
       const self = this;
@@ -128,6 +144,8 @@
 
     /**
      * WebDav PUT CONTENT
+     * @param {String} path The path to the file
+     * @param {String} content The content to be stored
      */
     putContent (path, content) {
       const self = this;
@@ -150,6 +168,7 @@
 
     /**
      * WebDav UNZIP
+     * @param {String} path The path to the file
      */
     unzip (path) {
       const self = this;

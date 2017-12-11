@@ -11,6 +11,9 @@
   // Locals
   const Log = require('./logger');
 
+  /**
+   * A business manager class
+   */
   class BMTools {
     constructor () {
       this.lastCsrfToken = null;
@@ -23,28 +26,37 @@
      *
      * @TODO must be refactored in more comprehendable way
      *
-     * @param {string} body - Represents the html page body text.
-     * @return {bool} - result of login check
+     * @param {String} body Represents the html page body text.
+     * @return {Boolean} Result of login check
      */
     isLoggedIn (body) {
       //we must check an text element on the page to determine if we are logged in or not
       return (!body || body.indexOf('You are currently not logged in') === -1);
     }
 
+    /**
+     * Determines if a request was valid or not
+     * @param {String} body Represents the html page body text
+     * @return {Boolean} Result of the request check
+     */
     isValidRequest (body) {
       return (!body || body.indexOf('The request was not validated') === -1);
     }
 
     /**
-     * remove all space and white spaces from string, This is used to compare demandware bm tag elements with
+     * Rremove all space and white spaces from string, This is used to compare demandware bm tag elements with
      * string tags which have random white spacing
-     * @param {string} text - the text to remove spaces from
-     * @return {String} - The formatted text
+     * @param {String} text The text to remove spaces from
+     * @return {String} The formatted text
      */
     removeAllWhiteSpaces (text) {
       return (text || '').replace(/\s/g, '');
     }
 
+    /**
+     * Parse the csrf token from the body
+     * @param {String} body Represents the html page body text
+     */
     parseCsrfToken (body) {
       if (!body || !body.includes('csrf_token')) {
         return;
@@ -57,6 +69,10 @@
       }
     }
 
+    /**
+     * Append the csrf token to the url
+     * @param {String} url The url for the current request
+     */
     appendCSRF (url) {
       if (this.lastCsrfToken) {
         url = (url.indexOf('?') === -1) ? url + '?' : url + '&';
@@ -66,8 +82,10 @@
     }
 
     /**
-     * Parses the HTML body to find the import jobs of the desired name.
-     * The most recently created job is returned.
+     * Parses the HTML body to find the import jobs of the desired name
+     * @param {String} body Represents the html page body text
+     * @param {Object} options The options object containing the selector
+     * @return {Array} The most recently created job is returned
      */
     parseBody (body, options) {
       const self = this;
@@ -99,7 +117,10 @@
     }
 
     /**
-     * Filters out records and keeps only the ones with the desired name.
+     * Filters out records 
+     * @param {Array} records An array of objects
+     * @param {Object} options The options object containing name and label
+     * @return {Array} The records with the desired name
      */
     filterRecords (records, options) {
       const self = this;

@@ -25,7 +25,13 @@
   // Locals
   const Log = require('./logger');
 
+  /** 
+   * A configuration manager managing the input JSON
+   */
   class ConfigManager {
+    /**
+     * Create a configuration manager
+     */
     constructor() {
       /* contain all the profiles */
       this.profiles = [];
@@ -34,12 +40,21 @@
       return this;
     }
 
+    /**
+     * Gets the configuration file name
+     * @return {String} The configuration file name
+     */
     getConfigName() {
       // @TODO make config name dynamic
       // check files for structure that match config and get first one - if not - throws an error
       return DEFAULT_CONFIG_NAME;
     }
 
+    /**
+     * Gets the active profile from the configuration
+     * @param {Object} config The configuration object used by Davos
+     * @return {Object} The configuration object used by Davos
+     */
     getActiveProfile(config) {
       if (!this.profiles) {
         Log.error(chalk.red(`\nCannot read configuration.`));
@@ -64,11 +79,21 @@
       return this.config;
     }
 
+    /**
+     * Merge two configurations
+     * @param {Object} config The configuration object used by Davos
+     * @return {Object} The merged configuration object
+     */
     mergeConfiguration(config) {
       this.config = Object.assign({}, this.config, config);
       return this.config;
     }
 
+    /**
+     * Check for existing configuration
+     * @param {Object} config The configuration object used by Davos
+     * @return {Boolean}
+     */
     isConfigExisting() {
       let configName = this.getConfigName();
 
@@ -80,6 +105,10 @@
       }
     }
 
+    /**
+     * Configuration object validator
+     * @param {Object} config The configuration object used by Davos
+     */
     validateConfigProperties(config) {
       CONFIG_PROPERTIES.required.forEach(function (property) {
         if (!config.hasOwnProperty(property)) {
@@ -96,6 +125,11 @@
       });
     }
 
+    /**
+     * Gets all found cartridges
+     * @param {String} currentRoot The root directory
+     * @return {Array.<Object>} An array with all found cartridges
+     */
     getCartridges(currentRoot) {
       let result = [];
 
@@ -120,6 +154,10 @@
       return result;
     }
 
+    /**
+     * Gets all found cartridges
+     * @return {String} The temp directory
+     */
     getTempDir() {
       let dir = this.config.tmpDir || TMP_DIR;
 
@@ -132,6 +170,11 @@
       return dir;
     }
 
+    /**
+     * Check for valid cartridge path
+     * @param {String} relativePath The path where the cartridges are located
+     * @return {Boolean}
+     */
     isValidCartridgePath(relativePath) {
       const self = this;
 
@@ -146,6 +189,10 @@
       return validCartridge;
     }
 
+    /**
+     * Load the configuration JSON from the file
+     * @return {Object} The found configuration
+     */
     loadConfiguration() {
       //parse the configuration
       let configName = this.getConfigName(),
@@ -169,6 +216,10 @@
       return this;
     }
 
+    /**
+     * Save the configuration JSON 
+     * @param {Object} json The new configuration to be saved
+     */
     saveConfiguration(json) {
       let configFileName = this.getConfigName();
 
@@ -176,6 +227,11 @@
       Log.info(chalk.cyan('\n Configuration saved in ' + configFileName));
     }
 
+    /**
+     * Load the configuration JSON from the file
+     * @param {Object} e The error to be logged
+     * @return {Number}
+     */
     promptError(e) {
       Log.error(e);
       return 1;
