@@ -95,23 +95,47 @@
       });
     }
 
+    getCartridgesPath() {
+      return path.join(this.getCurrentRoot(), CARTRIDGES_FOLDER);
+    }
+
+    /**
+     * Get cartridge names in an array.
+     * 
+     * @param {bool} all whether to return all cartridges or only selected in config
+     */
+    getCartridges(all = false) {
+      if (all || !this.config.cartridge) {
+        let cartridgesDir = this.getCartridgesPath();
+
+        return fs.readdirSync(cartridgesDir).filter(dir => {
+          return fs.lstatSync(path.join(cartridgesDir, dir)).isDirectory();
+        });
+      } else {
+        return this.config.cartridge;
+      }
+    }
+
+    getCurrentRoot() {
+      return this.config.basePath || process.cwd();
+    }
+
     uploadCartridges() {
       const self = this;
 
       let webdav = new WebDav(self.config, self.ConfigManager),
-        currentRoot = self.config.basePath || process.cwd(),
-        archiveName = 'cartriges_' + self.config.codeVersion + '.zip';
+        archiveName = 'cartriges_' + self.config.codeVersion + '.zip',
+        cartridges = self.getCartridges();
 
-      return (function () {
-        Log.info(chalk.cyan(`Creating archive of all cartridges.`));
-        return self.compress(path.join(currentRoot, CARTRIDGES_FOLDER), archiveName, self.config.cartridge.map(name => name + "/**"));
-      })().then(function () {
+      Log.info(chalk.cyan(`Creating archive of ${cartridges.length} cartridges: ${cartridges.join(", ")}`));
+
+      return self.compress(self.getCartridgesPath(), archiveName, cartridges.map(name => name + "/**")).then(function () {
         Log.info(chalk.cyan(`Uploading archive.`));
         return webdav.put(archiveName, {
           fromTmpDir: true
         });
       }).then(function () {
-        Log.info(chalk.cyan(`Unzipping archive.`));
+        Log.info(chalk.cyan(`Unzipping archive, code version: ${self.config.codeVersion}`));
         return webdav.unzip(archiveName);
       }).then(function () {
         Log.info(chalk.cyan(`Removing archive.`));
@@ -133,7 +157,7 @@
 
       let webdav = new WebDav(self.config, self.ConfigManager),
         bm = new BM(self.config, self.ConfigManager),
-        currentRoot = self.config.basePath || process.cwd(),
+        currentRoot = this.getCurrentRoot(),
         archiveName = 'sites_' + self.config.codeVersion + '.zip',
         rootPrefix = path.basename(archiveName, '.zip') + '/';
 
@@ -408,13 +432,24 @@
         });
     }
 
+    replaceRevisionNumber() {
+      let cartridgesDir = this.getCartridgesPath();
+
+      this.getCartridges(true).forEach(cartridge => {
+        let revFilePath = path.join(cartridgesDir, cartridge, "cartridge", "templates", "resources", "revisioninfo.properties");
+
+        if (fs.existsSync(revFilePath)) {
+          fs.writeFileSync(revFilePath, fs.readFileSync(revFilePath).toString().replace(/revisioninfo\.revisionnumber=.+/, "revisioninfo.revisionnumber=" + this.config.codeVersion))
+        }
+      })
+    }
+
     replaceTemplateInfo() {
       const self = this;
 
       return new Promise(function (replaceResolve, replaceReject) {
         if (!self.config.hasOwnProperty('templateReplace')) {
           Log.info(chalk.cyan('Skipping template replace.'));
-          Log.warn(`Your configuration profile does not contain optional property templateReplace`);
           return replaceResolve();
         }
 
@@ -467,7 +502,7 @@
       }
 
       let bm = new BM(self.config, self.ConfigManager),
-        currentRoot = self.config.basePath || process.cwd();
+        currentRoot = this.getCurrentRoot();
 
       currentRoot = currentRoot + this.SITES_META_FOLDER + META_FOLDER;
 
@@ -638,10 +673,9 @@
     merge(pattern = this.config._[1], out = this.config.out) {
       const xmlm = require("xmlappend");
 
-      let currentRoot = (this.config.basePath || process.cwd()) + this.SITES_META_FOLDER;
       let dir;
 
-      return globby(path.join(currentRoot, pattern)).then(files => {
+      return globby(path.join(this.getCurrentRoot(), this.SITES_META_FOLDER, pattern)).then(files => {
 
         return Promise.all(files.map(file => {
           dir = path.dirname(file);

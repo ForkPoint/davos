@@ -5,8 +5,8 @@
   const DEFAULT_CONFIG_NAME = 'davos.json',
     TMP_DIR = "tmp",
     CONFIG_PROPERTIES = {
-      required: ['hostname', 'username', 'password', 'cartridge', 'codeVersion'],
-      optional: ['exclude', 'templateReplace']
+      required: ['hostname', 'username', 'password', 'codeVersion'],
+      optional: ['exclude', 'cartridge']
     },
     GLOB_IGNORED = [
       "**/.git/**",
