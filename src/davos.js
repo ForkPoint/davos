@@ -433,16 +433,26 @@
         });
     }
 
-    replaceRevisionNumber() {
-      let cartridgesDir = this.getCartridgesPath();
+    /**
+     * Replace a placeholder in all files matching pattern with the current code version defined in davos.json.
+     * 
+     * @param {string} pattern Starts from project root or cwd
+     * @param {string} placeholder A string to look for
+     */
+    replaceRevisionNumber(pattern, placeholder = "@BUILD_NUMBER@") {
+      const regex = new RegExp(placeholder, "g");
 
-      this.getCartridges(true).forEach(cartridge => {
-        let revFilePath = path.join(cartridgesDir, cartridge, "cartridge", "templates", "resources", "revisioninfo.properties");
+      return globby(this.getCurrentRoot() + "/" + pattern).then(files => {
+        
+        files.forEach(file => {
+          let content = fs.readFileSync(file).toString();
 
-        if (fs.existsSync(revFilePath)) {
-          fs.writeFileSync(revFilePath, fs.readFileSync(revFilePath).toString().replace(/revisioninfo\.revisionnumber=.+/, "revisioninfo.revisionnumber=" + this.config.codeVersion))
-        }
-      })
+          if (~content.search(placeholder)) {
+            fs.writeFileSync(file, content.replace(regex, this.config.codeVersion));
+          }
+
+        })
+      });
     }
 
     replaceTemplateInfo() {
