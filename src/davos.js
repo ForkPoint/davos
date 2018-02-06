@@ -15,6 +15,7 @@
     Queue = require('sync-queue'),
     chokidar = require('chokidar'),
     md5File = require('md5-file'),
+    merger = require("./merger"),
     xmldoc = require('xmldoc');
 
   // Locals
@@ -550,7 +551,7 @@
       const x = require("xpath");
       const xdom = require("xmldom");
       const template = fs.readFileSync(__dirname + "/../resources/" + cfg.template + ".template").toString();
-      const filepath = path.join((this.config.basePath || process.cwd()), this.SITES_META_FOLDER, fpath);
+      const filepath = path.isAbsolute(fpath) ? fpath : path.join((this.config.basePath || process.cwd()), this.SITES_META_FOLDER, fpath);
 
       return new Promise((r, e) => {
         fs.readFile(filepath, (err, xml) => {
@@ -564,7 +565,7 @@
           let nodes = x.select(xpath, document);
 
           Promise.all(nodes.map(node => new Promise((fp, fe) => cfg.persist(node, fp, fe, out, template)))).then(results => {
-            r();
+            r(results);
           }).catch(e);
         });
       });
@@ -578,7 +579,7 @@
         persist: (node, resolve, reject, out, template) => {
           let library = node.parentNode;
 
-          fs.writeFile(out + "/library." + node.getAttribute("content-id") + "." + (this.config.projectID || "projectID") + ".xml", template.replace("{{ libraryid }}", library.hasAttribute("library-id") ? ('library-id="' + library.getAttribute("library-id") + '"') : "").replace("{{ objects }}", (function (replacement) {
+          fs.writeFile(out + "/library." + node.getAttribute("content-id") + "." + (this.config.projectID || "projectID") + ".xml", template.replace("{{ libraryid }}", library.hasAttribute("library-id") ? library.getAttribute("library-id") : "").replace("{{ objects }}", (function (replacement) {
             return () => replacement;
           })(node.toString())), function (err) {
             err ? reject(err) : resolve()
@@ -670,38 +671,26 @@
       });
     }
 
+    /**
+     * Merge a bunch of xml files with the same root element into a bundle.
+     * 
+     * @param {string} pattern Starts from  sites/site_template/<pattern>
+     * @param {string} out A path where to output the bundle, if relative starts from cwd.
+     */
     merge(pattern = this.config._[1], out = this.config.out) {
-      const xmlm = require("xmlappend");
-
       let dir;
 
-      return globby(path.join(this.getCurrentRoot(), this.SITES_META_FOLDER, pattern)).then(files => {
+      return new Promise((r, e) => {
+        globby(path.join(this.getCurrentRoot(), this.SITES_META_FOLDER, pattern)).then(files => {
+          dir = path.dirname(files[0]);
 
-        return Promise.all(files.map(file => {
-          dir = path.dirname(file);
-
-          return new Promise((r, e) => {
-            fs.readFile(file, (err, xml) => {
-              if (err) {
-                return e(err);
-              }
-
-              r(xml.toString());
+          merger.merge(this, files).then(result => {
+            fs.writeFile(out || (dir + "/bundle.xml"), result, function (err) {
+              err ? e(err) : r();
             });
-          });
-        })).then(contents => {
-
-          if (dir) {
-            return new Promise((r, e) => {
-              fs.writeFile(out || (dir + "/bundle.xml"), xmlm(...contents.filter(c => !!c)), function (err) {
-                err ? e(err) : r();
-              });
-            });
-          }
-
-          return Promise.resolve();
+          }).catch(e);
         });
-      });
+      })
     }
 
     splitSlotBundle(fpath, out) {
