@@ -16,6 +16,7 @@
     chokidar = require('chokidar'),
     md5File = require('md5-file'),
     merger = require("./merger"),
+    splitter = require("./splitter"),
     xmldoc = require('xmldoc');
 
   // Locals
@@ -557,128 +558,8 @@
       });
     }
 
-    splitBundle(fpath, xpath, out, cfg) {
-      const x = require("xpath");
-      const xdom = require("xmldom");
-      const template = fs.readFileSync(__dirname + "/../resources/" + cfg.template + ".template").toString();
-      const filepath = path.isAbsolute(fpath) ? fpath : path.join((this.config.basePath || process.cwd()), this.SITES_META_FOLDER, fpath);
-
-      return new Promise((r, e) => {
-        fs.readFile(filepath, (err, xml) => {
-          if (err) {
-            return e(err);
-          }
-
-          out = out || path.dirname(filepath);
-
-          let document = new xdom.DOMParser().parseFromString(xml.toString().replace('xmlns="' + cfg.ns + '"', ''));
-          let nodes = x.select(xpath, document);
-
-          Promise.all(nodes.map(node => new Promise((fp, fe) => cfg.persist(node, fp, fe, out, template)))).then(results => {
-            r(results);
-          }).catch(e);
-        });
-      });
-    }
-
-    // fpath must point to a library.xml file
-    splitLibraryBundle(fpath = this.config._[1], out = this.config.out) {
-      return this.splitBundle(fpath, "//content", out, {
-        template: "library",
-        ns: "http://www.demandware.com/xml/impex/library/2006-10-31",
-        persist: (node, resolve, reject, out, template) => {
-          let library = node.parentNode;
-
-          fs.writeFile(out + "/library." + node.getAttribute("content-id") + "." + (this.config.projectID || "projectID") + ".xml", template.replace("{{ libraryid }}", library.hasAttribute("library-id") ? library.getAttribute("library-id") : "").replace("{{ objects }}", (function (replacement) {
-            return () => replacement;
-          })(node.toString())), function (err) {
-            err ? reject(err) : resolve()
-          });
-        }
-      });
-    }
-
-    splitMetaBundle(fpath = this.config._[1], xpath = "/metadata/*", out = this.config.out) {
-      function cloneAttribute(cloneInstance, source, attribute) {
-        let id = attribute.getAttribute("attribute-id");
-        let attrType;
-
-        switch (cloneInstance.nodeName) {
-          case "custom-type":
-            attrType = "";
-            break;
-
-          case "type-extension":
-            attrType = (attribute.getAttribute("system") === "true" ? "system" : "custom") + "-";
-            break;
-        }
-
-        Array.from(source.getElementsByTagName(attrType + "attribute-definitions")[0].childNodes)
-          .filter(ad => ad.nodeName === "attribute-definition" && ad.getAttribute("attribute-id") === id)
-          .forEach(ad => {
-            cloneInstance.getElementsByTagName(attrType + "attribute-definitions")[0]
-              .appendChild(ad.cloneNode(true));
-          });
-      }
-
-      return this.splitBundle(fpath, xpath, out, {
-        template: "metadata",
-        ns: "http://www.demandware.com/xml/impex/metadata/2006-10-31",
-        persist: (node, resolve, reject, out, template) => {
-          switch (node.nodeName) {
-            case "custom-type":
-            case "type-extension":
-              break;
-
-            default:
-              return Log.warn(chalk.yellow("Selected element was not a custom-type or type-extension - skipping."));
-          }
-
-          let clone = node.cloneNode();
-
-          Array.from(node.childNodes).forEach(child => {
-            let childClone;
-
-            switch (child.nodeName) {
-              case "system-attribute-definitions":
-              case "custom-attribute-definitions":
-              case "attribute-definitions":
-              case "group-definitions":
-                childClone = child.cloneNode();
-                break;
-
-              default:
-                childClone = child.cloneNode(true);
-            }
-
-            clone.appendChild(childClone);
-          });
-
-          // IMPORTANT: DO NOT modify "clone" and "node" variables within the promises !!!
-
-          Promise.all(Array.from((node.getElementsByTagName("group-definitions")[0] || {
-            childNodes: []
-          }).childNodes).filter(group => group.nodeName === "attribute-group")
-            .map(group => new Promise((r1, e1) => {
-
-              let cloneInstance = clone.cloneNode(true);
-
-              // no need to check if group-definitions exists because if
-              // code has reached this point it means it does.
-              cloneInstance.getElementsByTagName("group-definitions")[0].appendChild(group.cloneNode(true));
-
-              Array.from(group.childNodes)
-                .filter(attribute => attribute.nodeName === "attribute")
-                .map(attribute => {
-                  cloneAttribute(cloneInstance, node, attribute);
-                });
-
-              fs.writeFile(out + "/" + (cloneInstance.nodeName === "custom-type" ? "custom" : "system") + "." + cloneInstance.getAttribute("type-id") + "." + (this.config.projectID || "projectID") + "." + group.getAttribute("group-id") + ".xml", template.replace("{{ objects }}", cloneInstance.toString()), function (err) {
-                err ? e1(err) : r1("done");
-              });
-            }))).then(resolve).catch(reject);
-        }
-      });
+    split(fpath = this.config._[1], out = this.config.out) {
+      return splitter.split(this, fpath, out);
     }
 
     /**
@@ -692,6 +573,10 @@
 
       return new Promise((r, e) => {
         globby(path.join(this.getCurrentRoot(), this.SITES_META_FOLDER, pattern)).then(files => {
+          if (!files.length) {
+            return r();
+          }
+
           dir = path.dirname(files[0]);
 
           merger.merge(this, files).then(result => {
@@ -702,12 +587,6 @@
         });
       })
     }
-
-    splitSlotBundle(fpath, out) {
-      // TODO implement
-      throw "Not implemented yet";
-    }
-
   }
 
   module.exports = Davos;

@@ -1,6 +1,7 @@
 const xmlm = require("xmlappend");
 const fs = require("fs");
 const path = require("path");
+const splitter = require("./splitter");
 
 function escapeReplacement(string) {
   return string.replace(/\$/g, "$$$");
@@ -39,7 +40,7 @@ exports.processors = {
     let template = null;
 
     return Promise.all(files.map(filename => {
-      return davos.splitBundle(filename, "/services/*", null, {
+      return splitter.splitBundle(davos, filename, "/services/*", null, {
         template: "services",
         ns: "http://www.demandware.com/xml/impex/services/2014-09-26",
         persist: (node, resolve, reject, out, xmltemplate) => {
@@ -85,7 +86,7 @@ exports.processors = {
     let template = null;
 
     return Promise.all(files.map(filename => {
-      return davos.splitBundle(filename, "/library/*", null, {
+      return splitter.splitBundle(davos, filename, "/library/*", null, {
         template: "library",
         ns: "http://www.demandware.com/xml/impex/library/2006-10-31",
         persist: (node, resolve, reject, out, xmltemplate) => {
@@ -115,5 +116,28 @@ exports.processors = {
       
       return Promise.resolve(result);
     });
-  }
+  },
+  promotions: function (davos, files, rootElement) {
+    let template = null;
+
+    return Promise.all(files.map(filename => {
+      return splitter.splitBundle(davos, filename, "/promotions/*", null, {
+        template: "promotions",
+        ns: "http://www.demandware.com/xml/impex/promotion/2008-01-31",
+        persist: (node, resolve, reject, out, xmltemplate) => {
+          if (node) {
+            template = xmltemplate;
+            resolve(node);
+          }
+        }
+      });
+    })).then(nodes => {
+      nodes = [].concat.apply([], nodes); // flatten array of arrays
+      let weights = ["campaign", "promotion", "promotion-campaign-assignment"];
+
+      return Promise.resolve(template.replace("{{ objects }}", nodes.sort((a, b) => {
+        return weights.indexOf(a.nodeName) - weights.indexOf(b.nodeName);
+      }).map(node => node.toString()).join("")));
+    });
+  },
 }
