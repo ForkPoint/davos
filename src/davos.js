@@ -205,14 +205,14 @@
     activateCodeVersion() {
       const self = this;
 
-      let webdav = new WebDav(self.config, self.ConfigManager);
+      let bm = new BM(self.config, self.ConfigManager);
 
       return (function () {
         Log.info(chalk.cyan(`Logging in to Business Manager.`));
-        return webdav.bmLogin();
+        return bm.login();
       })().then(function () {
-        Log.info(chalk.cyan(`Activating code version.`));
-        return webdav.activateCodeVersion();
+        Log.info(chalk.cyan(`Activating code version [${self.config.codeVersion}]`));
+        return bm.activateCodeVersion();
       }, function (err) {
         Log.error(err);
         return Promise.reject(err);
