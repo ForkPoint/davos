@@ -304,12 +304,12 @@
      */
     activateCodeVersion() {
       const self = this;
-
+      
       return new Promise(function (resolve, reject) {
         let options = {
-          uri: '/ViewCodeDeployment-Activate',
+          uri: self.bmTools.appendCSRF('/ViewCodeDeployment-Activate'),
           form: {
-            CodeVersionID: self.conf.codeVersions
+            CodeVersionID: self.config.codeVersion
           }
         };
 
