@@ -3,8 +3,8 @@
 
   // Constants
   const MAX_ATTEMPTS = 3,
-    RETRY_DELAY = 300,
-    REQUEST_TIMEOUT = 15000;
+    RETRY_DELAY = 3000,
+    REQUEST_TIMEOUT = 60000;
 
   // Locals
   const ConfigManager = require('./config-manager'),

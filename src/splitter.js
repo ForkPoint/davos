@@ -1,8 +1,20 @@
 const fs = require("fs");
 const path = require("path");
+const log = require('./logger');
 
 function absolutePath(davos, fpath) {
-  return path.isAbsolute(fpath) ? fpath : path.join((davos.config.basePath || process.cwd()), davos.SITES_META_FOLDER, fpath);
+  let source;
+  if(path.isAbsolute(fpath)) {
+    source = fpath;
+  } else {
+    if(davos.config.basePath) {
+      source = path.join(davos.config.basePath, davos.SITES_META_FOLDER, fpath);
+    } else {
+      source = path.join( process.cwd(), fpath );
+    }
+
+  }
+  return source;
 }
 
 exports.splitBundle = function (davos, fpath, xpath, out, cfg) {
@@ -64,7 +76,7 @@ exports.processors = {
       persist: (node, resolve, reject, out, template) => {
         let library = node.parentNode;
 
-        fs.writeFile(out + "/library." + node.getAttribute("content-id") + "." + (davos.config.projectID || "projectID") + ".xml", template.replace("{{ libraryid }}", library.hasAttribute("library-id") ? library.getAttribute("library-id") : "").replace("{{ objects }}", (function (replacement) {
+        fs.writeFile(out + "/library." + node.getAttribute("content-id") + ".xml", template.replace("{{ libraryid }}", library.hasAttribute("library-id") ? library.getAttribute("library-id") : "").replace("{{ objects }}", (function (replacement) {
           return () => replacement;
         })(node.toString())), function (err) {
           err ? reject(err) : resolve()
@@ -184,7 +196,7 @@ exports.processors = {
         resolve();
       }
     }).then(() => {
-      
+
       return Promise.all(Object.keys(nodes.campaign).map(id => {
         let objects = nodes.campaign[id].toString();
         let assignments = "";

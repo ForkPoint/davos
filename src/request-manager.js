@@ -13,11 +13,10 @@
       'ECONNREFUSED'
     ],
     REQUEST_DEFAULTS = {
-      pool: {
-        maxSockets: Infinity
-      },
       strictSSL: false,
+      forever: true,
       agent: false,
+      pool: false,
       followRedirect: false,
       jar: false
     };
@@ -61,7 +60,7 @@
         }
 
         options.headers = options.headers || {};
-
+        var datachunks = 0;
         var url = require('url').parse(options.baseUrl);
         options.headers.Origin = url.protocol + '//' + url.hostname;
         req = request(options, function (error, response, body) {
@@ -100,7 +99,7 @@
           let e = new Error('Error occurred...' + error.code);
           e.code = error.code;
           if (_.contains(ERR_CODES, error.code)) {
-            Log.error('Got ' + error.code + ' scheduling a retry after ' + retryDelay + 'ms');
+            Log.error('Got ' + error.code + ' scheduling a retry after ' + (retryDelay/1000) + 's');
             (function () {
               return new Promise(function (retryResolve, retryReject) {
                 setTimeout(function () {

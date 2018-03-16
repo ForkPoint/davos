@@ -19,8 +19,7 @@
   const fs = require('fs'),
     globby = require('globby'),
     path = require('path'),
-    chalk = require('chalk'),
-    Queue = require('sync-queue');
+    chalk = require('chalk');
 
   // Locals
   const Log = require('./logger');

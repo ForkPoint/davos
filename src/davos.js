@@ -26,10 +26,14 @@
     Log = require('./logger');
 
   class Davos {
-    constructor(config, ConfigManagerInstance) {
-      this.ConfigManager = ConfigManagerInstance || new ConfigManager();
+    constructor(config, configManagerInstance) {
 
-      this.syncConfig(config);
+      if(configManagerInstance !== false) {
+        this.ConfigManager = configManagerInstance || new ConfigManager();
+        this.syncConfig(config);
+      } else {
+        this.config = config;
+      }
 
       return this;
     }
@@ -103,7 +107,7 @@
 
     /**
      * Get cartridge names in an array.
-     * 
+     *
      * @param {bool} all whether to return all cartridges or only selected in config
      */
     getCartridges(all = false) {
@@ -436,7 +440,7 @@
 
     /**
      * Replace a placeholder in all files matching pattern with the current code version defined in davos.json.
-     * 
+     *
      * @param {string} pattern Starts from project root or cwd
      * @param {string} placeholder A string to look for
      */
@@ -444,7 +448,7 @@
       const regex = new RegExp(placeholder, "g");
 
       return globby(this.getCurrentRoot() + "/" + pattern).then(files => {
-        
+
         files.forEach(file => {
           let content = fs.readFileSync(file).toString();
 
@@ -564,7 +568,7 @@
 
     /**
      * Merge a bunch of xml files with the same root element into a bundle.
-     * 
+     *
      * @param {string} pattern Starts from  sites/site_template/<pattern>
      * @param {string} out A path where to output the bundle, if relative starts from cwd.
      */
