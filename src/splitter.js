@@ -159,6 +159,23 @@ exports.processors = {
                 cloneAttribute(cloneInstance, node, attribute);
               });
 
+            /**
+             * if there are no extracted attributes then remove the entire
+             * definitions node because dw complains when its empty
+             */
+            Array.from(cloneInstance.childNodes).forEach(node => {
+              if (!node.nodeName) return;
+
+              switch (node.nodeName) {
+                case "custom-attribute-definitions":
+                case "system-attribute-definitions":
+                  if (!Object.keys(node.childNodes).length) {
+                    cloneInstance.removeChild(node);
+                  }
+                  break;
+              }
+            })
+
             fs.writeFile(out + "/" + (cloneInstance.nodeName === "custom-type" ? "custom" : "system") + "." + cloneInstance.getAttribute("type-id") + "." + (davos.config.projectID || "projectID") + "." + group.getAttribute("group-id") + ".xml", template.replace("{{ objects }}", cloneInstance.toString()), function (err) {
               err ? e1(err) : r1("done");
             });
