@@ -84,6 +84,21 @@ exports.processors = {
       }
     });
   },
+  'slot-configurations': function (davos, fpath, out) {
+    return exports.splitBundle(davos, fpath, "//slot-configuration", out, {
+      template: "slots",
+      ns: "http://www.demandware.com/xml/impex/slot/2008-09-08",
+      persist: (node, resolve, reject, out, template) => {
+        let slot = node.parentNode;
+
+        fs.writeFile(out + "/slots." + node.getAttribute("slot-id") + ".xml", template.replace("{{ objects }}", (function (replacement) {
+          return () => replacement;
+        })(node.toString())), function (err) {
+          err ? reject(err) : resolve()
+        });
+      }
+    });
+  },
   metadata: function (davos, fpath, out) {
     function cloneAttribute(cloneInstance, source, attribute) {
       let id = attribute.getAttribute("attribute-id");

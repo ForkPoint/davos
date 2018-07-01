@@ -1,0 +1,32 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "Davos Watch",
+			"program": "${workspaceFolder}/../davos-cli/index.js",
+			"cwd": "${workspaceFolder}/../davos-sample-project",
+			"args": [
+				"watch"
+            ],
+            "outputCapture": "std",
+            "internalConsoleOptions": "openOnSessionStart"
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "Davos Create",
+			"program": "${workspaceFolder}/../davos-cli/index.js",
+			"cwd": "${workspaceFolder}/../davos-sample-project",
+			"args": [
+				"create"
+            ],
+            "outputCapture": "std",
+            "internalConsoleOptions": "openOnSessionStart"
+		}
+    ]
+}
