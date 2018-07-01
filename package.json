@@ -3,6 +3,9 @@
   "version": "2.0.0-alpha.9",
   "description": "Salesforce Commerce Cloud (Demandware) - Configuration Manager and Continuous Integration deployment tools",
   "main": "index.js",
+  "bin": {
+    "davos": "index.js"
+  },
   "scripts": {
     "test": "mocha --opts scripts/mocha.opts src/**/*-test.js",
     "lint": "eslint .",
@@ -19,7 +22,9 @@
     "synch",
     "eclipse",
     "watch",
-    "isml"
+    "isml",
+    "continuous integration",
+    "commerce cloud"
   ],
   "author": "ForkPoint",
   "license": "MIT",
@@ -52,7 +57,10 @@
     "xmldoc": "^1.1.0",
     "xmldom": "^0.1.27",
     "xpath": "0.0.27",
-    "yazl": "^2.4.3"
+    "yazl": "^2.4.3",
+    "prompt": "^1.0.0",
+    "yargonaut": "^1.1.2",
+    "yargs": "^12.0.1"
   },
   "devDependencies": {
     "chai": "~4.1.2",
