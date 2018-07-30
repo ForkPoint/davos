@@ -3,8 +3,13 @@
   "version": "2.0.0-alpha.9",
   "description": "Salesforce Commerce Cloud (Demandware) - Configuration Manager and Continuous Integration deployment tools",
   "main": "index.js",
+  "files": [
+    "LICENSE",
+    "index.js",
+    "bin"
+  ],
   "bin": {
-    "davos": "index.js"
+    "davos": "./bin/davos.js"
   },
   "scripts": {
     "test": "mocha --opts scripts/mocha.opts src/**/*-test.js",

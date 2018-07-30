@@ -32,7 +32,7 @@
   // Imports
   const prompt = require('prompt'),
     chalk = require('chalk'),
-    Davos = require('./davos'),
+    Davos = require('../index'),
     Log = Davos.Logger;
 
   /**

@@ -3,7 +3,7 @@
 
   // Imports
   const chalk = require('chalk'),
-    Davos = require('./davos'),
+    Davos = require('../index'),
     ConfigManager = new Davos.ConfigManager(),
     Log = Davos.Logger;
 
