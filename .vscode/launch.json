@@ -20,7 +20,7 @@
             "type": "node",
             "request": "launch",
             "name": "Davos Create",
-			"program": "${workspaceFolder}/../davos-cli/index.js",
+			"program": "${workspaceFolder}/index.js",
 			"cwd": "${workspaceFolder}/../davos-sample-project",
 			"args": [
 				"create"
