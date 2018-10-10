@@ -1,6 +1,6 @@
 /* eslint no-unused-vars:0, no-unused-expressions:0 */
 const yargs = require('yargs'),
-Davos = require('davos');
+Davos = require('../../../index');
 Log = Davos.Logger;
 exports.command = 'split'
 exports.aliases = ['s']

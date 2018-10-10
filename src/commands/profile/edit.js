@@ -1,6 +1,6 @@
 /* eslint no-unused-vars:0, no-unused-expressions:0 */
 const yargs = require('yargs'),
-Davos = require('../../davos'),
+Davos = require('../../../index'),
 ConfigEditor = require('../../config-editor');
 exports.command = 'edit [name]'
 exports.aliases = ['e']
