@@ -1,6 +1,6 @@
 /* eslint no-unused-vars:0, no-unused-expressions:0 */
 const yargs = require('yargs'),
-Davos = require('davos');
+Davos = require('../../../index');
 exports.command = 'sites'
 exports.aliases = ['site']
 exports.desc = 'Upload sites metadata and do full site import'

@@ -100,11 +100,13 @@
 
       currentRoot = path.join(currentRoot, "/cartridges")
 
-      let paths = globby.sync(['**/cartridge/'], {
+      let paths = globby.sync(['**/cartridge'], {
         cwd: currentRoot,
         dot: true,
         nosort: true,
         absolute: true,
+        deep: 1,
+        onlyDirectories: true,
         ignore: GLOB_IGNORED
       });
 
@@ -115,7 +117,7 @@
 
         result.push(relativePath);
       });
-
+      
       return result;
     }
 
