@@ -155,7 +155,7 @@
     editProfile () {
       const self = this;
 
-      let profile = self.config._[1],
+      let profile = self.config.name,
         profiles = self.ConfigManager.loadConfiguration().profiles,
         foundProfile = profiles.find(x => x.profile === profile),
         len = profiles.length;
