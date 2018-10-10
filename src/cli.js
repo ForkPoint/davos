@@ -68,9 +68,9 @@
 
     .example('davos create', 'create the config file')
     .example('davos insert', 'insert new profile in the config file')
-    .example('davos list', 'list profiles in the config file')
     .example('davos profile insert [name of profile]', 'edit the specified profile in the config file')
     .example('davos profile switch [name of profile]', 'switch to specified profile in the config file')
+    .example('davos profile list', 'list profiles in the config file')
     .example('davos sync --delete [boolean]', 'sync the cartridges on the server with your local cartridges. If delete option is passed, the cartridges on the server that does not exist in your local cartridges will be deleted.')
     .example('davos upload cartridges --cartridge [path to cartridge]', 'upload all cartridges from your configuration or a specific single cartridge from your local cartridges')
     .example('davos upload sites --meta [path to meta]', 'import sites meta')
