@@ -396,21 +396,11 @@
           let cartridgesOnServerLen = cartridgesOnServer.length;
 
           for (let i = 0; i < cartridgesOnServerLen; i++) {
-            let currentServerCartridge = cartridgesOnServer[i],
-              localCartridgesLen = localCartridges.length;
-
-            for (let j = 0; j < localCartridgesLen; j++) {
-              let currentLocalCartridge = localCartridges[j],
-                hasMatchedCartridges = (currentServerCartridge === currentLocalCartridge);
-
-              if (hasMatchedCartridges) {
-                break;
+            let currentServerCartridge = cartridgesOnServer[i];
+              
+              if (!localCartridges.includes(currentServerCartridge)) {
+                differentCartridges.push(currentServerCartridge);
               }
-            }
-
-            if (!hasMatchedCartridges) {
-              differentCartridges.push(currentServerCartridge);
-            }
           }
 
           return new Promise(function (resolve, reject) {
