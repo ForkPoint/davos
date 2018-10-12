@@ -2,9 +2,9 @@
 const yargs = require('yargs'),
 Davos = require('../../../index');
 Log = Davos.Logger;
-exports.command = 'split'
-exports.aliases = ['s']
-exports.desc = 'Split metadata'
+exports.command = 'split';
+exports.aliases = ['s'];
+exports.desc = 'Split metadata';
 exports.builder = {
   out: {
     alias: 'o',
@@ -14,4 +14,4 @@ exports.builder = {
 exports.handler = (argv) => {
    Log.error("Metadata split in progress");
    new Davos.Core(argv, false).split();
-}
+};
