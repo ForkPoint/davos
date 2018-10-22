@@ -133,7 +133,7 @@
               stream.push(null);
             } else {
               // create file stream (default)
-              stream = fs.createReadStream((options.fromTmpDir ? (self.configManager.getTempDir() + "/") : "") + options.uri);
+              stream = fs.createReadStream((options.fromTmpDir ? (self.configManager.getTempDir() + "/") : "cartridges/") + options.uri);
             }
             stream.pipe(req);
           } catch (e) {

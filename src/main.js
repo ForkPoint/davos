@@ -230,7 +230,7 @@
 
       let queue = new Queue(),
         webdav = new WebDav(self.config, self.ConfigManager),
-        allCartridges = self.config.cartridge,
+        allCartridges = self.config.cartridge.map(cartridge => `cartridges/${cartridge}`),
         excludesWithDotFiles = self.config.exclude.concat([/[\/\\]\./]),
         watchHashList = [],
         isFirstUseFiles = true,
@@ -265,6 +265,11 @@
             Log.info(`File ${p} has been added`);
 
             queue.place(function () {
+              /** Remove 'cartridges/' substring from path. */
+              let newPath = p.split('\\');
+              newPath.shift();
+              p = newPath.join('\\');
+
               return webdav.put(p)
                 .then(function () {
                   Log.info(chalk.cyan(`Successfully uploaded: ${p}`));
@@ -281,6 +286,11 @@
             Log.info(`Directory ${p} has been added`);
 
             queue.place(function () {
+              /** Remove 'cartridges/' substring from path. */
+              let newPath = p.split('\\');
+              newPath.shift();
+              p = newPath.join('\\');
+
               return webdav.mkcol(p)
                 .then(function () {
                   Log.info(chalk.cyan(`Successfully uploaded: ${p}`));
@@ -309,6 +319,11 @@
             changedFile.md5sum = hash;
             Log.info(`File ${p} has been changed`);
             queue.place(function () {
+              /** Remove 'cartridges/' substring from path. */
+              let newPath = p.split('\\');
+              newPath.shift();
+              p = newPath.join('\\');
+
               return webdav.put(p)
                 .then(function () {
                   Log.info(chalk.cyan(`Successfully uploaded: ${p}`));
@@ -331,6 +346,11 @@
           Log.info(`File ${path} has been removed`);
 
           queue.place(function () {
+            /** Remove 'cartridges/' substring from path. */
+            let newPath = path.split('\\');
+            newPath.shift();
+            path = newPath.join('\\');
+
             return webdav.delete(path)
               .then(function () {
                 Log.info(chalk.cyan(`Successfully deleted: ${path}`));
@@ -345,6 +365,11 @@
           Log.info(`Directory ${path} has been removed`);
 
           queue.place(function () {
+            /** Remove 'cartridges/' substring from path. */
+            let newPath = path.split('\\');
+            newPath.shift();
+            path = newPath.join('\\');
+            
             return webdav.delete(path)
               .then(function () {
                 Log.info(chalk.cyan(`Successfully deleted: ${path}`));
