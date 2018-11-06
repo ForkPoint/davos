@@ -12,7 +12,6 @@ exports.builder = {
   }
 };
 exports.handler = (argv) => {
-   Log.error("Metadata split in progress");
-   const splitter = require("../../splitter");
-   return splitter.split({config: {basePath: null}}, fpath = argv._[2], out = argv.out);
+   Log.info("Metadata split in progress");
+   new Davos.Core({command: {in: argv.in, out: argv.out}}, false).split();
 };

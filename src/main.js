@@ -27,7 +27,7 @@
 
   class Davos {
     constructor(config, configManagerInstance) {
-
+      config = config || {}
       if(configManagerInstance !== false) {
         this.ConfigManager = configManagerInstance || new ConfigManager();
         this.syncConfig(config);
@@ -126,6 +126,9 @@
       return this.config.basePath || process.cwd();
     }
 
+	/**
+	 * Upload cartridges
+	 */
     uploadCartridges() {
       const self = this;
 
@@ -158,6 +161,10 @@
       });
     }
 
+	/**
+	 * Upload sites metadata
+	 * @param {array} arrayWithGlob 
+	 */
     uploadSitesMeta(arrayWithGlob) {
       const self = this;
 
@@ -206,6 +213,9 @@
       });
     }
 
+	/**
+	 * Activate code version
+	 */
     activateCodeVersion() {
       const self = this;
 
@@ -223,6 +233,9 @@
       });
     }
 
+	/**
+	 * Watch files for changes
+	 */
     watch() {
       const self = this;
 
@@ -385,6 +398,9 @@
         });
     }
 
+	/**
+	 * Sinchronice server site files with local version
+	 */
     sync() {
       const self = this;
 
@@ -524,6 +540,10 @@
       });
     }
 
+	/**
+	 * Upload metadata for site
+	 * @param {string} pattern 
+	 */
     uploadMeta(pattern = this.config.pattern) {
       const self = this;
       const filename = "davos-meta-bundle.xml";
@@ -577,21 +597,55 @@
       });
     }
 
-    split(fpath = this.config._[1], out = this.config.out) {
-      return splitter.split(this, fpath, out);
-    }
+	/**
+	 * SPLIT META
+	 */
+    split(paramIn = null, paramOut = null) {
+      if(paramIn !== null && paramOut !== null){
+        this.config.command = {in: paramIn, out: paramOut};
+      } else {
+          if(this.checkForParametersInConfig(this.config.command, 'in', 'out') === false){
+            return;
+          }
+      }
+
+      const fs = require('fs');
+      const bundle = path.join(this.getCurrentRoot(),this.config.command.in);
+      const out =  path.join(this.getCurrentRoot(),this.config.command.out);
+      if(this.checkPath(bundle, out) === false){
+        return;
+      }
+      return splitter.split(this, bundle, out);
+}
 
     /**
      * Merge a bunch of xml files with the same root element into a bundle.
-     *
-     * @param {string} pattern Starts from  sites/site_template/<pattern>
-     * @param {string} out A path where to output the bundle, if relative starts from cwd.
      */
-    merge(pattern = this.config._[1], out = this.config.out) {
-      let dir;
+    merge(paramIn = null, paramOut = null) {
+      if(paramIn !== null && paramOut !== null){
+        this.config.command = {in: paramIn, out: paramOut};
+      } else {
+          if(this.checkForParametersInConfig(this.config.command, 'in', 'out') === false){
+            return;
+          }
+      }
 
+      const pattern = path.join(this.getCurrentRoot(), this.config.command.in);
+      const out = this.config.command.out;
+      const outPath = path.join(this.getCurrentRoot(), out);
+      const outWithoutFile = outPath.substring(0, outPath.lastIndexOf(path.sep));
+      let dir;
+      const fs = require('fs');
+      if (!fs.existsSync(pattern)) {
+          Log.error('Path for IN doesn`t exist! Please provide existing path.');
+          return;
+      }
+      if (!fs.existsSync(outWithoutFile)) {
+          Log.error('Path for OUT doesn`t exist! Please provide existing path.');
+          return;
+      }
       return new Promise((r, e) => {
-        globby(path.join(this.getCurrentRoot(), this.SITES_META_FOLDER, pattern)).then(files => {
+        globby(pattern).then(files => {
           if (!files.length) {
             return r();
           }
@@ -605,6 +659,24 @@
           }).catch(e);
         });
       })
+    }
+    checkForParametersInConfig(config, ...params){
+      for (let c = 0; c < params.length; c++){
+        if(!(params[c] in config) || config[params[c]] === undefined){
+           Log.error(`No paramenter added! Please provide ${params[c]} parameter.`);
+           return false;
+        }
+      }
+    }
+
+    checkPath(...params){
+      const fs = require('fs');
+      for (let c = 0; c < params.length; c++){
+        if (!fs.existsSync(params[c])) {
+            Log.error(`${params[c]} param doesn\`t exist! Please provide existing path.`);
+            return false;
+        }
+      }
     }
   }
 

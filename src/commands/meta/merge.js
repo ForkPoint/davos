@@ -11,5 +11,6 @@ exports.builder = {
   }
 };
 exports.handler = (argv) => {
-   new Davos.Core(argv, false).merge();
+   Log.info("Metadata merge in progress...");
+   new Davos.Core({command: {in: argv.in, out: argv.out}}, false).merge();
 };
