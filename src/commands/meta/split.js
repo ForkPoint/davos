@@ -13,5 +13,9 @@ exports.builder = {
 };
 exports.handler = (argv) => {
    Log.info("Metadata split in progress");
-   new Davos.Core({command: {in: argv.in, out: argv.out}}, false).split();
+   const params = {command: {in: argv.in, out: argv.out}}
+   if(argv.force){
+     params.command.force = true;
+   }
+   new Davos.Core(params, false).split();
 };

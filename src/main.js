@@ -600,19 +600,22 @@
 	/**
 	 * SPLIT META
 	 */
-    split(paramIn = null, paramOut = null) {
+    split(paramIn = null, paramOut = null, force = null) {
       if(paramIn !== null && paramOut !== null){
         this.config.command = {in: paramIn, out: paramOut};
+        if(force !== null && force == '--force') {
+          this.config.command.force = true;
+        }
       } else {
           if(this.checkForParametersInConfig(this.config.command, 'in', 'out') === false){
             return;
           }
       }
 
-      const fs = require('fs');
       const bundle = path.join(this.getCurrentRoot(),this.config.command.in);
       const out =  path.join(this.getCurrentRoot(),this.config.command.out);
-      if(this.checkPath(bundle, out) === false){
+      const bundleWithOutFile = bundle.substring(0, bundle.lastIndexOf(path.sep));
+      if(this.checkPath(bundleWithOutFile, out) === false){
         return;
       }
       return splitter.split(this, bundle, out);
@@ -621,9 +624,12 @@
     /**
      * Merge a bunch of xml files with the same root element into a bundle.
      */
-    merge(paramIn = null, paramOut = null) {
+    merge(paramIn = null, paramOut = null, force = null) {
       if(paramIn !== null && paramOut !== null){
-        this.config.command = {in: paramIn, out: paramOut};
+		this.config.command = {in: paramIn, out: paramOut};
+		if(force !== null && force == '--force') {
+			this.config.command.force = true;
+		}
       } else {
           if(this.checkForParametersInConfig(this.config.command, 'in', 'out') === false){
             return;
@@ -635,14 +641,8 @@
       const outPath = path.join(this.getCurrentRoot(), out);
       const outWithoutFile = outPath.substring(0, outPath.lastIndexOf(path.sep));
       let dir;
-      const fs = require('fs');
-      if (!fs.existsSync(pattern)) {
-          Log.error('Path for IN doesn`t exist! Please provide existing path.');
-          return;
-      }
-      if (!fs.existsSync(outWithoutFile)) {
-          Log.error('Path for OUT doesn`t exist! Please provide existing path.');
-          return;
+	  if(this.checkPath(pattern, outWithoutFile) === false){
+        return;
       }
       return new Promise((r, e) => {
         globby(pattern).then(files => {
@@ -673,8 +673,14 @@
       const fs = require('fs');
       for (let c = 0; c < params.length; c++){
         if (!fs.existsSync(params[c])) {
-            Log.error(`${params[c]} param doesn\`t exist! Please provide existing path.`);
-            return false;
+			
+			if(this.config.command.force !== undefined && this.config.command.force === true){
+				fs.mkdirSync(params[c]);
+			} else {
+				Log.error("Folder does not exist. Use --force to create it");
+				return false;
+			}
+            
         }
       }
     }

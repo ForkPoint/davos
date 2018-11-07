@@ -26,10 +26,15 @@
 
   let argv, activeConfig;
   let args = process.argv;
-  let commandParam = args[3];
   let configlessCommands = [undefined, 'create', '-h', '--help', 'split', 'merge'];
+  let isConfiglessCommand = false;
+  for (let p = 0; p < configlessCommands.length; p++){
+    if (args.indexOf(configlessCommands[p]) > -1) {
+        isConfiglessCommand = true;
+        break;
+	}
+  }
 
-  let isConfiglessCommand = configlessCommands.indexOf(commandParam) > -1;
 //   if (!isConfiglessCommand && !ConfigManager.isConfigExisting()) {
 //     Log.error(chalk.red(`\nCannot find configuration in [${process.cwd()}].`));
 //     return;
