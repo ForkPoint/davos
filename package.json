@@ -51,6 +51,7 @@
     "mergexml": "^1.1.2",
     "moment": "^2.22.2",
     "multimatch": "^2.1.0",
+    "prettify-xml": "^1.2.0",
     "pretty-data": "^0.40.0",
     "progress": "^2.0.0",
     "request": "^2.87.0",
