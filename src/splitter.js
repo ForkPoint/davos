@@ -49,6 +49,7 @@ exports.split = function (davos, path, out) {
   }
 
   const xdom = require("xmldom");
+  const prettifier = require('prettify-xml');
   let parser = new xdom.DOMParser();
 
   let child = 1; // start from 1 to skip <xml/>
@@ -64,42 +65,46 @@ exports.split = function (davos, path, out) {
   if (!exports.processors[nodeName]) {
     throw new Error("Splitting " + nodeName + " is currently not supported.");
   } else {
-    return exports.processors[nodeName](davos, path, out)
+    return exports.processors[nodeName](davos, path, out, prettifier)
   }
 }
 
 exports.processors = {
-  library: function (davos, fpath, out) {
+  library: function (davos, fpath, out, prettifier) {
     return exports.splitBundle(davos, fpath, "//content", out, {
       template: "library",
       ns: "http://www.demandware.com/xml/impex/library/2006-10-31",
       persist: (node, resolve, reject, out, template) => {
         let library = node.parentNode;
 
-        fs.writeFile(out + "/library." + node.getAttribute("content-id") + ".xml", template.replace("{{ libraryid }}", library.hasAttribute("library-id") ? library.getAttribute("library-id") : "").replace("{{ objects }}", (function (replacement) {
+        fs.writeFile(out + "/library." + node.getAttribute("content-id") + ".xml", prettifier(template.replace("{{ libraryid }}", library.hasAttribute("library-id") ? library.getAttribute("library-id") : "").replace("{{ objects }}", (function (replacement) {
           return () => replacement;
-        })(node.toString())), function (err) {
+        })(node.toString())), {
+          indent: davos.config.indentSize
+        }), function (err) {
           err ? reject(err) : resolve()
         });
       }
     });
   },
-  'slot-configurations': function (davos, fpath, out) {
+  'slot-configurations': function (davos, fpath, out, prettifier) {
     return exports.splitBundle(davos, fpath, "//slot-configuration", out, {
       template: "slots",
       ns: "http://www.demandware.com/xml/impex/slot/2008-09-08",
       persist: (node, resolve, reject, out, template) => {
         let slot = node.parentNode;
 
-        fs.writeFile(out + "/slots." + node.getAttribute("slot-id") + ".xml", template.replace("{{ objects }}", (function (replacement) {
+        fs.writeFile(out + "/slots." + node.getAttribute("slot-id") + ".xml", prettifier(template.replace("{{ objects }}", (function (replacement) {
           return () => replacement;
-        })(node.toString())), function (err) {
+        })(node.toString())), {
+          indent: davos.config.indentSize
+        }), function (err) {
           err ? reject(err) : resolve()
         });
       }
     });
   },
-  metadata: function (davos, fpath, out) {
+  metadata: function (davos, fpath, out, prettifier) {
     function cloneAttribute(cloneInstance, source, attribute) {
       let id = attribute.getAttribute("attribute-id");
       let attrType;
@@ -137,7 +142,13 @@ exports.processors = {
 
         let clone = node.cloneNode();
 
-        Array.from(node.childNodes).forEach(child => {
+        if (node.nodeName === "type-extension" && node.getAttribute("type-id") === "Basket") {
+          var greeting = 'Wazaaaaa';
+        }
+
+        Array.from(node.childNodes)
+        .filter(child => child.hasOwnProperty("nodeName"))
+        .forEach(child => {
           let childClone;
 
           switch (child.nodeName) {
@@ -189,16 +200,22 @@ exports.processors = {
                   }
                   break;
               }
-            })
-
-            fs.writeFile(out + "/" + (cloneInstance.nodeName === "custom-type" ? "custom" : "system") + "." + cloneInstance.getAttribute("type-id") + "." + (davos.config.projectID || "projectID") + "." + group.getAttribute("group-id") + ".xml", template.replace("{{ objects }}", cloneInstance.toString()), function (err) {
-              err ? e1(err) : r1("done");
             });
+
+            fs.writeFile(
+              out + "/" + (cloneInstance.nodeName === "custom-type" ? "custom" : "system") + "." + cloneInstance.getAttribute("type-id") + "." + (davos.config.projectID || "projectID") + "." + group.getAttribute("group-id").replace(' ', '') + ".xml",
+              prettifier(template.replace("{{ objects }}", cloneInstance.toString()), {
+                indent: davos.config.indentSize
+              }),
+              function (err) {
+                err ? e1(err) : r1("done");
+              }
+            );
           }))).then(resolve).catch(reject);
       }
     });
   },
-  promotions: function (davos, path, out) {
+  promotions: function (davos, path, out, prettifier) {
     let nodes = {
       campaign: {},
       promotion: {},
@@ -242,7 +259,9 @@ exports.processors = {
         objects += assignments;
 
         return new Promise((resolve, reject) => {
-          fs.writeFile(out + "/campaign." + id + ".xml", template.replace("{{ objects }}", objects), function (err) {
+          fs.writeFile(out + "/campaign." + id + ".xml", prettifier(template.replace("{{ objects }}", objects)), {
+            indent: davos.config.indentSize
+          }, function (err) {
             err ? reject(err) : resolve("done");
           });
         })

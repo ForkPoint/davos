@@ -11,7 +11,9 @@ exports.builder = {
   }
 };
 exports.handler = (argv) => {
-   Log.info("Metadata merge in progress...");
-   const params = {command: argv};
-   new Davos.Core(params, false).merge();
+  Log.info("Metadata merge in progress...");
+  const params = {
+    command: argv
+  };
+  new Davos.Core(params, false).merge();
 };
