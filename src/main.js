@@ -30,23 +30,23 @@
       config = config || {}
       if(configManagerInstance !== false) {
         this.ConfigManager = configManagerInstance || new ConfigManager();
-		if(Object.keys(this.ConfigManager.loadConfiguration().profiles).length > 0){
-			this.syncConfig(config);
-		} else {
-			if(Object.keys(config).length > 0){
-				if(this.checkConsoleParamsForDetails(config)){
-					this.ConfigManager.profiles = [{'active': true, config: config}];
-					this.syncConfig(config);
-				} else {
-					Log.error('No config file found. Pleace plovide BM details');
-				}
-			}
-		}
+        if(Object.keys(this.ConfigManager.loadConfiguration().profiles).length > 0){
+            this.syncConfig(config);
+        } else {
+            if(Object.keys(config).length > 0){
+                if(this.checkConsoleParamsForDetails(config)){
+                    this.ConfigManager.profiles = [{'active': true, config: config}];
+                    this.syncConfig(config);
+                } else {
+                    Log.error('No config file found. Pleace plovide BM details');
+                }
+            }
+        }
       } else {
         this.config = config;
       }
 
-      return this;
+        return this;
     }
 
     syncConfig(config) {
@@ -60,6 +60,7 @@
         this.SITES_META_FOLDER = '/sites/site_template'
       }
     }
+
 
     /**
      * @var string archiveName
@@ -174,7 +175,7 @@
 
 	/**
 	 * Upload sites metadata
-	 * @param {array} arrayWithGlob 
+	 * @param {array} arrayWithGlob
 	 */
     uploadSitesMeta(arrayWithGlob) {
       const self = this;
@@ -393,7 +394,7 @@
             let newPath = path.split('\\');
             newPath.shift();
             path = newPath.join('\\');
-            
+
             return webdav.delete(path)
               .then(function () {
                 Log.info(chalk.cyan(`Successfully deleted: ${path}`));
@@ -449,7 +450,7 @@
 
           for (let i = 0; i < cartridgesOnServerLen; i++) {
             let currentServerCartridge = cartridgesOnServer[i];
-              
+
               if (!localCartridges.includes(currentServerCartridge)) {
                 differentCartridges.push(currentServerCartridge);
               }
@@ -551,27 +552,32 @@
       });
     }
 
-	/**
-	 * Upload metadata for site
-	 * @params {object} object with params from gulp task 
-	 */
-    uploadMeta(params = null) {
-	  if(!this.config && params == null){
-		return;
-	  }
-	  if(params){
-		if(this.checkConsoleParamsForDetails(params)){
-			this.config = Object.assign({}, this.config, params);
-		} else {
-			Log.error('No config file found. Pleace plovide BM details');
-			return;
-		}
-	  }
+      /**
+       * Upload metadata for site
+       * @params {object} object with params from gulp task
+       */
+      uploadMeta(params = null) {
+          if (!this.config && params == null) {
+              return false;
+          }
+          if (params) {
+              if (!this.config) {
+                if (this.checkConsoleParamsForDetails(params)) {
+                    this.config = Object.assign({}, this.config, params);
+                } else {
+                    Log.error('No config file found. Pleace plovide BM details');
+                    return false;
+                }
+              } else {
+                this.config = Object.assign({}, this.config, params);
+              }
 
-      let pattern;
-      if(this.config.pattern){
-        pattern = this.config.pattern;
-	  }
+          }
+
+          let pattern;
+          if (this.config.pattern) {
+              pattern = this.config.pattern;
+          }
 
       this.ConfigManager.mergeConfiguration(params);
       const self = this;
@@ -580,7 +586,6 @@
       if (pattern === undefined) {
         pattern = "*";
       }
-
       let bm = new BM(self.config, self.ConfigManager),
         currentRoot = this.getCurrentRoot();
       this.SITES_META_FOLDER === undefined ? this.SITES_META_FOLDER = '/sites/site_template' : '';
@@ -626,42 +631,52 @@
       });
     }
 
-	/**
-	 * SPLIT META
-	 */
+    /**
+     * SPLIT META
+     */
     split(paramIn = null, paramOut = null, force = null) {
-      if(paramIn !== null && paramOut !== null){
-        this.config.command = {in: paramIn, out: paramOut};
-        if(force !== null && force == '--force') {
+
+      if (paramIn !== null && paramOut !== null){
+		  if (this.config == undefined){
+			this.config = {};
+		  }
+
+		this.config.command = {in: paramIn, out: paramOut};
+        if (force == '--force') {
           this.config.command.force = true;
         }
       } else {
           if(this.checkForParametersInConfig(this.config.command, 'in', 'out') === false){
-            return;
+            return false;
           }
-      }
+	  }
 
       const bundle = path.join(this.getCurrentRoot(),this.config.command.in);
       const out =  path.join(this.getCurrentRoot(),this.config.command.out);
-      const bundleWithOutFile = bundle.substring(0, bundle.lastIndexOf(path.sep));
-      if(this.checkPath(bundleWithOutFile, out) === false){
-        return;
-      }
+	  const bundleWithOutFile = bundle.substring(0, bundle.lastIndexOf(path.sep));
+
+      if (this.checkPath(bundleWithOutFile, out) === false){
+        return false;
+	  }
+	  //return bundle;
       return splitter.split(this, bundle, out);
-}
+    }
 
     /**
      * Merge a bunch of xml files with the same root element into a bundle.
      */
     merge(paramIn = null, paramOut = null, force = null) {
       if(paramIn !== null && paramOut !== null){
-		this.config.command = {in: paramIn, out: paramOut};
-		if(force !== null && force == '--force') {
-			this.config.command.force = true;
-		}
+          if (this.config == undefined) {
+              this.config = {};
+          }
+          this.config.command = { in: paramIn, out: paramOut };
+          if (force !== null && force == '--force') {
+              this.config.command.force = true;
+          }
       } else {
           if(this.checkForParametersInConfig(this.config.command, 'in', 'out') === false){
-            return;
+            return false;
           }
       }
 
@@ -670,8 +685,8 @@
       const outPath = path.join(this.getCurrentRoot(), out);
       const outWithoutFile = outPath.substring(0, outPath.lastIndexOf(path.sep));
       let dir;
-	  if(this.checkPath(pattern, outWithoutFile) === false){
-        return;
+        if (this.checkPath(pattern, outWithoutFile) === false) {
+        return false;
       }
       return new Promise((r, e) => {
         globby(pattern).then(files => {
@@ -691,44 +706,43 @@
     }
     checkForParametersInConfig(config, ...params){
       for (let c = 0; c < params.length; c++){
-        if(!(params[c] in config) || config[params[c]] === undefined){
-           Log.error(`No paramenter added! Please provide ${params[c]} parameter.`);
+        if(!(params[c] in config) || config[params[c]] === undefined || config[params[c]].length == 0){
+            Log.error(`No paramenter added! Please provide ${params[c]} parameter.`);
+            return false;
         }
       }
     }
 
-    checkPath(...params){
+    checkPath(...params) {
       const fs = require('fs');
-      for (let c = 0; c < params.length; c++){
+      for (let c = 0; c < params.length; c++) {
         if (!fs.existsSync(params[c])) {
-			if(this.config.command.force !== undefined && this.config.command.force === true){
-				fs.mkdirSync(params[c]);
-			} else {
-				Log.error("Folder does not exist. Use --force to create it");
-				return false;
-			}
-            
+            if (this.config.command.force !== undefined && this.config.command.force === true) {
+                fs.mkdirSync(params[c]);
+            } else {
+                Log.error("Folder does not exist. Use --force to create it");
+                return false;
+            }
         }
       }
     }
 
-	checkConsoleParamsForDetails(config){
-		const reqiuredParams = ['hostname', 'username', 'password', 'codeVersion'];
-		let cnt = 0
-		for (let p = 0; p < reqiuredParams.length; p++){
-			if (!config.hasOwnProperty(reqiuredParams[p])) {
-				Log.error(`Param ${reqiuredParams[p]} are not provided. Please use --${reqiuredParams[p]} "value" to add`);
-				cnt++;
-			} else if(config[reqiuredParams[p]] == ''){
-				Log.error(`Param ${reqiuredParams[p]} are empty`);
-				cnt++;
-			}
-		}
-		if(cnt > 0){
-			return false;
-		}
-		return true
-	}
+    checkConsoleParamsForDetails(config) {
+      const reqiuredParams = ['hostname', 'username', 'password', 'codeVersion'];
+      let cnt = 0
+      for (let p = 0; p < reqiuredParams.length; p++) {
+        if (!config.hasOwnProperty(reqiuredParams[p])) {
+          Log.error(`Param ${reqiuredParams[p]} are not provided. Please use --${reqiuredParams[p]} "value" to add`);
+          cnt++;
+        } else if (config[reqiuredParams[p]] == '') {
+          Log.error(`Param ${reqiuredParams[p]} are empty`);
+          cnt++;
+        }
+      }
+
+      return cnt > 0 ? false : true;
+    }
+
 
   }
 
