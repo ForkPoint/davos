@@ -667,16 +667,19 @@
       for (let c = 0; c < params.length; c++){
         if(!(params[c] in config) || config[params[c]] === undefined){
             if(params[c] == 'config'){
-                const Davos = require('../index');
-                const ConfigManager = new Davos.ConfigManager()
-                const activeConfig = ConfigManager.loadConfiguration().getActiveProfile();
-                this.config = Object.assign(config, activeConfig);
-                return Log.info(JSON.stringify(this.config) + " This is it");
+				this.addLoginDetailsToConfigObject(config);
+				return;
             }
            Log.error(`No paramenter added! Please provide ${params[c]} parameter.`);
            return false;
         }
       }
+    }
+
+    addLoginDetailsToConfigObject(config){
+      const ConfigManager = require('../src/config-manager');
+      const activeConfig = new ConfigManager().loadConfiguration().getActiveProfile();
+      this.config = Object.assign(config, activeConfig);
     }
 
     checkPath(...params){
