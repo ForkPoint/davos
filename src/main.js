@@ -547,6 +547,9 @@
     uploadMeta(pattern = this.config.pattern) {
       const self = this;
       const filename = "davos-meta-bundle.xml";
+      if(this.checkForParametersInConfig(this.config, 'config') === false){
+        return;
+      }
 
       if (pattern === undefined) {
         pattern = "*";
@@ -663,6 +666,13 @@
     checkForParametersInConfig(config, ...params){
       for (let c = 0; c < params.length; c++){
         if(!(params[c] in config) || config[params[c]] === undefined){
+            if(params[c] == 'config'){
+                const Davos = require('../index');
+                const ConfigManager = new Davos.ConfigManager()
+                const activeConfig = ConfigManager.loadConfiguration().getActiveProfile();
+                this.config = Object.assign(config, activeConfig);
+                return Log.info(JSON.stringify(this.config) + " This is it");
+            }
            Log.error(`No paramenter added! Please provide ${params[c]} parameter.`);
            return false;
         }

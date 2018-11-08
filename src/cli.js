@@ -25,15 +25,15 @@
   const ConfigEditor = require('./config-editor');
 
   let argv, activeConfig;
-  let args = process.argv;
-  let configlessCommands = [undefined, 'create', '-h', '--help', 'split', 'merge'];
-  let isConfiglessCommand = false;
-  for (let p = 0; p < configlessCommands.length; p++){
-    if (args.indexOf(configlessCommands[p]) > -1) {
-        isConfiglessCommand = true;
-        break;
-	}
-  }
+//   let args = process.argv;
+//   let configlessCommands = [undefined, 'create', '-h', '--help', 'split', 'merge'];
+//   let isConfiglessCommand = false;
+//   for (let p = 0; p < configlessCommands.length; p++){
+//     if (args.indexOf(configlessCommands[p]) > -1) {
+//         isConfiglessCommand = true;
+//         break;
+// 	}
+//   }
 
 //   if (!isConfiglessCommand && !ConfigManager.isConfigExisting()) {
 //     Log.error(chalk.red(`\nCannot find configuration in [${process.cwd()}].`));
@@ -41,9 +41,9 @@
 //   }
 
   //var configPath = path.join(process.cwd().getConfigName());
-  if (!isConfiglessCommand) {
-    activeConfig = ConfigManager.loadConfiguration().getActiveProfile();
-  }
+//   if (!isConfiglessCommand) {
+//     activeConfig = ConfigManager.loadConfiguration().getActiveProfile();
+//   }
 
   /**
     profile
