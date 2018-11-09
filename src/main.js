@@ -30,7 +30,18 @@
       config = config || {}
       if(configManagerInstance !== false) {
         this.ConfigManager = configManagerInstance || new ConfigManager();
-        this.syncConfig(config);
+		if(Object.keys(this.ConfigManager.loadConfiguration().profiles).length > 0){
+			this.syncConfig(config);
+		} else {
+			if(Object.keys(config).length > 0){
+				if(this.checkConsoleParamsForDetails(config)){
+					this.ConfigManager.profiles = [{'active': true, config: config}];
+					this.syncConfig(config);
+				} else {
+					Log.error('No config file found. Pleace plovide BM details');
+				}
+			}
+		}
       } else {
         this.config = config;
       }
@@ -542,14 +553,29 @@
 
 	/**
 	 * Upload metadata for site
-	 * @param {string} pattern 
+	 * @params {object} object with params from gulp task 
 	 */
-    uploadMeta(pattern = this.config.pattern) {
+    uploadMeta(params = null) {
+	  if(!this.config && params == null){
+		return;
+	  }
+	  if(params){
+		if(this.checkConsoleParamsForDetails(params)){
+			this.config = Object.assign({}, this.config, params);
+		} else {
+			Log.error('No config file found. Pleace plovide BM details');
+			return;
+		}
+	  }
+
+      let pattern;
+      if(this.config.pattern){
+        pattern = this.config.pattern;
+	  }
+
+      this.ConfigManager.mergeConfiguration(params);
       const self = this;
       const filename = "davos-meta-bundle.xml";
-      if(this.checkForParametersInConfig(this.config, 'config') === false){
-        return;
-      }
 
       if (pattern === undefined) {
         pattern = "*";
@@ -557,7 +583,7 @@
 
       let bm = new BM(self.config, self.ConfigManager),
         currentRoot = this.getCurrentRoot();
-
+      this.SITES_META_FOLDER === undefined ? this.SITES_META_FOLDER = '/sites/site_template' : '';
       currentRoot = currentRoot + this.SITES_META_FOLDER + META_FOLDER;
 
       return new Promise((r, e) => {
@@ -666,27 +692,15 @@
     checkForParametersInConfig(config, ...params){
       for (let c = 0; c < params.length; c++){
         if(!(params[c] in config) || config[params[c]] === undefined){
-            if(params[c] == 'config'){
-				this.addLoginDetailsToConfigObject(config);
-				return;
-            }
            Log.error(`No paramenter added! Please provide ${params[c]} parameter.`);
-           return false;
         }
       }
-    }
-
-    addLoginDetailsToConfigObject(config){
-      const ConfigManager = require('../src/config-manager');
-      const activeConfig = new ConfigManager().loadConfiguration().getActiveProfile();
-      this.config = Object.assign(config, activeConfig);
     }
 
     checkPath(...params){
       const fs = require('fs');
       for (let c = 0; c < params.length; c++){
         if (!fs.existsSync(params[c])) {
-			
 			if(this.config.command.force !== undefined && this.config.command.force === true){
 				fs.mkdirSync(params[c]);
 			} else {
@@ -697,6 +711,25 @@
         }
       }
     }
+
+	checkConsoleParamsForDetails(config){
+		const reqiuredParams = ['hostname', 'username', 'password', 'codeVersion'];
+		let cnt = 0
+		for (let p = 0; p < reqiuredParams.length; p++){
+			if (!config.hasOwnProperty(reqiuredParams[p])) {
+				Log.error(`Param ${reqiuredParams[p]} are not provided. Please use --${reqiuredParams[p]} "value" to add`);
+				cnt++;
+			} else if(config[reqiuredParams[p]] == ''){
+				Log.error(`Param ${reqiuredParams[p]} are empty`);
+				cnt++;
+			}
+		}
+		if(cnt > 0){
+			return false;
+		}
+		return true
+	}
+
   }
 
   module.exports = Davos;
