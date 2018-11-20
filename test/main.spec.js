@@ -210,10 +210,7 @@ function mockFileSystemForUploadMetaWithConfigFile() {
         },
         'sites/site_template/meta': {
             'davos-meta-bundle.xml': fs.readFileSync('test/files/test123.xml', 'UTF-8').toString()
-        },
-        // './': {
-        //     'davos.json': fs.readFileSync('test/files/davos.json', 'UTF-8').toString()
-        // }
+        }
     });
 }
 
