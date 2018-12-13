@@ -9,8 +9,8 @@ const inputDirAndFile = 'test/files/some-file.xml';
 const inputDirForMerge = 'test/files/';
 const outputDirMerge = 'some/other/path/myTest.xml';
 const sandbox = require('sinon').createSandbox();
-
-const BM = require('../src/bm')
+const BM = require('../src/bm');
+WebDav = require('../src/webdav')
 
 describe('Meta Split', function () {
 
@@ -22,7 +22,7 @@ describe('Meta Split', function () {
     it('should split meta file on CLI', async function () {
         mockFileSystemForSplit();
         const params = { command: { in: inputDirAndFile, out: outputDir } };
-        await new Davos.Core(params, false).split();
+        await new Davos.Core(params).split();
         verifyFileSplitted();
     });
 
@@ -70,7 +70,7 @@ describe('Meta Merge', function () {
     it('should merge meta file on CLI', async function () {
         mockFileSystemForMerge();
         const params = { command: { in: inputDirForMerge, out: outputDirMerge } };
-        await new Davos.Core(params, false).merge();
+        await new Davos.Core(params).merge();
         verifyFilesMerged();
     });
 
@@ -162,6 +162,69 @@ describe('Upload Meta', function () {
 
 });
 
+describe('Upload Sites', function () {
+
+    afterEach(function () {
+        mockfs.restore();
+        sandbox.restore();
+    });
+
+    it('should upload site meta to server with config file', async function () {
+        stubBMMethodsForUploadSites();
+        mockFileSystemForUploadMetaWithConfigFile();
+        const params = { meta: "sites/site_template/meta" }
+        await new Davos.Core(params).uploadSitesMeta();
+        sandbox.assert.calledOnce(BM.prototype.deleteSitesArchive);
+    });
+
+    it('should upload site meta to server without config file', async function () {
+        stubBMMethodsForUploadSites();
+        mockFileSystemForUploadMetaWithoutConfigFile();
+        const params = { "meta": "sites/site_template/meta", "username": "user", "hostname": "test.demandware.net", "password": "pass", "codeVersion": "v1", "exclude": ["**/node_modules/**", "**/.git/**", "**/.svn/**", "**/.sass-cache/**"] }
+        await new Davos.Core(params).uploadSitesMeta();
+        //sandbox.assert.calledOnce(BM.prototype.deleteSitesArchive);
+    });
+
+});
+
+describe('Upload Cartridges', function () {
+
+    afterEach(function () {
+        mockfs.restore();
+        sandbox.restore();
+    });
+
+    it('should upload cartridges to server with config file via CLI', async function () {
+        stubWebDavMethodsForUploadCartridges();
+        mockFileSystemForUploadCartridgesWithConfigFile();
+        let logSpy = sandbox.spy(Log, 'error');
+        await new Davos.Core().uploadCartridges();
+        sandbox.assert.calledOnce(WebDav.prototype.delete);
+        expect(logSpy.callCount).to.be.equal(0);
+    });
+
+    it('should upload cartridges to server without config file via CLI', async function () {
+        stubWebDavMethodsForUploadCartridges();
+        mockFileSystemForUploadCartridgesWithOutConfigFile();
+        let logSpy = sandbox.spy(Log, 'error');
+        const params = { "username": "user", "hostname": "test.demandware.net", "password": "pass", "codeVersion": "v1", "exclude": ["**/node_modules/**", "**/.git/**", "**/.svn/**", "**/.sass-cache/**"],  "cartridge": ["app_storefront"] }
+        await new Davos.Core(params).uploadCartridges();
+        sandbox.assert.calledOnce(WebDav.prototype.delete);
+        expect(logSpy.callCount).to.be.equal(0);
+    });
+
+    it('should log error when execute upload cartridges command without config details via CLI', async function () {
+        stubWebDavMethodsForUploadCartridges();
+        mockFileSystemForUploadCartridgesWithOutConfigFile();
+        let logSpy = sandbox.spy(Log, 'error');
+        const params = { "username": "user", "hostname": "test.demandware.net", "password": "pass", "codeVersion": "v1", "exclude": ["**/node_modules/**", "**/.git/**", "**/.svn/**", "**/.sass-cache/**"],  "cartridge": ["app_storefront"] }
+        let res = await new Davos.Core().uploadCartridges();
+        //expect(res).to.be.false;
+        //expect(logSpy.callCount).to.be.equal(5);
+    });
+
+})
+
 function mockFileSystemForSplit() {
     mockfs({
         'test/files': {
@@ -214,6 +277,34 @@ function mockFileSystemForUploadMetaWithConfigFile() {
     });
 }
 
+function mockFileSystemForUploadCartridgesWithConfigFile() {
+    mockfs({
+        'davos.json': fs.readFileSync('test/files/davos.json', 'UTF-8').toString(),
+        'tmp': {},
+        [outputDir]: {/** another empty directory */ },
+        'resources': {
+            'library.template': fs.readFileSync('resources/library.template', 'UTF-8').toString()
+        },
+        'sites/site_template/meta': {
+            'davos-meta-bundle.xml': fs.readFileSync('test/files/test123.xml', 'UTF-8').toString()
+        },
+        'app_storefront': {}
+    });
+}
+function mockFileSystemForUploadCartridgesWithOutConfigFile() {
+    mockfs({
+        'tmp': {},
+        [outputDir]: {/** another empty directory */ },
+        'resources': {
+            'library.template': fs.readFileSync('resources/library.template', 'UTF-8').toString()
+        },
+        'sites/site_template/meta': {
+            'davos-meta-bundle.xml': fs.readFileSync('test/files/test123.xml', 'UTF-8').toString()
+        },
+        'app_storefront': {}
+    });
+}
+
 function verifyFileSplitted() {
     let files = fs.readdirSync(outputDir);
 
@@ -251,4 +342,28 @@ function stubBMMethodsForUploadMeta() {
     sandbox.stub(BM.prototype, 'checkImportProgress').resolves(true);
     sandbox.stub(BM.prototype, 'importMeta').resolves(true);
     sandbox.stub(BM.prototype, 'deleteMeta').resolves(true);
+}
+
+function stubBMMethodsForUploadSites() {
+    sandbox.stub(BM.prototype, 'uploadSitesArchive').resolves(true);
+    sandbox.stub(BM.prototype, 'login').resolves(true);
+    sandbox.stub(BM.prototype, 'ensureNoImport').resolves(true);
+    sandbox.stub(BM.prototype, 'importSites').resolves(true);
+    sandbox.stub(BM.prototype, 'checkImportProgress').resolves(true);
+    sandbox.stub(BM.prototype, 'deleteSitesArchive').resolves(true);
+}
+
+function stubBMMethodsForUploadSites() {
+    sandbox.stub(BM.prototype, 'uploadSitesArchive').resolves(true);
+    sandbox.stub(BM.prototype, 'login').resolves(true);
+    sandbox.stub(BM.prototype, 'ensureNoImport').resolves(true);
+    sandbox.stub(BM.prototype, 'importSites').resolves(true);
+    sandbox.stub(BM.prototype, 'checkImportProgress').resolves(true);
+    sandbox.stub(BM.prototype, 'deleteSitesArchive').resolves(true);
+}
+
+function stubWebDavMethodsForUploadCartridges() {
+    sandbox.stub(WebDav.prototype, 'put').resolves(true);
+    sandbox.stub(WebDav.prototype, 'unzip').resolves(true);
+    sandbox.stub(WebDav.prototype, 'delete').resolves(true);
 }

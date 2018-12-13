@@ -26,10 +26,13 @@
     Log = require('./logger');
 
   class Davos {
-    constructor(config, configManagerInstance) {
-      config = config || {}
-      if(configManagerInstance !== false) {
-        this.ConfigManager = configManagerInstance || new ConfigManager();
+    constructor(config) {
+        this.config = config || {};//config;
+        return this;
+    }
+
+    prepareConfiguration(config){
+        this.ConfigManager = new ConfigManager();
         if(Object.keys(this.ConfigManager.loadConfiguration().profiles).length > 0){
             this.syncConfig(config);
         } else {
@@ -39,13 +42,10 @@
                     this.syncConfig(config);
                 } else {
                     Log.error('No config file found. Pleace plovide BM details');
+                    return false;
                 }
             }
         }
-      } else {
-        this.config = config;
-      }
-
         return this;
     }
 
@@ -143,11 +143,12 @@
 	 */
     uploadCartridges() {
       const self = this;
-
+      if(!this.prepareConfiguration(self.config)){
+        return false;
+      }
       let webdav = new WebDav(self.config, self.ConfigManager),
         archiveName = 'cartriges_' + self.config.codeVersion + '.zip',
         cartridges = self.getCartridges();
-
       Log.info(chalk.cyan(`Creating archive of ${cartridges.length} cartridges: ${cartridges.join(", ")}`));
 
       return self.compress(self.getCartridgesPath(), archiveName, cartridges.map(name => name + "/**")).then(function () {
@@ -179,9 +180,14 @@
 	 */
     uploadSitesMeta(arrayWithGlob) {
       const self = this;
+      if(!this.prepareConfiguration(self.config)){
+        return false;
+      }
+      if (!("exclude" in self.config)){
+        self.config.exclude = ["**/node_modules/**","**/.git/**","**/.svn/**","**/.sass-cache/**"];
+      }
 
-      let webdav = new WebDav(self.config, self.ConfigManager),
-        bm = new BM(self.config, self.ConfigManager),
+      let bm = new BM(self.config, self.ConfigManager),
         currentRoot = this.getCurrentRoot(),
         archiveName = 'sites_' + self.config.codeVersion + '.zip',
         rootPrefix = path.basename(archiveName, '.zip') + '/';
@@ -250,7 +256,9 @@
 	 */
     watch() {
       const self = this;
-
+      if(!this.prepareConfiguration(self.config)){
+        return false;
+      }
       Log.info('Waiting for initial scan completion');
 
       let queue = new Queue(),
@@ -557,11 +565,14 @@
        * @params {object} object with params from gulp task
        */
       uploadMeta(params = null) {
+          if(!this.prepareConfiguration(this.config)){
+            return false;
+          }
           if (!this.config && params == null) {
               return false;
           }
           if (params) {
-              if (!this.config) {
+              if (Object.keys(this.config).length == 0) {
                 if (this.checkConsoleParamsForDetails(params)) {
                     this.config = Object.assign({}, this.config, params);
                 } else {
@@ -688,6 +699,7 @@
         if (this.checkPath(pattern, outWithoutFile) === false) {
         return false;
       }
+      //return Log.info(outWithoutFile);
       return new Promise((r, e) => {
         globby(pattern).then(files => {
           if (!files.length) {
@@ -704,6 +716,79 @@
         });
       })
     }
+
+    gitLogDiff(){
+
+        const exec = require('child_process').exec;
+        if(!this.config.git.start || !this.config.git.end){
+            Log.error('Please provide --start "Tag1" --end "Tag2" parameters!');
+            return false;
+        }
+        const gitLogDiff = `git diff --name-only ${this.config.git.start} ${this.config.git.end} --diff-filter=AM -- sites/site_template`;
+        this.ConfigManager = new ConfigManager();
+        let self = this;
+        require("del").sync(process.cwd() + path.sep + self.ConfigManager.getTempDir() + path.sep + "*");
+
+        exec(gitLogDiff, function(err, stdout, stderr) {
+            if (err) {
+              console.log(err.message);
+              return false;
+            }
+            //var match = /\r|\n/.exec(stdout);
+            let changedFiles =  stdout.split(/\r|\n/).filter(Boolean);
+            if (changedFiles.length > 0) {
+                var mkdirp = require('mkdirp');
+                for (let c = 0; c < changedFiles.length; c++){
+                    let changedFile = changedFiles[c]
+                    let pathToFile = self.ConfigManager.getTempDir() + path.sep + self.config.git.end + changedFile.replace('sites/site_template', "").replace(path.basename(changedFile), "")
+                    mkdirp(pathToFile, function (err) {
+                        if (err) console.error(err);
+                        fs.copyFile(changedFile, pathToFile + path.basename(changedFile), (err) => {
+                            if (err) throw err;
+                          });
+                    });
+                }
+                // const file = fs.createWriteStream(self.ConfigManager.getTempDir() + "/changeLog.txt");
+                // file.write(stdout);
+                // file.end();
+                Log.info('Changed file are copped in temp dir');
+            } else {
+                Log.info('There are not changes');
+            }
+
+        });
+
+    }
+
+    deleteFiles(folder){
+        var files = fs.readdirSync(folder);
+
+        if (files.length > 0) {
+            var res = null;
+            for (let c = 0; c < files.length; c++){
+                let filePath = folder + path.sep + files[c] + 'ss';
+                fs.stat(filePath, function (err, stats) {
+
+                    if (err) {
+                        res = false
+                        Log.error('err.message')
+                        return false;
+                    }
+
+
+                    fs.unlink(filePath, function(err){
+                         if(err) {
+                            Log.error(err.message);
+                             return false;
+                         }
+                    });
+                });
+            }
+            return res;
+        }
+
+    }
+
     checkForParametersInConfig(config, ...params){
       for (let c = 0; c < params.length; c++){
         if(!(params[c] in config) || config[params[c]] === undefined || config[params[c]].length == 0){
