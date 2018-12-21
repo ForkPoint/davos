@@ -658,7 +658,7 @@
       if (this.checkPath(bundleWithOutFile, out) === false){
         return false;
 	  }
-	  //return bundle;
+
       return splitter.split(this, bundle, out);
     }
 
@@ -742,7 +742,6 @@
 
       return cnt > 0 ? false : true;
     }
-
 
   }
 

@@ -34,12 +34,13 @@
             "name": "Davos Split",
 			"program": "${workspaceFolder}/bin/davos.js",
             "cwd": "${workspaceFolder}/../../bee/tfg",
+
 			"args": [
 				"meta",
                 "split",
                 "sites/site_template/meta/system-objecttype-extensions.xml",
                 "--out",
-                "sites/site_template/testis"
+                "sites/site_template/meta"
             ],
             "outputCapture": "std",
             "internalConsoleOptions": "openOnSessionStart"

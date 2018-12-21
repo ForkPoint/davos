@@ -50,7 +50,6 @@ exports.split = function (davos, path, out) {
     return;
   }
 
-
   let child = 1; // start from 1 to skip <xml/>
   let document = new DOMParser().parseFromString(fs.readFileSync(path).toString().replace(/xmlns=".+?"/, ''));
 
