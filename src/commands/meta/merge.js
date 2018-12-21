@@ -15,5 +15,5 @@ exports.handler = (argv) => {
   const params = {
     command: argv
   };
-  new Davos.Core(params, false).merge();
+  new Davos.Core(params).merge();
 };
