@@ -1,6 +1,6 @@
 /* eslint no-unused-vars:0, no-unused-expressions:0 */
 const yargs = require('yargs'),
-Davos = require('../../../index');
+  Davos = require('../../../index');
 Log = Davos.Logger;
 exports.command = 'split';
 exports.aliases = ['s'];
@@ -12,6 +12,9 @@ exports.builder = {
   }
 };
 exports.handler = (argv) => {
-   Log.error("Metadata split in progress");
-   new Davos.Core(argv, false).split();
+  Log.info("Metadata split in progress");
+  const params = {
+    command: argv
+  };
+  new Davos.Core(params, false).split();
 };

@@ -19,6 +19,10 @@
     name: 'codeversion',
     description: 'Code Version (default is version1)',
     default: 'version1'
+  },{
+    name: 'indentSize',
+    description: 'Space indentation size for meta files (2 or 4)',
+    default: '2'
   }, {
     name: 'exclude',
     description: 'Exclude uploading folders and files. Separate all excludes by space',
@@ -86,6 +90,7 @@
               password: result.password,
               codeVersion: result.codeversion,
               cartridge: cartridges,
+              indentSize: result.indentSize,
               exclude: result.exclude.split(' '),
               templateReplace: {
                 files: [result.templateReplace],
@@ -133,6 +138,7 @@
             password: result.password,
             codeVersion: result.codeversion,
             cartridge: cartridges,
+            indentSize: result.indentSize,
             exclude: result.exclude.split(' '),
             templateReplace: {
               files: [result.templateReplace],
@@ -186,6 +192,7 @@
               password: result.password,
               cartridge: cartridges,
               codeVersion: result.codeversion,
+              indentSize: result.indentSize,
               exclude: result.exclude.split(' ')
             };
           }
@@ -225,13 +232,13 @@
      */
     switchProfile () {
       const self = this;
-      
+
       let profile = self.config.name,
         profiles = self.ConfigManager.loadConfiguration().profiles,
         foundProfile = profiles.find(x => x.profile === profile),
         len = profiles.length,
         newList = [];
-        
+
       if (foundProfile === undefined) {
         Log.info(chalk.red(`\nCannot find ${profile} profile.`));
         return;

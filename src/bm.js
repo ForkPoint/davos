@@ -431,7 +431,7 @@
 
         // Check if validation has been done on this file: Prepare label text
         var archiveLabel = 'Meta Data Validation <{0}>'.replace('{0}', filename),
-          $td = $('form[name="ImpexForm"] > table:nth-child(6) > tr > td:nth-child(2)'),
+          $td = $('form[name="ImpexForm"] > table:nth-child(6) tr > td:nth-child(2)'),
           importLink;
 
         // Compare target label text with actual result, strip whitespace (to ignore line breaks etc.)

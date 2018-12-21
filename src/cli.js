@@ -25,20 +25,25 @@
   const ConfigEditor = require('./config-editor');
 
   let argv, activeConfig;
-  let args = process.argv;
-  let commandParam = args[2];
-  let configlessCommands = [undefined, 'create', '-h', '--help', 'split', 'merge'];
+//   let args = process.argv;
+//   let configlessCommands = [undefined, 'create', '-h', '--help', 'split', 'merge'];
+//   let isConfiglessCommand = false;
+//   for (let p = 0; p < configlessCommands.length; p++){
+//     if (args.indexOf(configlessCommands[p]) > -1) {
+//         isConfiglessCommand = true;
+//         break;
+// 	}
+//   }
 
-  let isConfiglessCommand = configlessCommands.indexOf(commandParam) > -1;
-  if (!isConfiglessCommand && !ConfigManager.isConfigExisting()) {
-    Log.error(chalk.red(`\nCannot find configuration in [${process.cwd()}].`));
-    return;
-  }
+//   if (!isConfiglessCommand && !ConfigManager.isConfigExisting()) {
+//     Log.error(chalk.red(`\nCannot find configuration in [${process.cwd()}].`));
+//     return;
+//   }
 
   //var configPath = path.join(process.cwd().getConfigName());
-  if (!isConfiglessCommand) {
-    activeConfig = ConfigManager.loadConfiguration().getActiveProfile();
-  }
+//   if (!isConfiglessCommand) {
+//     activeConfig = ConfigManager.loadConfiguration().getActiveProfile();
+//   }
 
   /**
     profile
@@ -76,8 +81,8 @@
     .example('davos upload sites --meta [path to meta]', 'import sites meta')
     .example("davos upload meta --pattern *.xml", "Upload and import all meta files matching the pattern. Default pattern is *")
     .example('davos watch --cartridge [path to cartridge]', 'watch all cartridges from your configuration for changes or a specific single cartridge from your local cartridges')
-    .example("davos meta split [path/to/bundle.xml] --out dir/for/chunks", "split a meta/library bundle into chunks by attribute group or content assets. Path must be relative starting from site_template directory.")
-    .example("davos meta merge [pattern] --out bundle.xml", "merge all files matching the pattern into a bundle.xml in your CWD")
+    .example("davos meta split --in [path/to/bundle.xml] --out dir/for/chunks", "split a meta/library bundle into chunks by attribute group or content assets. Path must be relative starting from sites/site_template/ directory.")
+    .example("davos meta merge --in [pattern] --out bundle.xml", "merge all files matching the pattern into a bundle.xml in your CWD")
 
     .config(activeConfig)
     .options({
