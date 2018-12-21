@@ -1,6 +1,10 @@
 const fs = require("fs");
 const path = require("path");
 const log = require('./logger');
+const DOMParser = require('xmldom').DOMParser;
+const x = require("xpath");
+const xdom = require("xmldom");
+const prettifier = require('prettify-xml');
 
 function absolutePath(davos, fpath) {
   let source;
@@ -18,8 +22,6 @@ function absolutePath(davos, fpath) {
 }
 
 exports.splitBundle = function (davos, fpath, xpath, out, cfg) {
-  const x = require("xpath");
-  const xdom = require("xmldom");
   const template = fs.readFileSync(__dirname + "/../resources/" + cfg.template + ".template").toString();
   const filepath = absolutePath(davos, fpath);
 
@@ -48,12 +50,8 @@ exports.split = function (davos, path, out) {
     return;
   }
 
-  const xdom = require("xmldom");
-  const prettifier = require('prettify-xml');
-  let parser = new xdom.DOMParser();
-
   let child = 1; // start from 1 to skip <xml/>
-  let document = parser.parseFromString(fs.readFileSync(path).toString().replace(/xmlns=".+?"/, ''));
+  let document = new DOMParser().parseFromString(fs.readFileSync(path).toString().replace(/xmlns=".+?"/, ''));
 
   while (document.childNodes[child].nodeName === "#text") {
     child++;

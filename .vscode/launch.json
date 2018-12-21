@@ -33,7 +33,8 @@
             "request": "launch",
             "name": "Davos Split",
 			"program": "${workspaceFolder}/bin/davos.js",
-            "cwd": "${workspaceFolder}/../davos-sample-project",
+            "cwd": "${workspaceFolder}/../../bee/tfg",
+
 			"args": [
 				"meta",
                 "split",
@@ -44,5 +45,5 @@
             "outputCapture": "std",
             "internalConsoleOptions": "openOnSessionStart"
 		}
-    ]
+	]
 }
