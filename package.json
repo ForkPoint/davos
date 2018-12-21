@@ -3,6 +3,14 @@
   "version": "2.0.0-alpha.9",
   "description": "Salesforce Commerce Cloud (Demandware) - Configuration Manager and Continuous Integration deployment tools",
   "main": "index.js",
+  "files": [
+    "LICENSE",
+    "index.js",
+    "bin"
+  ],
+  "bin": {
+    "davos": "./bin/davos.js"
+  },
   "scripts": {
     "test": "mocha --opts scripts/mocha.opts src/**/*-test.js",
     "lint": "eslint .",
@@ -19,7 +27,9 @@
     "synch",
     "eclipse",
     "watch",
-    "isml"
+    "isml",
+    "continuous integration",
+    "commerce cloud"
   ],
   "author": "ForkPoint",
   "license": "MIT",
@@ -39,12 +49,16 @@
     "globby": "^8.0.1",
     "md5-file": "^4.0.0",
     "mergexml": "^1.1.2",
+    "mkdirp-sync": "0.0.3",
     "moment": "^2.22.2",
     "multimatch": "^2.1.0",
+    "prettify-xml": "^1.2.0",
     "pretty-data": "^0.40.0",
     "progress": "^2.0.0",
+    "prompt": "^1.0.0",
     "request": "^2.87.0",
     "request-debug": "^0.2.0",
+    "simple-git": "^1.107.0",
     "sync-queue": "0.0.2",
     "underscore": "^1.9.1",
     "winston": "^3.0.0",
@@ -52,18 +66,23 @@
     "xmldoc": "^1.1.0",
     "xmldom": "^0.1.27",
     "xpath": "0.0.27",
+    "yargonaut": "^1.1.2",
+    "yargs": "^12.0.1",
     "yazl": "^2.4.3"
   },
   "devDependencies": {
-    "chai": "~4.1.2",
+    "chai": "^4.1.2",
     "chai-as-promised": "~7.1.1",
     "eslint": "^4.19.1",
     "eslint-config-airbnb-base": "^13.0.0",
     "eslint-plugin-import": "^2.13.0",
     "fixpack": "~2.3.1",
-    "mocha": "~5.2.0",
+    "mocha": "^5.2.0",
     "mocha-clean": "~1.0.0",
+    "mock-fs": "^4.7.0",
     "node-readme": "^0.1.9",
-    "publish-please": "^3.1.0"
+    "proxyquire": "^2.1.0",
+    "publish-please": "^3.1.0",
+    "sinon": "^7.1.1"
   }
 }

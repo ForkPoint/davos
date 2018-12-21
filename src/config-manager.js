@@ -40,27 +40,31 @@
     }
 
     getActiveProfile(config) {
-      if (!this.profiles) {
-        Log.error(chalk.red(`\nCannot read configuration.`));
-        return config;
-      }
-
-      let activeProfile = this.profiles.find(x => x.active === true);
-
-      if (!activeProfile) {
-        Log.error(chalk.red(`\nThere is no active profile in your configuration.`));
-        return config;
-      }
-
-      this.config = activeProfile.config;
-
-      if (config !== undefined) {
-        this.mergeConfiguration(config);
-      }
-
-      this.validateConfigProperties(this.config);
-
-      return this.config;
+		if(Object.keys(this.profiles).length == 0){
+			return false;
+		} else {
+			if (!this.profiles) {
+				Log.error(chalk.red(`\nCannot read configuration.`));
+				return config;
+			  }
+		
+			  let activeProfile = this.profiles.find(x => x.active === true);
+		
+			  if (!activeProfile) {
+				Log.error(chalk.red(`\nThere is no active profile in your configuration.`));
+				return config;
+			  }
+		
+			  this.config = activeProfile.config;
+		
+			  if (config !== undefined) {
+				this.mergeConfiguration(config);
+			  }
+		
+			  this.validateConfigProperties(this.config);
+		
+			  return this.config;
+		}
     }
 
     mergeConfiguration(config) {
@@ -100,11 +104,13 @@
 
       currentRoot = path.join(currentRoot, "/cartridges")
 
-      let paths = globby.sync(['**/cartridge/'], {
+      let paths = globby.sync(['**/cartridge'], {
         cwd: currentRoot,
         dot: true,
         nosort: true,
         absolute: true,
+        deep: 1,
+        onlyDirectories: true,
         ignore: GLOB_IGNORED
       });
 
@@ -115,7 +121,7 @@
 
         result.push(relativePath);
       });
-
+      
       return result;
     }
 
@@ -148,24 +154,27 @@
     loadConfiguration() {
       //parse the configuration
       let configName = this.getConfigName(),
-        fileContents = '',
-        json = null;
-
-      try {
-        fileContents = fs.readFileSync(configName, 'UTF-8');
-      } catch (e) {
-        Log.error(chalk.red("\nConfiguration not found. Error: " + configName + " ::: " + e.message));
+      fileContents = '',
+      json = null;
+      if(fs.existsSync(configName)){
+		try {
+			fileContents = fs.readFileSync(configName, 'UTF-8');
+		  } catch (e) {
+			Log.error(chalk.red("\nConfiguration not found. Error: " + configName + " ::: " + e.message));
+		  }
+	
+		  try {
+			json = JSON.parse(fileContents);
+		  } catch (e) {
+			Log.error(chalk.red("\nThere was a problem parsing the configuration file : " + configName + " ::: " + e.message));
+		  }
+	
+		  this.profiles = json;
+	
+		  return this;
+      } else {
+		return this;
       }
-
-      try {
-        json = JSON.parse(fileContents);
-      } catch (e) {
-        Log.error(chalk.red("\nThere was a problem parsing the configuration file : " + configName + " ::: " + e.message));
-      }
-
-      this.profiles = json;
-
-      return this;
     }
 
     saveConfiguration(json) {

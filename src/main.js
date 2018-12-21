@@ -26,16 +26,27 @@
     Log = require('./logger');
 
   class Davos {
-    constructor(config, configManagerInstance) {
+    constructor(config) {
+        this.config = config || {};//config;
+        return this;
+    }
 
-      if(configManagerInstance !== false) {
-        this.ConfigManager = configManagerInstance || new ConfigManager();
-        this.syncConfig(config);
-      } else {
-        this.config = config;
-      }
-
-      return this;
+    prepareConfiguration(config){
+        this.ConfigManager = new ConfigManager();
+        if(Object.keys(this.ConfigManager.loadConfiguration().profiles).length > 0){
+            this.syncConfig(config);
+        } else {
+            if(Object.keys(config).length > 0){
+                if(this.checkConsoleParamsForDetails(config)){
+                    this.ConfigManager.profiles = [{'active': true, config: config}];
+                    this.syncConfig(config);
+                } else {
+                    Log.error('No config file found. Pleace plovide BM details');
+                    return false;
+                }
+            }
+        }
+        return this;
     }
 
     syncConfig(config) {
@@ -49,6 +60,7 @@
         this.SITES_META_FOLDER = '/sites/site_template'
       }
     }
+
 
     /**
      * @var string archiveName
@@ -126,13 +138,17 @@
       return this.config.basePath || process.cwd();
     }
 
+	/**
+	 * Upload cartridges
+	 */
     uploadCartridges() {
       const self = this;
-
+      if(!this.prepareConfiguration(self.config)){
+        return false;
+      }
       let webdav = new WebDav(self.config, self.ConfigManager),
         archiveName = 'cartriges_' + self.config.codeVersion + '.zip',
         cartridges = self.getCartridges();
-
       Log.info(chalk.cyan(`Creating archive of ${cartridges.length} cartridges: ${cartridges.join(", ")}`));
 
       return self.compress(self.getCartridgesPath(), archiveName, cartridges.map(name => name + "/**")).then(function () {
@@ -158,11 +174,20 @@
       });
     }
 
+	/**
+	 * Upload sites metadata
+	 * @param {array} arrayWithGlob
+	 */
     uploadSitesMeta(arrayWithGlob) {
       const self = this;
+      if(!this.prepareConfiguration(self.config)){
+        return false;
+      }
+      if (!("exclude" in self.config)){
+        self.config.exclude = ["**/node_modules/**","**/.git/**","**/.svn/**","**/.sass-cache/**"];
+      }
 
-      let webdav = new WebDav(self.config, self.ConfigManager),
-        bm = new BM(self.config, self.ConfigManager),
+      let bm = new BM(self.config, self.ConfigManager),
         currentRoot = this.getCurrentRoot(),
         archiveName = 'sites_' + self.config.codeVersion + '.zip',
         rootPrefix = path.basename(archiveName, '.zip') + '/';
@@ -206,6 +231,9 @@
       });
     }
 
+	/**
+	 * Activate code version
+	 */
     activateCodeVersion() {
       const self = this;
 
@@ -223,14 +251,19 @@
       });
     }
 
+	/**
+	 * Watch files for changes
+	 */
     watch() {
       const self = this;
-
+      if(!this.prepareConfiguration(self.config)){
+        return false;
+      }
       Log.info('Waiting for initial scan completion');
 
       let queue = new Queue(),
         webdav = new WebDav(self.config, self.ConfigManager),
-        allCartridges = self.config.cartridge,
+        allCartridges = self.config.cartridge.map(cartridge => `cartridges/${cartridge}`),
         excludesWithDotFiles = self.config.exclude.concat([/[\/\\]\./]),
         watchHashList = [],
         isFirstUseFiles = true,
@@ -265,6 +298,11 @@
             Log.info(`File ${p} has been added`);
 
             queue.place(function () {
+              /** Remove 'cartridges/' substring from path. */
+              let newPath = p.split('\\');
+              newPath.shift();
+              p = newPath.join('\\');
+
               return webdav.put(p)
                 .then(function () {
                   Log.info(chalk.cyan(`Successfully uploaded: ${p}`));
@@ -281,6 +319,11 @@
             Log.info(`Directory ${p} has been added`);
 
             queue.place(function () {
+              /** Remove 'cartridges/' substring from path. */
+              let newPath = p.split('\\');
+              newPath.shift();
+              p = newPath.join('\\');
+
               return webdav.mkcol(p)
                 .then(function () {
                   Log.info(chalk.cyan(`Successfully uploaded: ${p}`));
@@ -309,6 +352,11 @@
             changedFile.md5sum = hash;
             Log.info(`File ${p} has been changed`);
             queue.place(function () {
+              /** Remove 'cartridges/' substring from path. */
+              let newPath = p.split('\\');
+              newPath.shift();
+              p = newPath.join('\\');
+
               return webdav.put(p)
                 .then(function () {
                   Log.info(chalk.cyan(`Successfully uploaded: ${p}`));
@@ -331,6 +379,11 @@
           Log.info(`File ${path} has been removed`);
 
           queue.place(function () {
+            /** Remove 'cartridges/' substring from path. */
+            let newPath = path.split('\\');
+            newPath.shift();
+            path = newPath.join('\\');
+
             return webdav.delete(path)
               .then(function () {
                 Log.info(chalk.cyan(`Successfully deleted: ${path}`));
@@ -345,6 +398,11 @@
           Log.info(`Directory ${path} has been removed`);
 
           queue.place(function () {
+            /** Remove 'cartridges/' substring from path. */
+            let newPath = path.split('\\');
+            newPath.shift();
+            path = newPath.join('\\');
+
             return webdav.delete(path)
               .then(function () {
                 Log.info(chalk.cyan(`Successfully deleted: ${path}`));
@@ -360,6 +418,9 @@
         });
     }
 
+	/**
+	 * Sinchronice server site files with local version
+	 */
     sync() {
       const self = this;
 
@@ -396,21 +457,11 @@
           let cartridgesOnServerLen = cartridgesOnServer.length;
 
           for (let i = 0; i < cartridgesOnServerLen; i++) {
-            let currentServerCartridge = cartridgesOnServer[i],
-              localCartridgesLen = localCartridges.length;
+            let currentServerCartridge = cartridgesOnServer[i];
 
-            for (let j = 0; j < localCartridgesLen; j++) {
-              let currentLocalCartridge = localCartridges[j],
-                hasMatchedCartridges = (currentServerCartridge === currentLocalCartridge);
-
-              if (hasMatchedCartridges) {
-                break;
+              if (!localCartridges.includes(currentServerCartridge)) {
+                differentCartridges.push(currentServerCartridge);
               }
-            }
-
-            if (!hasMatchedCartridges) {
-              differentCartridges.push(currentServerCartridge);
-            }
           }
 
           return new Promise(function (resolve, reject) {
@@ -509,17 +560,46 @@
       });
     }
 
-    uploadMeta(pattern = this.config.pattern) {
+      /**
+       * Upload metadata for site
+       * @params {object} object with params from gulp task
+       */
+      uploadMeta(params = null) {
+          if(!this.prepareConfiguration(this.config)){
+            return false;
+          }
+          if (!this.config && params == null) {
+              return false;
+          }
+          if (params) {
+              if (Object.keys(this.config).length == 0) {
+                if (this.checkConsoleParamsForDetails(params)) {
+                    this.config = Object.assign({}, this.config, params);
+                } else {
+                    Log.error('No config file found. Pleace plovide BM details');
+                    return false;
+                }
+              } else {
+                this.config = Object.assign({}, this.config, params);
+              }
+
+          }
+
+          let pattern;
+          if (this.config.pattern) {
+              pattern = this.config.pattern;
+          }
+
+      this.ConfigManager.mergeConfiguration(params);
       const self = this;
       const filename = "davos-meta-bundle.xml";
 
       if (pattern === undefined) {
         pattern = "*";
       }
-
       let bm = new BM(self.config, self.ConfigManager),
         currentRoot = this.getCurrentRoot();
-
+      this.SITES_META_FOLDER === undefined ? this.SITES_META_FOLDER = '/sites/site_template' : '';
       currentRoot = currentRoot + this.SITES_META_FOLDER + META_FOLDER;
 
       return new Promise((r, e) => {
@@ -562,21 +642,66 @@
       });
     }
 
-    split(fpath = this.config._[1], out = this.config.out) {
-      return splitter.split(this, fpath, out);
+    /**
+     * SPLIT META
+     */
+    split(paramIn = null, paramOut = null, force = null) {
+
+      if (paramIn !== null && paramOut !== null){
+		  if (this.config == undefined){
+			this.config = {};
+		  }
+
+		this.config.command = {in: paramIn, out: paramOut};
+        if (force == '--force') {
+          this.config.command.force = true;
+        }
+      } else {
+          if(this.checkForParametersInConfig(this.config.command, 'in', 'out') === false){
+            return false;
+          }
+	  }
+
+      const bundle = path.join(this.getCurrentRoot(),this.config.command.in);
+      const out =  path.join(this.getCurrentRoot(),this.config.command.out);
+	  const bundleWithOutFile = bundle.substring(0, bundle.lastIndexOf(path.sep));
+
+      if (this.checkPath(bundleWithOutFile, out) === false){
+        return false;
+	  }
+
+      return splitter.split(this, bundle, out);
     }
 
     /**
      * Merge a bunch of xml files with the same root element into a bundle.
-     *
-     * @param {string} pattern Starts from  sites/site_template/<pattern>
-     * @param {string} out A path where to output the bundle, if relative starts from cwd.
      */
-    merge(pattern = this.config._[1], out = this.config.out) {
-      let dir;
+    merge(paramIn = null, paramOut = null, force = null) {
+      if(paramIn !== null && paramOut !== null){
+          if (this.config == undefined) {
+              this.config = {};
+          }
+          this.config.command = { in: paramIn, out: paramOut };
+          if (force !== null && force == '--force') {
+              this.config.command.force = true;
+          }
+      } else {
+          if(this.checkForParametersInConfig(this.config.command, 'in', 'out') === false){
+            return false;
+          }
+      }
 
+      const pattern = path.join(this.getCurrentRoot(), this.config.command.in);
+      const out = this.config.command.out;
+      const outPath = path.join(this.getCurrentRoot(), out);
+      const outWithoutFile = outPath.substring(0, outPath.lastIndexOf(path.sep));
+      let dir;
+        if (this.checkPath(pattern, outWithoutFile) === false) {
+        return false;
+      }
+      //return Log.info(outWithoutFile);
       return new Promise((r, e) => {
-        globby(path.join(this.getCurrentRoot(), this.SITES_META_FOLDER, pattern)).then(files => {
+        globby(pattern).then(files => {
           if (!files.length) {
             return r();
           }
@@ -591,6 +716,118 @@
         });
       })
     }
+
+    gitLogDiff(){
+
+        const exec = require('child_process').exec;
+        if(!this.config.git.start || !this.config.git.end){
+            Log.error('Please provide --start "Tag1" --end "Tag2" parameters!');
+            return false;
+        }
+        const gitLogDiff = `git diff --name-only ${this.config.git.start} ${this.config.git.end} --diff-filter=AM -- sites/site_template`;
+        this.ConfigManager = new ConfigManager();
+        let self = this;
+        require("del").sync(process.cwd() + path.sep + self.ConfigManager.getTempDir() + path.sep + "*");
+
+        exec(gitLogDiff, function(err, stdout, stderr) {
+            if (err) {
+              console.log(err.message);
+              return false;
+            }
+            //var match = /\r|\n/.exec(stdout);
+            let changedFiles =  stdout.split(/\r|\n/).filter(Boolean);
+            if (changedFiles.length > 0) {
+                var mkdirp = require('mkdirp');
+                for (let c = 0; c < changedFiles.length; c++){
+                    let changedFile = changedFiles[c]
+                    let pathToFile = self.ConfigManager.getTempDir() + path.sep + self.config.git.end + changedFile.replace('sites/site_template', "").replace(path.basename(changedFile), "")
+                    mkdirp(pathToFile, function (err) {
+                        if (err) console.error(err);
+                        fs.copyFile(changedFile, pathToFile + path.basename(changedFile), (err) => {
+                            if (err) throw err;
+                          });
+                    });
+                }
+                // const file = fs.createWriteStream(self.ConfigManager.getTempDir() + "/changeLog.txt");
+                // file.write(stdout);
+                // file.end();
+                Log.info('Changed file are copped in temp dir');
+            } else {
+                Log.info('There are not changes');
+            }
+
+        });
+
+    }
+
+    deleteFiles(folder){
+        var files = fs.readdirSync(folder);
+
+        if (files.length > 0) {
+            var res = null;
+            for (let c = 0; c < files.length; c++){
+                let filePath = folder + path.sep + files[c] + 'ss';
+                fs.stat(filePath, function (err, stats) {
+
+                    if (err) {
+                        res = false
+                        Log.error('err.message')
+                        return false;
+                    }
+
+
+                    fs.unlink(filePath, function(err){
+                         if(err) {
+                            Log.error(err.message);
+                             return false;
+                         }
+                    });
+                });
+            }
+            return res;
+        }
+
+    }
+
+    checkForParametersInConfig(config, ...params){
+      for (let c = 0; c < params.length; c++){
+        if(!(params[c] in config) || config[params[c]] === undefined || config[params[c]].length == 0){
+            Log.error(`No paramenter added! Please provide ${params[c]} parameter.`);
+            return false;
+        }
+      }
+    }
+
+    checkPath(...params) {
+      const fs = require('fs');
+      for (let c = 0; c < params.length; c++) {
+        if (!fs.existsSync(params[c])) {
+            if (this.config.command.force !== undefined && this.config.command.force === true) {
+                fs.mkdirSync(params[c]);
+            } else {
+                Log.error("Folder does not exist. Use --force to create it");
+                return false;
+            }
+        }
+      }
+    }
+
+    checkConsoleParamsForDetails(config) {
+      const reqiuredParams = ['hostname', 'username', 'password', 'codeVersion'];
+      let cnt = 0
+      for (let p = 0; p < reqiuredParams.length; p++) {
+        if (!config.hasOwnProperty(reqiuredParams[p])) {
+          Log.error(`Param ${reqiuredParams[p]} are not provided. Please use --${reqiuredParams[p]} "value" to add`);
+          cnt++;
+        } else if (config[reqiuredParams[p]] == '') {
+          Log.error(`Param ${reqiuredParams[p]} are empty`);
+          cnt++;
+        }
+      }
+
+      return cnt > 0 ? false : true;
+    }
+
   }
 
   module.exports = Davos;

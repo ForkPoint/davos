@@ -8,7 +8,7 @@
             "type": "node",
             "request": "launch",
             "name": "Davos Watch",
-			"program": "${workspaceFolder}/../davos-cli/index.js",
+			"program": "${workspaceFolder}/bin/davos.js",
 			"cwd": "${workspaceFolder}/../davos-sample-project",
 			"args": [
 				"watch"
@@ -20,13 +20,30 @@
             "type": "node",
             "request": "launch",
             "name": "Davos Create",
-			"program": "${workspaceFolder}/../davos-cli/index.js",
+			"program": "${workspaceFolder}/bin/davos.js",
 			"cwd": "${workspaceFolder}/../davos-sample-project",
 			"args": [
 				"create"
             ],
             "outputCapture": "std",
             "internalConsoleOptions": "openOnSessionStart"
+		},
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "Davos Split",
+			"program": "${workspaceFolder}/bin/davos.js",
+            "cwd": "${workspaceFolder}/../../bee/tfg",
+
+			"args": [
+				"meta",
+                "split",
+                "sites/site_template/meta/system-objecttype-extensions.xml",
+                "--out",
+                "sites/site_template/meta"
+            ],
+            "outputCapture": "std",
+            "internalConsoleOptions": "openOnSessionStart"
 		}
-    ]
+	]
 }

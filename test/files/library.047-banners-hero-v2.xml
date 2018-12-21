@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<library xmlns="http://www.demandware.com/xml/impex/library/2006-10-31" library-id="Diesel">
+    <content content-id="047-banners-hero-v2">
+        <display-name xml:lang="x-default">Banners Hero V2</display-name>
+        <online-flag>true</online-flag>
+        <searchable-flag>false</searchable-flag>
+        <page-attributes/>
+        <custom-attributes>
+            <custom-attribute attribute-id="body" xml:lang="x-default">&lt;div class="banners-hero banners-hero-v2">
+	 &lt;div class="container">
+	 	&lt;div class="col-md-6 col-xs-12 banner-content">
+			&lt;h2 class="module-head-big">
+				Only The Brave
+			&lt;/h2>
+			&lt;div class="col-md-8">
+				&lt;p>We're head-over-heels with our latest denims,
+				 with the reserve technique giving new fabrics vintage vibes.
+				&lt;/p>
+			&lt;/div>
+			&lt;a href="#" class="button secondary-white-btn">Shop The Collection&lt;/a>
+ 			&lt;a href="#" class="button light-btn">Watch The Trailer&lt;/a>
+		&lt;/div>
+	 &lt;/div>
+&lt;/div></custom-attribute>
+            <custom-attribute attribute-id="contentStyling">&lt;style>
+.banners-hero-v2 {
+color: #fff;
+}
+&lt;/style></custom-attribute>
+            <custom-attribute attribute-id="imageUrl">modules/banners-hero-2.jpg</custom-attribute>
+        </custom-attributes>
+    </content>
+</library>

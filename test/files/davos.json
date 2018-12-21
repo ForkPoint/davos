@@ -1,0 +1,29 @@
+[
+  {
+    "active": true,
+    "profile": "dev05",
+    "config": {
+      "hostname": "test.demandware.net",
+      "username": "user",
+      "password": "pass",
+      "codeVersion": "v1",
+      "cartridge": [
+        "app_storefront"
+      ],
+      "exclude": [
+        "**/node_modules/**",
+        "**/.git/**",
+        "**/.svn/**",
+        "**/.sass-cache/**"
+      ],
+      "templateReplace": {
+        "files": [
+          "/path/to/cartrige/template/build_info.isml"
+        ],
+        "pattern": {
+          "buildVersion": "@DEPLOYMENT_VERSION@"
+        }
+      }
+    }
+  }
+]

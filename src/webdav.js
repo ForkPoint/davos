@@ -184,8 +184,8 @@
         };
 
         self.doRequest(options, MAX_ATTEMPTS, RETRY_DELAY)
-          .then(function () {
-            resolve();
+          .then(function (body) {
+            resolve(body);
           }, function (err) {
             reject(err);
           });
