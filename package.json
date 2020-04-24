@@ -42,7 +42,7 @@
     "moment": "^2.18.1",
     "multimatch": "^2.1.0",
     "pretty-data": "^0.40.0",
-    "progress": "^1.1.8",
+    "progress": "^2.0.3",
     "request": "^2.79.0",
     "request-debug": "^0.2.0",
     "sync-queue": "0.0.2",
