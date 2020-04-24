@@ -40,7 +40,7 @@
     "md5-file": "^3.1.1",
     "mergexml": "^1.1.2",
     "moment": "^2.18.1",
-    "multimatch": "^2.1.0",
+    "multimatch": "^4.0.0",
     "pretty-data": "^0.40.0",
     "progress": "^1.1.8",
     "request": "^2.79.0",
