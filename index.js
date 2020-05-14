@@ -1,11 +1,5 @@
-(function () {
-  'use strict';
+'use strict';
 
-  module.exports = {
-    Core: require('./src/main'),
-    ConfigManager: require('./src/config-manager'),
-    Logger: require('./src/logger'),
-    BM: require('./src/bm'),
-    WebDav: require('./src/webdav')
-  };
-}());
+const Core = require('./src/main');
+
+module.exports = Core;

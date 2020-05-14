@@ -40,7 +40,7 @@
     }
 
     getActiveProfile(config) {
-		if(Object.keys(this.profiles).length == 0){
+		if (Object.keys(this.profiles).length == 0){
 			return false;
 		} else {
 			if (!this.profiles) {
@@ -153,27 +153,36 @@
 
     loadConfiguration() {
       //parse the configuration
-      let configName = this.getConfigName(),
+      const configName = this.getConfigName();
+      let configExists = false,
       fileContents = '',
       json = null;
-      if(fs.existsSync(configName)){
-		try {
-			fileContents = fs.readFileSync(configName, 'UTF-8');
-		  } catch (e) {
-			Log.error(chalk.red("\nConfiguration not found. Error: " + configName + " ::: " + e.message));
-		  }
-	
-		  try {
-			json = JSON.parse(fileContents);
-		  } catch (e) {
-			Log.error(chalk.red("\nThere was a problem parsing the configuration file : " + configName + " ::: " + e.message));
-		  }
-	
-		  this.profiles = json;
-	
-		  return this;
+
+      try {
+        configExists = fs.existsSync(configName);
+      } catch (err) {
+        Log.error(err);
+      }
+
+
+      if (configExists) {
+          try {
+            fileContents = fs.readFileSync(configName, 'UTF-8');
+          } catch (e) {
+            Log.error(chalk.red("\nConfiguration not found. Error: " + configName + " ::: " + e.message));
+          }
+
+          try {
+            json = JSON.parse(fileContents);
+          } catch (e) {
+            Log.error(chalk.red("\nThere was a problem parsing the configuration file : " + configName + " ::: " + e.message));
+          }
+
+          this.profiles = json;
+
+          return this;
       } else {
-		return this;
+        return this;
       }
     }
 

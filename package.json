@@ -12,7 +12,7 @@
     "davos": "./bin/davos.js"
   },
   "scripts": {
-    "test": "mocha --opts scripts/mocha.opts src/**/*-test.js",
+    "test": "mocha test/**/*.spec.js",
     "lint": "eslint .",
     "lint:fix": "npm run lint --silent -- --fix",
     "readme": "node ./node_modules/.bin/node-readme",

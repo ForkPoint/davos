@@ -20,7 +20,8 @@ exports.merge = function (davos, files) {
   let parser = new xdom.DOMParser();
 
   let child = 1; // start from 1 to skip <xml/>
-  let document = parser.parseFromString(fs.readFileSync(files[0]).toString().replace(/xmlns=".+?"/, ''));
+  const readFile = fs.readFileSync(files[0]);
+  let document = parser.parseFromString(readFile.toString().replace(/xmlns=".+?"/, ''));
 
   while (document.childNodes[child].nodeName === "#text") {
     child++;
@@ -28,7 +29,6 @@ exports.merge = function (davos, files) {
 
   let node = document.childNodes[child],
     nodeName = node.nodeName;
-
   return exports.processors[exports.processors[nodeName] ? nodeName : "generic"](davos, files, node);
 }
 

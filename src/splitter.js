@@ -3,62 +3,71 @@ const path = require("path");
 const log = require('./logger');
 const DOMParser = require('xmldom').DOMParser;
 const x = require("xpath");
-const xdom = require("xmldom");
 const prettifier = require('prettify-xml');
 
 function absolutePath(davos, fpath) {
-  let source;
-  if(path.isAbsolute(fpath)) {
+  let source = '';
+
+  if (path.isAbsolute(fpath)) {
     source = fpath;
   } else {
-    if(davos.config.basePath) {
+    if (davos.config.basePath) {
       source = path.join(davos.config.basePath, davos.SITES_META_FOLDER, fpath);
     } else {
-      source = path.join( process.cwd(), fpath );
+      source = path.join(process.cwd(), fpath);
     }
-
   }
+
   return source;
 }
 
 exports.splitBundle = function (davos, fpath, xpath, out, cfg) {
   const template = fs.readFileSync(__dirname + "/../resources/" + cfg.template + ".template").toString();
   const filepath = absolutePath(davos, fpath);
+  const xmlFile = fs.readFileSync(filepath).toString();
 
-  return new Promise((r, e) => {
-    fs.readFile(filepath, (err, xml) => {
-      if (err) {
-        return e(err);
-      }
+  if (!xmlFile) {
+    console.error(`Error while reading file at ${filepath}`);
+    return;
+  }
 
-      out = out || path.dirname(filepath);
+  return new Promise((resolve, reject) => {
+    const document = new DOMParser().parseFromString(xmlFile.replace(`xmlns="${cfg.ns}"`, ''));
+    const nodes = x.select(xpath, document);
+    const nodeMap = nodes.map(node => new Promise((fileResolve, fileReject) => cfg.persist(
+      node,
+      fileResolve,
+      fileReject,
+      out || path.dirname(filepath),
+      template
+    )
+    ));
 
-      let document = new xdom.DOMParser().parseFromString(xml.toString().replace('xmlns="' + cfg.ns + '"', ''));
-      let nodes = x.select(xpath, document);
-
-      Promise.all(nodes.map(node => new Promise((fp, fe) => cfg.persist(node, fp, fe, out, template)))).then(results => {
-        r(results);
-      }).catch(e);
-    });
+    Promise.all(nodeMap)
+      .then(results => {
+        resolve(results);
+      })
+      .catch(reject);
   });
 }
 
 exports.split = function (davos, path, out) {
   path = absolutePath(davos, path);
-
+  
   if (!fs.existsSync(path)) {
     return;
   }
 
   let child = 1; // start from 1 to skip <xml/>
-  let document = new DOMParser().parseFromString(fs.readFileSync(path).toString().replace(/xmlns=".+?"/, ''));
+  const xmlFile = fs.readFileSync(path).toString().replace(/xmlns=".+?"/, '');
+  const document = new DOMParser().parseFromString(xmlFile);
 
   while (document.childNodes[child].nodeName === "#text") {
     child++;
   }
 
-  let node = document.childNodes[child],
-    nodeName = node.nodeName;
+  const node = document.childNodes[child];
+  const nodeName = node.nodeName;
 
   if (!exports.processors[nodeName]) {
     throw new Error("Splitting " + nodeName + " is currently not supported.");
@@ -200,8 +209,14 @@ exports.processors = {
               }
             });
 
-            fs.writeFile(
-              out + "/" + (cloneInstance.nodeName === "custom-type" ? "custom" : "system") + "." + cloneInstance.getAttribute("type-id") + "." + (davos.config.projectID || "projectID") + "." + group.getAttribute("group-id").replace(' ', '') + ".xml",
+            const nodeType = cloneInstance.nodeName === 'custom-type' ? 'custom' : 'system'
+            const attributeType = cloneInstance.getAttribute('type-id');
+            const projectID = davos.config.projectID || 'projectID';
+            const groupID = group.getAttribute('group-id').replace(' ', '');
+            const writePath = `${out}/${nodeType}.${attributeType}.${projectID}.${groupID}.xml`;
+
+            fs.writeFileSync(
+              writePath,
               prettifier(template.replace("{{ objects }}", cloneInstance.toString()), {
                 indent: davos.config.indentSize
               }),
