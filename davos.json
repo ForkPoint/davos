@@ -1,0 +1,20 @@
+[
+    {
+        "active": true,
+        "profile": "dev01",
+        "config": {
+            "hostname": "dev01-web-proj.demandware.net",
+            "username": "user1",
+            "password": "password1",
+            "cartridge": [
+                "cartridges\\app_foo",
+                "cartridges\\int_foo"
+            ],
+            "codeVersion": "version1",
+            "exclude": [
+                "**/node_modules/**",
+                "**/.sass-cache/**"
+            ]
+        }
+    }
+]
