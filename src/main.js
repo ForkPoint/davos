@@ -32,14 +32,23 @@ class Davos {
 
   prepareConfiguration(config){
     this.ConfigManager = new ConfigManager();
-    const configuration = this.ConfigManager.loadConfiguration();
-    const profiles = Object.keys(configuration.profiles);
+    let configuration;
+    let profiles = [];
+
+    /**
+     * Before trying to search and read the davos.json file, check what parameters are stored in the configuration
+     * if any are stored and they DO have the required parameters, then continue (e.g. CLI Case)
+     */
+    if (!Object.keys(config).length || (Object.keys(config).length && !this.checkConsoleParamsForDetails(config))) {
+      configuration = this.ConfigManager.loadConfiguration(); // tries to read configuration from davos.json
+      profiles = Object.keys(configuration.profiles); // gets those profiles from the configuration file
+    }
 
     if (profiles.length > 0){
         this.syncConfig(config);
     } else {
-        if(Object.keys(config).length > 0){
-            if(this.checkConsoleParamsForDetails(config)){
+        if (Object.keys(config).length > 0) {
+            if (this.checkConsoleParamsForDetails(config)) {
                 this.ConfigManager.profiles = [{'active': true, config: config}];
                 this.syncConfig(config);
             } else {
@@ -53,14 +62,12 @@ class Davos {
 
   syncConfig(config) {
     this.config = (Object.keys(this.ConfigManager.config).length === 0)
-      ? this.ConfigManager.loadConfiguration().getActiveProfile(config)
+      ? this.ConfigManager.profiles.length > 0
+      ? this.ConfigManager.getActiveProfile(config)
+      : this.ConfigManager.loadConfiguration().getActiveProfile(config)
       : this.ConfigManager.mergeConfiguration(config);
 
-    if (this.config && this.config.metaDir) {
-      this.SITES_META_FOLDER = this.config.metaDir;
-    } else {
-      this.SITES_META_FOLDER = '/sites/site_template'
-    }
+    this.SITES_META_FOLDER = this.config && this.config.metaDir ? this.config.metaDir : '/sites/site_template';
   }
 
 

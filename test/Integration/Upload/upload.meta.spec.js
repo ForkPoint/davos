@@ -52,7 +52,12 @@ describe('INTEGRATION: Upload Meta', function () {
         const davos = new Davos(params);
         let res = await davos.uploadMeta();
         expect(res).to.be.undefined;
-        expect(LogSpy.callCount).to.be.equal(1);
+        /**
+         * 5 errors:
+         * 1: no file has been found, no configuration
+         * 2-5: the required parameters were not passed
+         */
+        expect(LogSpy.callCount).to.be.equal(5);
         LogSpy.restore();
     });
 
