@@ -32,7 +32,7 @@
     "url": "git+https://github.com/forkpoint/davos.git"
   },
   "dependencies": {
-    "chalk": "^1.1.3",
+    "chalk": "^4.0.0",
     "cheerio": "^0.22.0",
     "chokidar": "^1.6.1",
     "del": "^2.2.2",
