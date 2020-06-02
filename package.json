@@ -66,6 +66,6 @@
     "mocha": "~3.2.0",
     "mocha-clean": "~1.0.0",
     "node-readme": "^0.1.9",
-    "publish-please": "^2.2.0"
+    "publish-please": "^5.5.1"
   }
 }
