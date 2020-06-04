@@ -30,11 +30,12 @@
 
   // Locals
   const Log = require('./logger');
+  const Utils = require('./util');
 
   class RequestManager {
-    constructor (options, configManager) {
+    constructor (options, config) {
       this.options = options;
-      this.configManager = configManager;
+      this.config = config;
       return this;
     }
 
@@ -133,7 +134,7 @@
               stream.push(null);
             } else {
               // create file stream (default)
-              stream = fs.createReadStream((options.fromTmpDir ? (self.configManager.getTempDir() + "/") : "cartridges/") + options.uri);
+              stream = fs.createReadStream((options.fromTmpDir ? (Utils.getTempDir(this.config) + "/") : "cartridges/") + options.uri);
             }
             stream.pipe(req);
           } catch (e) {

@@ -6,5 +6,6 @@ exports.aliases = ['metdata'];
 exports.desc = 'Import a single metadata file';
 exports.builder = {};
 exports.handler = (argv) => {
-   new Davos.Core(argv).uploadMeta();
+   const davos = new Davos(argv);
+   davos.uploadMeta();
 };

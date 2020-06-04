@@ -58,6 +58,7 @@
     "prompt": "^1.0.0",
     "request": "^2.87.0",
     "request-debug": "^0.2.0",
+    "sfcc-ci": "^2.5.0",
     "simple-git": "^1.107.0",
     "sync-queue": "0.0.2",
     "underscore": "^1.9.1",

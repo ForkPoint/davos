@@ -6,5 +6,5 @@ exports.aliases = ['w'];
 exports.desc = '';
 exports.builder = {};
 exports.handler = (argv) => {
-   new Davos.Core(argv).watch();
+   new Davos(argv).watch();
 };

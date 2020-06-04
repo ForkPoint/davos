@@ -4,7 +4,7 @@
   // Imports
   const chalk = require('chalk'),
     Davos = require('../index'),
-    ConfigManager = new Davos.ConfigManager(),
+    // ConfigManager = new Davos.ConfigManager(),
     Log = Davos.Logger;
 
   const yargonaut = require('yargonaut')
