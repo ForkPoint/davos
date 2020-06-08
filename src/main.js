@@ -26,18 +26,17 @@ class Davos {
     this.SFCCManager = new SFCCManager(this.ConfigManager.getActiveConfig());
   }
 
-  /** NEW/REWORKED DAVOS FUNCTIONALITIES [ WIP ]!!!*/
+  /** List code versions */
   listCode(token) {
     const config = this.ConfigManager.getActiveConfig();
     codeList(config.hostname, token);
   }
-  /** END */
 
   /**
    * Upload cartridges
    */
   uploadCartridges() {
-    UploadCartridges(this.ConfigManager.getActiveConfig()); // TODO: Adjust the passed config
+    UploadCartridges(this.ConfigManager.getActiveConfig());
   }
 
   /**
@@ -52,21 +51,21 @@ class Davos {
    * Activate code version
    */
   activateCodeVersion() {
-    ActivateCodeVer(this.ConfigManager.getActiveConfig()); // TODO: Adjust the passed config
+    ActivateCodeVer(this.ConfigManager.getActiveConfig());
   }
 
   /**
    * Watch files for changes
    */
   watch() {
-    Watcher(this.ConfigManager.getActiveConfig()); // TODO: Adjust the passed config
+    Watcher(this.ConfigManager.getActiveConfig());
   }
 
   /**
    * Sinchronice server site files with local version
    */
   sync() {
-    Sync(this.ConfigManager.getActiveConfig()); // TODO: Adjust the passed config
+    Sync(this.ConfigManager.getActiveConfig());
   }
 
   /**
@@ -77,7 +76,7 @@ class Davos {
    */
   replaceRevisionNumber(pattern, placeholder = "@BUILD_NUMBER@") {
     const config = this.ConfigManager.getActiveConfig();
-    ReplaceRevisionNumber(pattern, placeholder = "@BUILD_NUMBER@", config); // TODO: Adjust the passed config
+    ReplaceRevisionNumber(pattern, placeholder = "@BUILD_NUMBER@", config);
   }
 
   /**
@@ -85,7 +84,7 @@ class Davos {
    * @params {object} object with params from gulp task
    */
   uploadMeta() {
-    UploadMeta(this.ConfigManager.getActiveConfig()); // TODO: Adjust the passed config
+    UploadMeta(this.ConfigManager.getActiveConfig());
   }
 
   /**
@@ -94,7 +93,7 @@ class Davos {
    * Split a big Metadata xml file into smaller chunks, separated by object type definition
    */
   split(paramIn = null, paramOut = null, force = null) {
-    SplitMeta(paramIn, paramOut, force, this.ConfigManager.getActiveConfig()); // TODO: Adjust the passed config
+    SplitMeta(paramIn, paramOut, force, this.ConfigManager.getActiveConfig());
   }
 
   /**
@@ -103,7 +102,7 @@ class Davos {
    * Merge a bunch of xml files with the same root element into a bundle.
    */
   async merge(paramIn = null, paramOut = null, force = null) {
-    MergeMeta(paramIn, paramOut, force, this.ConfigManager.getActiveConfig()); // TODO: Adjust the passed config
+    MergeMeta(paramIn, paramOut, force, this.ConfigManager.getActiveConfig());
   }
 }
 

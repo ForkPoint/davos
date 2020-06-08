@@ -4,14 +4,15 @@ const chalk = require('chalk');
 const path = require('path');
 const yazl = require('yazl');
 const globby = require('globby');
+const del = require('del');
 
 /** Internal Modules */
 const Log = require('./logger');
 const Constants = require('./constants');
 
 // used to be just 'delete'
-function deleteArchive(archiveName, logMessage = "Removing local archive.") {
-    return del(getTempDir() + "/" + archiveName).then(function () {
+function deleteArchive(archiveName, logMessage = "Removing local archive.", config) {
+    return del(getTempDir(config) + "/" + archiveName).then(function () {
         Log.info(chalk.cyan(logMessage));
     });
 }
@@ -48,7 +49,7 @@ function gitLogDiff(config){
     const exec = require('child_process').exec;
     const gitLogDifference = `git diff --name-only ${config.git.start} ${config.git.end} --diff-filter=AM -- sites/site_template`;
     const root = getCurrentRoot();
-    const tempDir = getTempDir();
+    const tempDir = getTempDir(config);
 
     if (!config.git.start || !config.git.end) {
         Log.error('Please provide --start "Tag1" --end "Tag2" parameters!');
@@ -95,7 +96,7 @@ function compress(root, archiveName, arrayWithGlob, rootPrefix, config) {
 
     return new Promise(function (compressResolve, compressReject) {
         const archive = new yazl.ZipFile();
-        const tempDir = getTempDir();
+        const tempDir = getTempDir(config);
 
         return globby(arrayWithGlob, {
             cwd: root,
@@ -139,7 +140,7 @@ function getCurrentRoot() {
 // }
 
 function getTempDir(config) {
-    const dir = config.tmpDir || Constants.TMP_DIR;
+    const dir = config.Has('tmpDir') ? config.tmpDir : Constants.TMP_DIR;
 
     try {
         fs.mkdirSync(dir);

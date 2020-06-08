@@ -21,7 +21,7 @@ function uploadSitesMeta(arrayWithGlob, config) {
 
     return (function () {
         Log.info(chalk.cyan('Creating archive of sites.'));
-        return utils.compress(currentRoot, archiveName, arrayWithGlob, rootPrefix);
+        return utils.compress(currentRoot, archiveName, arrayWithGlob, rootPrefix, config);
     })().then(function () {
         Log.info(chalk.cyan('Uploading archive.'));
         return bm.uploadSitesArchive(archiveName);

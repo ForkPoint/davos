@@ -35,35 +35,29 @@ class ConfigManager {
     } else {
       this.setActiveConfig();
       const configFile = this.getConfigFile();
-      const nonVitalConfigProperties = this.getNonVitalConfigProperties(configFile);
-
+      
       if (!configFile) {
         /** create empty configuration */
         Log.warn('No configuration file present, creating empty configuration.');
         Log.warn('Limited functionality will be available.');
-
+        
         this.profiles.push(new Profile({}, true, 'default'));
       } else {
         /** if array, then it is davos.json */
         if (Array.isArray(configFile)) {
           configFile.forEach((profile) => {
-            this.profiles.push(new Profile(profile.config, profile.active, profile.profile));
+            const nonVitalConfigProperties = this.getNonVitalConfigProperties(profile.config);
+            const newProfile = new Profile(profile.config, profile.active, profile.profile);
+
+            this.addNonVitalConfigPropertiesToProfile(newProfile, nonVitalConfigProperties);
+            this.profiles.push(newProfile);
           });
         } else {
-          this.profiles.push(new Profile(configFile, true, 'default'));
-        }
-  
-        /**
-         * If any params are passed in the config object, while having configuration
-         * and are not the required or options properties
-         * - add them to all the profiles [current implementation]?
-         * - or
-         * - add to the current active configuration?
-         */
-        if (Object.keys(nonVitalConfigProperties).length) {
-          this.profiles.forEach((profile) => {
-            Object.keys(nonVitalConfigProperties).forEach(key => profile.config.SetProperty(key, nonVitalConfigProperties[key]));
-          });
+          const nonVitalConfigProperties = this.getNonVitalConfigProperties(configFile);
+          const newProfile = new Profile(configFile, true, 'default');
+
+          this.addNonVitalConfigPropertiesToProfile(newProfile, nonVitalConfigProperties);
+          this.profiles.push(newProfile);
         }
       }
     }
@@ -134,6 +128,10 @@ class ConfigManager {
     });
 
     return nonVitalConfigProperties;
+  }
+
+  addNonVitalConfigPropertiesToProfile(profile, nonVitalAttributes) {
+    Object.keys(nonVitalAttributes).forEach(attr => profile.config.SetProperty(attr, nonVitalAttributes[attr]));
   }
 
   /**

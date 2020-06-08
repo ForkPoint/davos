@@ -11,15 +11,15 @@ function getCartridgesPath() {
  * [From Config Manager]
  * @param {bool} all whether to return all cartridges or only selected in config
  */
-function getCartridges(all = false) {
-    if (all || !this.config.cartridge) {
+function getCartridges(all = false, config) {
+    if (all || !config.cartridge) {
         let cartridgesDir = getCartridgesPath();
 
         return fs.readdirSync(cartridgesDir).filter(dir => {
             return fs.lstatSync(path.join(cartridgesDir, dir)).isDirectory();
         });
     } else {
-        return this.config.cartridge;
+        return config.cartridge;
     }
 }
 

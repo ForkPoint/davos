@@ -64,6 +64,7 @@
         var datachunks = 0;
         var url = require('url').parse(options.baseUrl);
         options.headers.Origin = url.protocol + '//' + url.hostname;
+
         req = request(options, function (error, response, body) {
           if (attemptsLeft < MAX_ATTEMPTS) {
             Log.error('Trying to ' + signature + ' for the ' + (MAX_ATTEMPTS - attemptsLeft) + ' time out of ' + MAX_ATTEMPTS + ' tries left.');
@@ -134,7 +135,7 @@
               stream.push(null);
             } else {
               // create file stream (default)
-              stream = fs.createReadStream((options.fromTmpDir ? (Utils.getTempDir(this.config) + "/") : "cartridges/") + options.uri);
+              stream = fs.createReadStream((options.fromTmpDir ? (Utils.getTempDir(self.config) + "/") : "cartridges/") + options.uri);
             }
             stream.pipe(req);
           } catch (e) {

@@ -5,6 +5,12 @@ exports.command = 'code';
 exports.aliases = ['cartridges'];
 exports.desc = 'Upload all code/cartridges';
 exports.builder = {};
-exports.handler = (argv) => {
-   new Davos.Core(argv).uploadCartridges();
+exports.handler = async (argv) => {
+   const davos = new Davos(argv);
+   const sfcc = davos.SFCCManager;
+
+   /** Authenticate first */
+   await sfcc.Authenticate();
+
+   davos.uploadCartridges();
 };

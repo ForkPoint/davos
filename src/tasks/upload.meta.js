@@ -23,7 +23,7 @@ function uploadMeta(config) {
     return new Promise((r, e) => {
         globby(currentRoot + "/" + pattern).then(files => {
             const xmlm = require("xmlappend");
-            const filePath = configManager.getTempDir() + "/" + filename;
+            const filePath = configManager.getTempDir(config) + "/" + filename;
 
             Log.info(chalk.cyan(`Creating bundle from ${files.length} files.`));
 
