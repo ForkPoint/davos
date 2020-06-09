@@ -5,7 +5,7 @@
   const chalk = require('chalk'),
     Davos = require('../index'),
     // ConfigManager = new Davos.ConfigManager(),
-    Log = Davos.Logger;
+    Log = require('./logger');
 
   const yargonaut = require('yargonaut')
   .style('bold.underline', 'Commands:')

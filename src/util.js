@@ -251,6 +251,21 @@ function checkConsoleParamsForDetails(config) {
     return cnt > 0 ? false : true;
 }
 
+async function getMetaArchive(arrayWithGlob = null, config) {
+    const currentRoot = getCurrentRoot() + Constants.SITES_META_FOLDER;
+    const archiveName = getArchiveName(config);
+    const rootPrefix = path.basename(archiveName, '.zip') + '/';
+
+    if (!arrayWithGlob) arrayWithGlob = ['**/*.xml'];
+
+    await compress(currentRoot, archiveName, arrayWithGlob, rootPrefix, config);
+    return archiveName;
+}
+
+function getArchiveName(config) {
+    return `sites_${config.codeVersion}.zip`;
+}
+
 module.exports = {
     deleteFiles: deleteFiles,
     gitLogDiff: gitLogDiff,
@@ -262,5 +277,7 @@ module.exports = {
     promptError: promptError,
     replaceTemplateInfo: replaceTemplateInfo,
     checkPath: checkPath,
-    checkConsoleParamsForDetails: checkConsoleParamsForDetails
+    checkConsoleParamsForDetails: checkConsoleParamsForDetails,
+    getMetaArchive: getMetaArchive,
+    getArchiveName: getArchiveName
 };

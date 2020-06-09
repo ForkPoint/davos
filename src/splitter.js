@@ -80,8 +80,8 @@ exports.split = function (config, path, out) {
 }
 
 exports.processors = {
-  library: function (davos, fpath, out, prettifier) {
-    return exports.splitBundle(davos, fpath, "//content", out, {
+  library: function (config, fpath, out, prettifier) {
+    return exports.splitBundle(config, fpath, "//content", out, {
       template: "library",
       ns: "http://www.demandware.com/xml/impex/library/2006-10-31",
       persist: (node, resolve, reject, out, template) => {
@@ -90,15 +90,15 @@ exports.processors = {
         fs.writeFile(out + "/library." + node.getAttribute("content-id") + ".xml", prettifier(template.replace("{{ libraryid }}", library.hasAttribute("library-id") ? library.getAttribute("library-id") : "").replace("{{ objects }}", (function (replacement) {
           return () => replacement;
         })(node.toString())), {
-          indent: davos.config.indentSize
+          indent: config.indentSize
         }), function (err) {
           err ? reject(err) : resolve()
         });
       }
     });
   },
-  'slot-configurations': function (davos, fpath, out, prettifier) {
-    return exports.splitBundle(davos, fpath, "//slot-configuration", out, {
+  'slot-configurations': function (config, fpath, out, prettifier) {
+    return exports.splitBundle(config, fpath, "//slot-configuration", out, {
       template: "slots",
       ns: "http://www.demandware.com/xml/impex/slot/2008-09-08",
       persist: (node, resolve, reject, out, template) => {
@@ -107,7 +107,7 @@ exports.processors = {
         fs.writeFile(out + "/slots." + node.getAttribute("slot-id") + ".xml", prettifier(template.replace("{{ objects }}", (function (replacement) {
           return () => replacement;
         })(node.toString())), {
-          indent: davos.config.indentSize
+          indent: config.indentSize
         }), function (err) {
           err ? reject(err) : resolve()
         });
@@ -216,7 +216,7 @@ exports.processors = {
             fs.writeFileSync(
               writePath,
               prettifier(template.replace("{{ objects }}", cloneInstance.toString()), {
-                indent: config.indentSize || 2
+                indent: config.indentSize
               }),
               function (err) {
                 err ? e1(err) : r1("done");
@@ -226,7 +226,7 @@ exports.processors = {
       }
     });
   },
-  promotions: function (davos, path, out, prettifier) {
+  promotions: function (config, path, out, prettifier) {
     let nodes = {
       campaign: {},
       promotion: {},
@@ -235,7 +235,7 @@ exports.processors = {
 
     let template;
 
-    return exports.splitBundle(davos, path, "/promotions/*", out, {
+    return exports.splitBundle(config, path, "/promotions/*", out, {
       template: "promotions",
       ns: "http://www.demandware.com/xml/impex/promotion/2008-01-31",
       persist: (node, resolve, reject, _out, _templ) => {
@@ -271,7 +271,7 @@ exports.processors = {
 
         return new Promise((resolve, reject) => {
           fs.writeFile(out + "/campaign." + id + ".xml", prettifier(template.replace("{{ objects }}", objects)), {
-            indent: davos.config.indentSize
+            indent: config.indentSize
           }, function (err) {
             err ? reject(err) : resolve("done");
           });

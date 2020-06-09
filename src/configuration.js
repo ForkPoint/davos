@@ -12,6 +12,7 @@ class Configuration {
         this.codeVersion = config.codeVersion || '';
         this.cartridge = config.cartridge || [];
         this.exclude = config.exclude || [];
+        this.indentSize = config.indentSize || 2;
     }
 
     SetProperty(name, value) {

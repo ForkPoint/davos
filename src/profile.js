@@ -18,12 +18,8 @@ class Profile {
         this.name = name;
     }
 
-    Activate() {
-        this.active = true;
-    }
-
-    Deactivate() {
-        this.active = false;
+    SetActive(status) {
+        this.active = status;
     }
 }
 

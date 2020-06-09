@@ -3,7 +3,7 @@ const splitter = require('../splitter');
 const utils = require('../util');
 const Log = require('../logger');
 
-function split(paramIn = null, paramOut = null, force = null, config) {
+function split(paramIn, paramOut, force, config) {
     const root = utils.getCurrentRoot();
     let bundle;
     let out;
@@ -18,7 +18,7 @@ function split(paramIn = null, paramOut = null, force = null, config) {
         config.SetProperty('command', {
             in: paramIn,
             out: paramOut,
-            force: force === '--force'
+            force: force === '--force' ? force : false
         });
     }
 

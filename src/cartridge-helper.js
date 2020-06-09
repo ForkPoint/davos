@@ -1,6 +1,7 @@
 const path = require('path');
 const utils = require('./util');
 const Constants = require('./constants');
+const globby = require('globby');
 
 function getCartridgesPath() {
     return path.join(utils.getCurrentRoot(), Constants.CARTRIDGES_FOLDER);
@@ -23,33 +24,34 @@ function getCartridges(all = false, config) {
     }
 }
 
-// function getCartridges(currentRoot) {
-//     let result = [];
+function getCartridgesFromDir(dir) {
+    let result = [];
 
-//     currentRoot = path.join(currentRoot, "/cartridges")
+    dir = path.join(dir, "/cartridges")
 
-//     let paths = globby.sync(['**/cartridge'], {
-//         cwd: currentRoot,
-//         dot: true,
-//         nosort: true,
-//         absolute: true,
-//         deep: 1,
-//         onlyDirectories: true,
-//         ignore: Constants.GLOB_IGNORED
-//     });
+    let paths = globby.sync(['**/cartridge'], {
+        cwd: dir,
+        dot: true,
+        nosort: true,
+        absolute: true,
+        deep: 1,
+        onlyDirectories: true,
+        ignore: Constants.GLOB_IGNORED
+    });
 
-//     paths.forEach(function (filePath) {
-//         let absolutePath = filePath,
-//             relativeCartridgePath = path.relative(currentRoot, absolutePath),
-//             relativePath = path.dirname(relativeCartridgePath).replace(/\\/g, '/');
+    paths.forEach(function (filePath) {
+        let absolutePath = filePath,
+            relativeCartridgePath = path.relative(dir, absolutePath),
+            relativePath = path.dirname(relativeCartridgePath).replace(/\\/g, '/');
 
-//         result.push(relativePath);
-//     });
+        result.push(relativePath);
+    });
 
-//     return result;
-// }
+    return result;
+}
 
 module.exports = {
     getCartridgesPath: getCartridgesPath,
-    getCartridges: getCartridges
+    getCartridges: getCartridges,
+    getCartridgesFromDir: getCartridgesFromDir
 };
