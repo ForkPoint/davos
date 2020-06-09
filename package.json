@@ -47,7 +47,7 @@
     "request-debug": "^0.2.0",
     "sync-queue": "0.0.2",
     "underscore": "^1.8.3",
-    "winston": "^2.3.0",
+    "winston": "^3.2.1",
     "xmlappend": "^1.0.4",
     "xmldoc": "^1.1.0",
     "xmldom": "^0.1.27",
