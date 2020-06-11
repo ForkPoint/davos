@@ -7,7 +7,7 @@ const chalk = require('chalk');
 
 function watch(config) {
     const queue = new Queue();
-    const webdav = new WebDav(config); // webdav will be obsolete, please use sfcc-ci module
+    const webdav = new WebDav(config);
     const allCartridges = config.cartridge.map(cartridge => `cartridges/${cartridge}`);
     const excludesWithDotFiles = config.exclude.concat([/[\/\\]\./]);
     const watchHashList = [];

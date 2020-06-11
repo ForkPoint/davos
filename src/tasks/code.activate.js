@@ -1,18 +1,19 @@
-const BM = require('../bm');
+/** Modules */
+const sfccCode = require('sfcc-ci').code;
+const chalk = require('chalk');
+
+/** Internal modules */
 const Log = require('../logger');
 
-function activateCodeVersion(config) {
-    const bm = new BM(config); // BM will be obsolete in the future
+function activateCodeVersion(instance, token, version) {
+    Log.info(`Trying to activate ${chalk.cyan(version)}...`);
 
-    return (function () {
-        Log.info(chalk.cyan(`Logging in to Business Manager.`));
-        return bm.login();
-    })().then(function () {
-        Log.info(chalk.cyan(`Activating code version [${config.codeVersion}]`));
-        return bm.activateCodeVersion();
-    }, function (err) {
-        Log.error(err);
-        return Promise.reject(err);
+    sfccCode.activate(instance, version, token, (err) => {
+        if (err) {
+            Log.error(`Could not activate code version ${version}: ${err}`)
+        }
+
+        Log.info(`${chalk.cyan(version)} active on ${chalk.green(instance)}`);
     });
 }
 

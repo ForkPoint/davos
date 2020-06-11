@@ -37,7 +37,7 @@ class ConfigManager {
 
       if (!configFile) {
         /** create empty configuration */
-        Log.warn('No configuration file present, creating empty configuration.');
+        Log.warn('No configuration file present, creating temporary empty configuration.');
         Log.warn('Limited functionality will be available.');
 
         this.profiles.push(new Profile({}, true, 'default'));
@@ -46,9 +46,13 @@ class ConfigManager {
         if (Array.isArray(configFile)) {
           configFile.forEach((profile) => {
             const nonVitalConfigProperties = this.getNonVitalConfigProperties(profile.config);
-            const newProfile = new Profile(profile.config, profile.active, profile.name);
+            const newProfile = new Profile(profile.config, profile.active, profile.profile);
 
             this.addNonVitalConfigPropertiesToProfile(newProfile, nonVitalConfigProperties);
+
+            if (Object.keys(config).length) {
+              this.addNonVitalConfigPropertiesToProfile(newProfile, config);
+            }
             this.profiles.push(newProfile);
           });
         } else {
@@ -56,6 +60,10 @@ class ConfigManager {
           const newProfile = new Profile(configFile, true, 'default');
 
           this.addNonVitalConfigPropertiesToProfile(newProfile, nonVitalConfigProperties);
+
+          if (Object.keys(config).length) {
+            this.addNonVitalConfigPropertiesToProfile(newProfile, config);
+          }
           this.profiles.push(newProfile);
         }
       }

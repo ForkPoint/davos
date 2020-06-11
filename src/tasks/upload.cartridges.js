@@ -12,7 +12,7 @@ function uploadCartridges(config) {
 
     Log.info(chalk.cyan(`Creating archive of ${cartridges.length} cartridges: ${cartridges.join(", ")}`));
 
-    return utils.compress(cartridgeHelper.getCartridgesPath(), archiveName, cartridges.map(name => name + "/**"), null, config).then(function () {
+    return utils.compress(cartridgeHelper.getCartridgesPath(), archiveName, cartridges.map(name => name + "/**"), '', config).then(function () {
         Log.info(chalk.cyan(`Uploading archive.`));
         return webdav.put(archiveName, {
             fromTmpDir: true

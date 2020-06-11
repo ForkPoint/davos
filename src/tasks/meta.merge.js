@@ -31,7 +31,7 @@ async function merge(paramIn, paramOut, force, config) {
     outWithoutFile = outPath.substring(0, outPath.lastIndexOf(path.sep));
 
     // use config manager to checkPath
-    if (!config.checkPath(config, pattern, outWithoutFile)) return false;
+    if (!util.checkPath(config, pattern, outWithoutFile)) return false;
 
     return new Promise((r, e) => {
         globby(pattern).then(files => {

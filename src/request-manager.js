@@ -38,12 +38,11 @@ class RequestManager {
     return this;
   }
 
-  doRequest (options, attemptsLeft, retryDelay) {
+  doRequest (options, attemptsLeft, retryDelay, cb) {
     const self = this;
-
-    let req = null,
-      stream = null,
-      responseBody = null;
+    let req = null;
+    let stream = null;
+    let responseBody = null;
 
     if (attemptsLeft === MAX_ATTEMPTS) {
       options = Object.assign({}, self.options, options);
@@ -95,7 +94,9 @@ class RequestManager {
           resolve();
         } else {
           Log.debug('Succesfully actioned ' + options.uri);
-          console.log(response);
+          if (cb) {
+            cb(response);
+          }
         }
       }).on('error', function (error) {
         let e = new Error('Error occurred...' + error.code);
@@ -120,8 +121,14 @@ class RequestManager {
             stream.close();
           }
           // abort current request
+          if (cb) {
+            cb(error);
+          }
           req.abort();
         } else {
+          if (cb) {
+            cb(error);
+          }
           reject(e);
         }
       });

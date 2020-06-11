@@ -1,19 +1,17 @@
 /* eslint no-unused-vars:0, no-unused-expressions:0 */
-const Davos = require('../main');
+const Davos = require('../../main');
 
-exports.command = 'importsmth';
-exports.aliases = ['ismth'];
-exports.desc = '';
+exports.command = 'deploy';
+exports.aliases = ['d'];
+exports.desc = 'Deploys code version to instance';
 exports.builder = {};
 exports.handler = async (argv) => {
     const davos = new Davos(argv);
     const sfccMgr = davos.SFCCManager;
-    const fileName = argv.name;
 
     /** Authenticate first */
     await sfccMgr.Authenticate();
 
-
-    /** Upload file */
-    sfccMgr.Import(fileName);
+    /** list the code versions */
+    davos.deployCodeVer(sfccMgr.token);
 };

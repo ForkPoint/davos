@@ -1,9 +1,9 @@
 /* eslint no-unused-vars:0, no-unused-expressions:0 */
-const Davos = require('../main');
+const Davos = require('../../main');
 
-exports.command = 'uploadsmth';
-exports.aliases = ['usmth'];
-exports.desc = '';
+exports.command = 'list';
+exports.aliases = ['l'];
+exports.desc = 'List code versions';
 exports.builder = {};
 exports.handler = async (argv) => {
     const davos = new Davos(argv);
@@ -12,6 +12,6 @@ exports.handler = async (argv) => {
     /** Authenticate first */
     await sfccMgr.Authenticate();
 
-    /** Upload meta */
-    sfccMgr.Upload();
+    /** list the code versions */
+    davos.listCode(sfccMgr.token);
 };

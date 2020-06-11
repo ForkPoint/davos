@@ -1,9 +1,9 @@
 /* eslint no-unused-vars:0, no-unused-expressions:0 */
-const yargs = require('yargs'),
-    Davos = require('../../index');
-exports.command = 'listcode';
-exports.aliases = ['list-code'];
-exports.desc = 'List code versions';
+const Davos = require('../../main');
+
+exports.command = 'shift';
+exports.aliases = ['sh', 'djur'];
+exports.desc = 'Shifts the code versions';
 exports.builder = {};
 exports.handler = async (argv) => {
     const davos = new Davos(argv);
@@ -13,5 +13,5 @@ exports.handler = async (argv) => {
     await sfccMgr.Authenticate();
 
     /** list the code versions */
-    davos.listCode(sfccMgr.token);
+    davos.shiftCodeVers(sfccMgr.token);
 };

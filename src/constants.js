@@ -14,5 +14,10 @@ module.exports = {
         '**/.svn/**',
         '**/.sass-cache/**',
         '**/node_modules/**'
-    ]
+    ],
+    DEFAULT_OCAPI_VERSION: 'v19_5',
+    SITE_IMPORT_JOB_ID: 'sfcc-site-archive-import',
+    JobExecutionSearch: '/s/-/dw/data/v19_5/job_execution_search',
+    ACCOUNT_MANAGER_HOST: 'account.demandware.com',
+    ACCOUNT_MANAGER_TOKEN_PATH: '/dw/oauth2/access_token'
 };

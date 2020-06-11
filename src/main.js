@@ -11,14 +11,14 @@ const SFCCManager = require('./sfcc-manager');
  */
 const UploadCartridges = require('./tasks/upload.cartridges');
 const UploadSitesMeta = require('./tasks/upload.sites.meta');
-const UploadMeta = require('./tasks/upload.meta');
 const ActivateCodeVer = require('./tasks/code.activate');
+const DeployCodeVersion = require('./tasks/code.deploy');
+const CodeList = require('./tasks/code.list');
+const CodeShift = require('./tasks/code.shift');
 const Watcher = require('./tasks/watch');
-const Sync = require('./tasks/sync');
 const ReplaceRevisionNumber = require('./tasks/replace.revisionNumber');
 const SplitMeta = require('./tasks/meta.split');
 const MergeMeta = require('./tasks/meta.merge');
-const codeList = require('./tasks/list.code');
 
 class Davos {
   constructor(config) {
@@ -29,7 +29,7 @@ class Davos {
   /** List code versions */
   listCode(token) {
     const config = this.ConfigManager.getActiveConfig();
-    codeList(config.hostname, token);
+    CodeList(config.hostname, token);
   }
 
   /**
@@ -44,14 +44,28 @@ class Davos {
    * @param {array} arrayWithGlob
    */
   uploadSitesMeta(arrayWithGlob) {
-    UploadSitesMeta(arrayWithGlob, this.ConfigManager.getActiveConfig());
+    UploadSitesMeta(arrayWithGlob, this.ConfigManager.getActiveConfig(), this.SFCCManager);
   }
 
   /**
    * Activate code version
    */
-  activateCodeVersion() {
-    ActivateCodeVer(this.ConfigManager.getActiveConfig());
+  activateCodeVersion(token, codeVers) {
+    ActivateCodeVer(this.ConfigManager.getActiveConfig().hostname, token, codeVers);
+  }
+
+  /**
+   * Shifts the code versions back and forth
+   */
+  shiftCodeVers(token) {
+    CodeShift(this.ConfigManager.getActiveConfig(), token);
+  }
+
+  /**
+   * Deploys a code version to the active config instance
+   */
+  deployCodeVer(token) {
+    DeployCodeVersion(this.ConfigManager.getActiveConfig(), token);
   }
 
   /**
@@ -59,13 +73,6 @@ class Davos {
    */
   watch() {
     Watcher(this.ConfigManager.getActiveConfig());
-  }
-
-  /**
-   * Sinchronice server site files with local version
-   */
-  sync() {
-    Sync(this.ConfigManager.getActiveConfig());
   }
 
   /**
@@ -80,20 +87,12 @@ class Davos {
   }
 
   /**
-   * Upload metadata for site
-   * @params {object} object with params from gulp task
-   */
-  uploadMeta() {
-    UploadMeta(this.ConfigManager.getActiveConfig());
-  }
-
-  /**
    * Metadata Split
    * 
    * Split a big Metadata xml file into smaller chunks, separated by object type definition
    */
-  split(paramIn = null, paramOut = null, force = null) {
-    SplitMeta(paramIn, paramOut, force, this.ConfigManager.getActiveConfig());
+  async split(paramIn = null, paramOut = null, force = null) {
+    await SplitMeta(paramIn, paramOut, force, this.ConfigManager.getActiveConfig());
   }
 
   /**
@@ -102,7 +101,7 @@ class Davos {
    * Merge a bunch of xml files with the same root element into a bundle.
    */
   async merge(paramIn = null, paramOut = null, force = null) {
-    MergeMeta(paramIn, paramOut, force, this.ConfigManager.getActiveConfig());
+    await MergeMeta(paramIn, paramOut, force, this.ConfigManager.getActiveConfig());
   }
 }
 

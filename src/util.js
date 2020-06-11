@@ -11,9 +11,10 @@ const Log = require('./logger');
 const Constants = require('./constants');
 
 // used to be just 'delete'
-function deleteArchive(archiveName, logMessage = "Removing local archive.", config) {
+function deleteArchive(archiveName, logMessage, config) {
+    const defaultMsg = 'Removing local archive.';
     return del(getTempDir(config) + "/" + archiveName).then(function () {
-        Log.info(chalk.cyan(logMessage));
+        Log.info(chalk.cyan(logMessage || defaultMsg));
     });
 }
 
@@ -251,19 +252,14 @@ function checkConsoleParamsForDetails(config) {
     return cnt > 0 ? false : true;
 }
 
-async function getMetaArchive(arrayWithGlob = null, config) {
-    const currentRoot = getCurrentRoot() + Constants.SITES_META_FOLDER;
-    const archiveName = getArchiveName(config);
-    const rootPrefix = path.basename(archiveName, '.zip') + '/';
-
-    if (!arrayWithGlob) arrayWithGlob = ['**/*.xml'];
-
-    await compress(currentRoot, archiveName, arrayWithGlob, rootPrefix, config);
-    return archiveName;
-}
-
-function getArchiveName(config) {
-    return `sites_${config.codeVersion}.zip`;
+function listCodeVersions(versions) {
+    versions.forEach((codeVer) => {
+        if (codeVer.active) {
+            Log.info(chalk.bgGreen(` ID: ${codeVer.id} `));
+        } else {
+            Log.info(`ID: ${codeVer.id}`);
+        }
+    });
 }
 
 module.exports = {
@@ -278,6 +274,5 @@ module.exports = {
     replaceTemplateInfo: replaceTemplateInfo,
     checkPath: checkPath,
     checkConsoleParamsForDetails: checkConsoleParamsForDetails,
-    getMetaArchive: getMetaArchive,
-    getArchiveName: getArchiveName
+    listCodeVersions: listCodeVersions
 };

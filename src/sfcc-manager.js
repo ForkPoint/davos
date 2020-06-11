@@ -1,11 +1,3 @@
-/** Events */
-const events = {
-    JOB_RESET: 'job:reset',
-    JOB_STATUS: 'job:status',
-    JOB_SET: 'job:set',
-    TOKEN_FOUND: 'token:found'
-};
-
 /**
  * Modules
  */
@@ -13,16 +5,15 @@ const sfcc = require('sfcc-ci');
 const instance = sfcc.instance;
 const job = sfcc.job;
 const chalk = require('chalk');
+const request = require('request');
 
 /**
  * Internal modules
  */
 const Log = require('./logger');
 const Utils = require('./util');
-
-const DEFAULT_OCAPI_VERSION = 'v19_5'; // should possibly move to configuration
-const SITE_IMPORT_JOB_ID = 'sfcc-site-archive-import';
-const JobStatusURL = 's/-/dw/data/v19_5/jobs/sfcc-site-archive-import/executions';
+const RequestHelper = require('./requestHelper');
+const Constants = require('./constants');
 
 /**
  * SFCC Manager Class
@@ -39,84 +30,120 @@ class SFCCManager {
         this.token = token;
     }
 
-    async Upload(arrayGlob) {
-        const meta = await Utils.getMetaArchive(arrayGlob, this.config);
-        const tempDir = Utils.getTempDir(this.config);
-        const filePath = `${Utils.getCurrentRoot()}/${tempDir}/${meta}`;
+    /** Lists the current code versions on the sandbox */
+    async ListCodeVersions() {
 
-        instance.upload(this.config.hostname, filePath, this.token, {}, (err) => {
-            if (err) {
-                Log.error('Error while uploading...');
-                return;
-            }
-
-            Log.info('Upload successfull');
-            Utils.deleteArchive(meta, '', this.config);
-        });
     }
 
-    Import(fileName) {
-        const archiveName = fileName || Utils.getArchiveName(this.config);
-        const self = this;
+    /** Activates code version */
+    async ActivateCodeVer(codeVer) {
 
-        instance.import(this.config.hostname, archiveName, this.token, (err, result) => {
-            if (err) {
-                if (result && result.fault) {
-                    Log.error(`Could not start job. HTTP ${err.status}`);
-                    self.ResetCurrentJob();
+    }
+
+    async Upload(file) {
+        return new Promise((res, rej) => {
+            instance.upload(this.config.hostname, file, this.token, {}, (err) => {
+                if (err) {
+                    Log.error('Error while uploading. Deleting archive...');
+                    Utils.deleteArchive(file, '', this.config);
+                    rej();
                     return;
                 }
 
-                Log.error(`Could not start job: ${err}`);
-                self.ResetCurrentJob();
-                return;
-            } else if (result === undefined) {
-                Log.error(`Could not start job: ${err}`);
-                self.ResetCurrentJob();
-                return;
-            } else {
-                this.SetCurrentJob(result);
-                this.GetJobStatus();
-            }
-        });
+                Log.info('Upload successful');
+                res();
+            });
+        })
     }
 
-    ResetCurrentJob() {
-        this.jobID = '';
-        this.jobExecutionID = '';
-    }
+    /**
+     * - Should import the passed file name, uploaded to the instance
+     * @param {string} File name
+     */
+    async Import(fileName, archivePath) {
+        const archiveName = fileName;
+        const self = this;
+        const jobRunCheck = await this.IsJobRunning();
 
-    SetCurrentJob(status) {
-        this.jobID = status.job_id;
-        this.jobExecutionID = status.id;
-    }
-
-    ListImportJobs() {
-        const ReqMgr = require('./request-manager');
-        const options = {
-            baseUrl: `https://'${this.config.hostname}/${JobStatusURL}?client_id=${this.config['client-id']}`,
-            uri: '/',
-            contentString: null,
-            auth: {
-              user: this.config.username,
-              password: this.config.password
-            },
-            timeout: 60000
-          };
-        const RequestManager = new ReqMgr(options, this.config);
-        RequestManager.doRequest({}, 3);
-    }
-
-    GetJobStatus() {
-        if (!this.jobID || !this.jobExecutionID) {
-            Log.warn('No job is currently executing...');
+        /** If there is an already running job, stop */
+        if (jobRunCheck) {
+            Log.error('Import job is already running, cannot start new import...');
+            /** Delete archive */
+            Utils.deleteArchive(archivePath, '', this.config);
             return;
         }
 
-        job.status(this.config.hostname, this.jobID, this.jobExecutionID, this.token, this.ListJobStatus);
+        return new Promise((res, rej) => {
+            instance.import(this.config.hostname, archiveName, this.token, (err, result) => {
+                if (err) {
+                    if (result && result.fault) {
+                        Log.error(`Could not start job. HTTP ${err.status}`);
+                        return;
+                    }
+    
+                    Log.error(`Could not start job: ${err}`);
+                    rej();
+                    return;
+                } else if (result === undefined) {
+                    Log.error(`Could not start job: ${err}`);
+                    rej();
+                    return;
+                } else {
+                    const jobID = result.job_id;
+                    const jobExecutionID = result.id;
+                    Utils.deleteArchive(archivePath, '', self.config);
+                    res();
+                    job.status(this.config.hostname, jobID, jobExecutionID, this.token, this.ListJobStatus);
+                }
+            });
+        })
     }
 
-    /** Lists the status of the current executing job */
+    async IsJobRunning() {
+        const accessToken = await RequestHelper.getAccessToken(this.config['client-id'], this.config['client-secret']);
+        const body = {
+            query: {
+                term_query: {
+                    fields: [
+                        "job_id"
+                    ],
+                    operator: "is",
+                    values: [
+                        Constants.SITE_IMPORT_JOB_ID
+                    ]
+                }
+            }
+        };
+        const options = {
+            baseUrl: `https://${this.config.hostname}/${Constants.JobExecutionSearch}?client_id=${this.config['client-id']}`,
+            uri: '/',
+            auth: { bearer: accessToken },
+            body: JSON.stringify(body)
+        };
+
+        Log.info(`Access token granted: ${accessToken}`);
+        Log.info('Checking for import job...');
+
+        return new Promise((res, rej) => {
+            request.post(options, function (error, response, body) {
+                if (error) {
+                    Log.error(error);
+                    return;
+                }
+
+                const hits = JSON.parse(body).hits;
+                const running = hits.find((job) => job.status === 'RUNNING');
+
+                try {
+                    res(running);
+                } catch (err) {
+                    rej(err);
+                }
+            });
+        })
+    }
+
+    /** Lists the status of the current job */
     ListJobStatus(err, result) {
         const { status } = result;
 
@@ -141,14 +168,14 @@ class SFCCManager {
         switch(status) {
             case 'RUNNING':
                 Log.info('Job running...');
+                Log.info('Success');
                 break;
-            case 'ERROR':
-                Log.error('Job finished with status "Error". Please check job history');
-                ResetCurrentJob();
-                break;
-            default:
-                Log.info(`Job finished! Status: ${status}`);
-                ResetCurrentJob();
+                case 'ERROR':
+                    Log.error('Job finished with status "Error". Please check job history');
+                    break;
+                default:
+                    Log.info(`Job finished! Status: ${status}`);
+                    Log.info('Success');
         }
     }
 
