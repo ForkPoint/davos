@@ -9,9 +9,13 @@ exports.handler = async (argv) => {
     const davos = new Davos(argv);
     const sfccMgr = davos.SFCCManager;
 
-    /** Authenticate first */
-    await sfccMgr.Authenticate();
+    if (davos.ConfigManager.getActiveConfig().list) {
+        davos.listDeploy();
+    } else {
+        /** Authenticate first */
+        await sfccMgr.Authenticate();
 
-    /** list the code versions */
-    davos.deployCodeVer(sfccMgr.token);
+        /** list the code versions */
+        davos.deployCodeVer(sfccMgr.token);
+    }
 };

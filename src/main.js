@@ -13,6 +13,7 @@ const UploadCartridges = require('./tasks/upload.cartridges');
 const UploadSitesMeta = require('./tasks/upload.sites.meta');
 const ActivateCodeVer = require('./tasks/code.activate');
 const DeployCodeVersion = require('./tasks/code.deploy');
+const ListDeployCartridges = require('./tasks/code.listdeploy');
 const CodeList = require('./tasks/code.list');
 const CodeShift = require('./tasks/code.shift');
 const Watcher = require('./tasks/watch');
@@ -66,6 +67,13 @@ class Davos {
    */
   deployCodeVer(token) {
     DeployCodeVersion(this.ConfigManager.getActiveConfig(), token);
+  }
+
+  /**
+   * Lists the deploy cartridges
+   */
+  listDeploy() {
+    ListDeployCartridges(this.ConfigManager.getActiveConfig());
   }
 
   /**
