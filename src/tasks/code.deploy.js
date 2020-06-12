@@ -26,7 +26,6 @@ async function DeployCodeVersion(config, token) {
         sfccCode.deploy(config.hostname, zipPath, token, options, (err) => {
             if (err) {
                 Log.error('Error while deploying code version.');
-                Log.error(err);
                 rej(err);
                 return;
             }
@@ -34,7 +33,7 @@ async function DeployCodeVersion(config, token) {
             Log.info(`Successfully deployed ${config.codeVersion} to ${config.hostname}`);
             res();
         });
-    });
+    }).catch(err => Log.error(err));
 }
 
 module.exports = DeployCodeVersion;

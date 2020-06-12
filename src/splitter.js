@@ -5,6 +5,7 @@ const x = require("xpath");
 const prettifier = require('prettify-xml');
 const utils = require('./util');
 const Constants = require('./constants');
+const Log = require('./logger');
 
 function absolutePath(config, fpath) {
   let source = '';
@@ -49,7 +50,7 @@ exports.splitBundle = function (config, fpath, xpath, out, cfg) {
         resolve(results);
       })
       .catch(reject);
-  });
+  }).catch(err => Log.error(err));
 }
 
 exports.split = function (config, path, out) {
@@ -275,8 +276,8 @@ exports.processors = {
           }, function (err) {
             err ? reject(err) : resolve("done");
           });
-        })
-      }))
+        }).catch(err => Log.error(err));
+      }));
     });
   }
 }

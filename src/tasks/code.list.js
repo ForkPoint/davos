@@ -12,7 +12,6 @@ function ListCodeVersions(instance, token) {
             let versions = [];
     
             if (err) {
-                Log.error(err);
                 rej(err);
                 return;
             }
@@ -23,7 +22,7 @@ function ListCodeVersions(instance, token) {
             util.listCodeVersions(versions);
             res();
         });
-    });
+    }).catch(err => Log.error(err));
 }
 
 module.exports = ListCodeVersions;

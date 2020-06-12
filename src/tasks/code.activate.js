@@ -11,14 +11,15 @@ function activateCodeVersion(instance, token, version) {
     return new Promise((res, rej) => {
         sfccCode.activate(instance, version, token, (err) => {
             if (err) {
-                Log.error(`Could not activate code version ${version}: ${err}`)
-                rej(err);
+                Log.error(`Could not activate code version ${version}`);
+                rej('No such version');
+                return;
             }
     
             Log.info(`${chalk.cyan(version)} active on ${chalk.green(instance)}`);
             res();
         });
-    })
+    }).catch(err => Log.error(err));
 }
 
 module.exports = activateCodeVersion;

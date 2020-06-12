@@ -18,7 +18,6 @@ function codeShift(config, token) {
             let versions = [];
     
             if (err) {
-                Log.error(err);
                 rej(err);
                 return;
             }
@@ -72,7 +71,7 @@ function codeShift(config, token) {
                 });
             });
         });
-    });
+    }).catch(err => Log.error(err));
 }
 
 module.exports = codeShift;

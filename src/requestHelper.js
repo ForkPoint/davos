@@ -1,4 +1,5 @@
 const Constants = require('./constants');
+const Log = require('./logger');
 const request = require('request');
 
 async function getAccessToken(clientID, clientSecret) {
@@ -22,7 +23,7 @@ async function getAccessToken(clientID, clientSecret) {
                 rej(err);
             }
         });
-    });
+    }).catch(err => Log.error(err));
 }
 
 module.exports = {

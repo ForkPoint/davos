@@ -8,6 +8,7 @@
 
   // Locals
   const RequestManager = require('./request-manager');
+  const Log = require('./logger');
 
   /**
    * A WebDav client realizing DELETE, PUT, UNZIP, MKCOL, PROPFIND
@@ -54,7 +55,7 @@
           }, function (err) {
             reject(err);
           });
-      });
+      }).catch(err => Log.error(err));
     }
 
     /**
@@ -75,7 +76,7 @@
           }, function (err) {
             reject(err);
           });
-      });
+      }).catch(err => Log.error(err));
     }
 
     /**
@@ -96,7 +97,7 @@
           }, function (err) {
             reject(err);
           });
-      });
+      }).catch(err => Log.error(err));
     }
 
     /**
@@ -117,7 +118,7 @@
           }, function (err) {
             reject(err);
           });
-      });
+      }).catch(err => Log.error(err));
     }
 
     /**
@@ -139,7 +140,7 @@
           }, function (err) {
             reject(err);
           });
-      });
+      }).catch(err => Log.error(err));
     }
 
     /**
@@ -163,7 +164,7 @@
           }, function (err) {
             reject(err);
           });
-      });
+      }).catch(err => Log.error(err));
     }
 
     /**
@@ -183,7 +184,7 @@
           }, function (err) {
             reject(err);
           });
-      });
+      }).catch(err => Log.error(err));
     }
   }
 

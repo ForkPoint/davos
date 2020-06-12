@@ -53,7 +53,7 @@ async function merge(paramIn, paramOut, force, config) {
                 e(err);
             }
         });
-    })
+    }).catch(err => Log.error(err));
 }
 
 module.exports = merge;

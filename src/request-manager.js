@@ -151,7 +151,7 @@ class RequestManager {
           reject(e);
         }
       }
-    });
+    }).catch(err => Log.error(err));
   }
 }
 

@@ -53,7 +53,7 @@ class SFCCManager {
                 Log.info('Upload successful');
                 res();
             });
-        })
+        }).catch(err => Log.error(err));
     }
 
     /**
@@ -125,8 +125,7 @@ class SFCCManager {
                                     resolve();
                                     break;
                                 case 'ERROR':
-                                    Log.error('Job finished with status "Error". Please check job history');
-                                    reject();
+                                    reject('Job finished with status "Error". Please check job history');
                                     break;
                                 default:
                                     Log.info(`Job finished! Status: ${status}`);
@@ -134,12 +133,12 @@ class SFCCManager {
                                     resolve();
                             }
                         });
-                    });
+                    }).catch(err => Log.error(err));
 
                     res();
                 }
             });
-        })
+        }).catch(err => Log.error(err));
     }
 
     async IsJobRunning() {
@@ -184,7 +183,7 @@ class SFCCManager {
                     rej(err);
                 }
             });
-        });
+        }).catch(err => Log.error(err));
     }
 
     Authenticate() {
@@ -207,7 +206,7 @@ class SFCCManager {
                     rej(err);
                 }
             });
-        });
+        }).catch(err => Log.error(err));
     }
 }
 
