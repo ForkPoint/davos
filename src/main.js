@@ -5,6 +5,7 @@
  */
 const ConfigManager = require('./config-manager');
 const SFCCManager = require('./sfcc-manager');
+const Log = require('./logger');
 
 /**
  * Tasks
@@ -28,45 +29,50 @@ class Davos {
   }
 
   /** List code versions */
-  listCode(token) {
+  async listCode() {
     const config = this.ConfigManager.getActiveConfig();
-    CodeList(config.hostname, token);
+    await this.SFCCManager.Authenticate();
+    await CodeList(config.hostname, this.SFCCManager.token);
   }
 
   /**
    * Upload cartridges
    */
-  uploadCartridges() {
-    UploadCartridges(this.ConfigManager.getActiveConfig());
+  async uploadCartridges() {
+    await UploadCartridges(this.ConfigManager.getActiveConfig());
   }
 
   /**
    * Upload sites metadata
    * @param {array} arrayWithGlob
    */
-  uploadSitesMeta(arrayWithGlob) {
-    UploadSitesMeta(arrayWithGlob, this.ConfigManager.getActiveConfig(), this.SFCCManager);
+  async uploadSitesMeta(arrayWithGlob) {
+    await this.SFCCManager.Authenticate();
+    await UploadSitesMeta(arrayWithGlob, this.ConfigManager.getActiveConfig(), this.SFCCManager);
   }
 
   /**
    * Activate code version
    */
-  activateCodeVersion(token, codeVers) {
-    ActivateCodeVer(this.ConfigManager.getActiveConfig().hostname, token, codeVers);
+  async activateCodeVersion(codeVers) {
+    await this.SFCCManager.Authenticate();
+    await ActivateCodeVer(this.ConfigManager.getActiveConfig().hostname, this.SFCCManager.token, codeVers);
   }
 
   /**
    * Shifts the code versions back and forth
    */
-  shiftCodeVers(token) {
-    CodeShift(this.ConfigManager.getActiveConfig(), token);
+  async shiftCodeVers() {
+    await this.SFCCManager.Authenticate();
+    await CodeShift(this.ConfigManager.getActiveConfig(), this.SFCCManager.token);
   }
 
   /**
    * Deploys a code version to the active config instance
    */
-  deployCodeVer(token) {
-    DeployCodeVersion(this.ConfigManager.getActiveConfig(), token);
+  async deployCodeVer() {
+    await this.SFCCManager.Authenticate();
+    await DeployCodeVersion(this.ConfigManager.getActiveConfig(), this.SFCCManager.token);
   }
 
   /**
@@ -101,8 +107,9 @@ class Davos {
    */
   async split(paramIn = null, paramOut = null, force = null) {
     await SplitMeta(paramIn, paramOut, force, this.ConfigManager.getActiveConfig());
+    Log.info('Finished splitting meta');
   }
-
+  
   /**
    * Metadata Merge
    * 
@@ -110,6 +117,7 @@ class Davos {
    */
   async merge(paramIn = null, paramOut = null, force = null) {
     await MergeMeta(paramIn, paramOut, force, this.ConfigManager.getActiveConfig());
+    Log.info('Finished merging meta');
   }
 }
 

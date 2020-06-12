@@ -3,7 +3,7 @@ const splitter = require('../splitter');
 const utils = require('../util');
 const Log = require('../logger');
 
-function split(paramIn, paramOut, force, config) {
+async function split(paramIn, paramOut, force, config) {
     const root = utils.getCurrentRoot();
     let bundle;
     let out;

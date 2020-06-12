@@ -22,14 +22,18 @@ async function DeployCodeVersion(config, token) {
 
     Log.info(`Deploying to ${chalk.cyan(config.hostname)}...`);
 
-    sfccCode.deploy(config.hostname, zipPath, token, options, (err) => {
-        if (err) {
-            Log.error('Error while deploying code version.');
-            Log.error(err);
-            return;
-        }
-
-        Log.info(`Successfully deployed ${config.codeVersion} to ${config.hostname}`);
+    return new Promise((res, rej) => {
+        sfccCode.deploy(config.hostname, zipPath, token, options, (err) => {
+            if (err) {
+                Log.error('Error while deploying code version.');
+                Log.error(err);
+                rej(err);
+                return;
+            }
+    
+            Log.info(`Successfully deployed ${config.codeVersion} to ${config.hostname}`);
+            res();
+        });
     });
 }
 

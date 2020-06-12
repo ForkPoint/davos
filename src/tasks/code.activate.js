@@ -8,13 +8,17 @@ const Log = require('../logger');
 function activateCodeVersion(instance, token, version) {
     Log.info(`Trying to activate ${chalk.cyan(version)}...`);
 
-    sfccCode.activate(instance, version, token, (err) => {
-        if (err) {
-            Log.error(`Could not activate code version ${version}: ${err}`)
-        }
-
-        Log.info(`${chalk.cyan(version)} active on ${chalk.green(instance)}`);
-    });
+    return new Promise((res, rej) => {
+        sfccCode.activate(instance, version, token, (err) => {
+            if (err) {
+                Log.error(`Could not activate code version ${version}: ${err}`)
+                rej(err);
+            }
+    
+            Log.info(`${chalk.cyan(version)} active on ${chalk.green(instance)}`);
+            res();
+        });
+    })
 }
 
 module.exports = activateCodeVersion;

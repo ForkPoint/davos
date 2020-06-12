@@ -7,10 +7,6 @@ exports.desc = 'List code versions';
 exports.builder = {};
 exports.handler = async (argv) => {
     const davos = new Davos(argv);
-    const sfccMgr = davos.SFCCManager;
-
-    /** Authenticate first */
-    await sfccMgr.Authenticate();
 
     /** list the code versions */
     davos.listCode(sfccMgr.token);

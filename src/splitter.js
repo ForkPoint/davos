@@ -213,7 +213,7 @@ exports.processors = {
             const groupID = group.getAttribute('group-id').replace(' ', '');
             const writePath = `${out}/${nodeType}.${attributeType}.${projectID}.${groupID}.xml`;
 
-            fs.writeFileSync(
+            fs.writeFile(
               writePath,
               prettifier(template.replace("{{ objects }}", cloneInstance.toString()), {
                 indent: config.indentSize

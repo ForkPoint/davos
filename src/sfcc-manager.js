@@ -61,7 +61,6 @@ class SFCCManager {
      * @param {string} File name
      */
     async Import(fileName, archivePath) {
-        const archiveName = fileName;
         const self = this;
         const jobRunCheck = await this.IsJobRunning();
 
@@ -74,7 +73,7 @@ class SFCCManager {
         }
 
         return new Promise((res, rej) => {
-            instance.import(this.config.hostname, archiveName, this.token, (err, result) => {
+            instance.import(this.config.hostname, fileName, this.token, async (err, result) => {
                 if (err) {
                     if (result && result.fault) {
                         Log.error(`Could not start job. HTTP ${err.status}`);
@@ -91,9 +90,53 @@ class SFCCManager {
                 } else {
                     const jobID = result.job_id;
                     const jobExecutionID = result.id;
+
                     Utils.deleteArchive(archivePath, '', self.config);
+
+                    await new Promise((resolve, reject) => {
+                        job.status(this.config.hostname, jobID, jobExecutionID, this.token, (err, result) => {
+                            const { status } = result;
+
+                            if (err) {
+                                const fault = result.fault;
+
+                                if (fault) {
+                                    if (fault.type === 'InvalidAccessTokenException') {
+                                        // renew token ?
+                                        Log.error('Invalid token.');
+                                        reject();
+                                        return;
+                                    }
+
+                                    Log.error(`Error monitoring job: ${fault.message}`);
+                                    reject();
+                                    return;
+                                }
+
+                                Log.error(`Error monitoring job: ${err}`);
+                                reject();
+                                return;
+                            }
+
+                            switch (status) {
+                                case 'RUNNING':
+                                    Log.info('Job running...');
+                                    Log.info('Success');
+                                    resolve();
+                                    break;
+                                case 'ERROR':
+                                    Log.error('Job finished with status "Error". Please check job history');
+                                    reject();
+                                    break;
+                                default:
+                                    Log.info(`Job finished! Status: ${status}`);
+                                    Log.info('Success');
+                                    resolve();
+                            }
+                        });
+                    });
+
                     res();
-                    job.status(this.config.hostname, jobID, jobExecutionID, this.token, this.ListJobStatus);
                 }
             });
         })
@@ -131,6 +174,7 @@ class SFCCManager {
                     return;
                 }
 
+
                 const hits = JSON.parse(body).hits;
                 const running = hits.find((job) => job.status === 'RUNNING');
 
@@ -140,43 +184,7 @@ class SFCCManager {
                     rej(err);
                 }
             });
-        })
-    }
-
-    /** Lists the status of the current job */
-    ListJobStatus(err, result) {
-        const { status } = result;
-
-        if (err) {
-            const fault = result.fault;
-
-            if (fault) {
-                if (fault.type === 'InvalidAccessTokenException') {
-                    // renew token ?
-                    Log.error('Invalid token.');
-                    return;
-                }
-    
-                Log.error(`Error monitoring job: ${fault.message}`);
-                return;
-            }
-
-            Log.error(`Error monitoring job: ${err}`);
-            return;
-        }
-
-        switch(status) {
-            case 'RUNNING':
-                Log.info('Job running...');
-                Log.info('Success');
-                break;
-                case 'ERROR':
-                    Log.error('Job finished with status "Error". Please check job history');
-                    break;
-                default:
-                    Log.info(`Job finished! Status: ${status}`);
-                    Log.info('Success');
-        }
+        });
     }
 
     Authenticate() {

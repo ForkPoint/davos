@@ -7,14 +7,10 @@ exports.desc = 'Deploys code version to instance';
 exports.builder = {};
 exports.handler = async (argv) => {
     const davos = new Davos(argv);
-    const sfccMgr = davos.SFCCManager;
 
     if (davos.ConfigManager.getActiveConfig().list) {
         davos.listDeploy();
     } else {
-        /** Authenticate first */
-        await sfccMgr.Authenticate();
-
         /** list the code versions */
         davos.deployCodeVer(sfccMgr.token);
     }
