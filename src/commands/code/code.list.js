@@ -9,5 +9,5 @@ exports.handler = async (argv) => {
     const davos = new Davos(argv);
 
     /** list the code versions */
-    davos.listCode(sfccMgr.token);
+    davos.listCode();
 };

@@ -15,5 +15,5 @@ exports.handler = async (argv) => {
     }
 
     /** list the code versions */
-    davos.activateCodeVersion(sfccMgr.token, argv.ver);
+    davos.activateCodeVersion(argv.ver);
 };
