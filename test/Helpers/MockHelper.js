@@ -2,6 +2,7 @@ const fs = require('fs');
 const path = require('path');
 const mockfs = require('mock-fs');
 const { Paths: { OutputDir, InputMergeDir } } = require('../Constants');
+const mock = require('mock-fs');
 
 function mockFileSystemForSplit() {
     mockfs({
@@ -85,6 +86,36 @@ function mockFileSystemForUploadCartridgesWithOutConfigFile() {
     });
 }
 
+function mockGetCartridges() {
+    mockfs({
+        'cartridges': {
+            'app_test': {
+                'cartridge': {}
+            },
+            'app_test2': {
+                'cartridge': {}
+            }
+        }
+    });
+}
+
+function mockDavosJson() {
+    mockfs({
+        'davos.json': '',
+        'cartridges': {
+            'app_test': {
+                'cartridge': {}
+            }
+        }
+    });
+}
+
+function mockDavosJsonWithProfiles() {
+    mockfs({
+        'davos.json': '[{"profile": "test", "active": false, "config": {}}, {"profile": "test2", "active": true, "config": {}}]'
+    });
+}
+
 module.exports = {
     mockFileSystemForSplit: mockFileSystemForSplit,
     mockFileSystemForMerge: mockFileSystemForMerge,
@@ -92,4 +123,7 @@ module.exports = {
     mockFileSystemForUploadMetaWithConfigFile: mockFileSystemForUploadMetaWithConfigFile,
     mockFileSystemForUploadCartridgesWithConfigFile: mockFileSystemForUploadCartridgesWithConfigFile,
     mockFileSystemForUploadCartridgesWithOutConfigFile: mockFileSystemForUploadCartridgesWithOutConfigFile,
+    mockGetCartridges: mockGetCartridges,
+    mockDavosJson: mockDavosJson,
+    mockDavosJsonWithProfiles: mockDavosJsonWithProfiles,
 };

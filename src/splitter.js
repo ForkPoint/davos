@@ -1,29 +1,31 @@
 const fs = require("fs");
 const path = require("path");
-const log = require('./logger');
 const DOMParser = require('xmldom').DOMParser;
 const x = require("xpath");
 const prettifier = require('prettify-xml');
+const utils = require('./util');
+const Constants = require('./constants');
+const Log = require('./logger');
 
-function absolutePath(davos, fpath) {
+function absolutePath(config, fpath) {
   let source = '';
 
   if (path.isAbsolute(fpath)) {
     source = fpath;
   } else {
-    if (davos.config.basePath) {
-      source = path.join(davos.config.basePath, davos.SITES_META_FOLDER, fpath);
+    if (config.basePath) {
+      source = path.join(config.basePath, Constants.SITES_META_FOLDER, fpath);
     } else {
-      source = path.join(process.cwd(), fpath);
+      source = path.join(utils.getCurrentRoot(), fpath);
     }
   }
 
   return source;
 }
 
-exports.splitBundle = function (davos, fpath, xpath, out, cfg) {
+exports.splitBundle = function (config, fpath, xpath, out, cfg) {
   const template = fs.readFileSync(__dirname + "/../resources/" + cfg.template + ".template").toString();
-  const filepath = absolutePath(davos, fpath);
+  const filepath = absolutePath(config, fpath);
   const xmlFile = fs.readFileSync(filepath).toString();
 
   if (!xmlFile) {
@@ -48,37 +50,39 @@ exports.splitBundle = function (davos, fpath, xpath, out, cfg) {
         resolve(results);
       })
       .catch(reject);
-  });
+  }).catch(err => Log.error(err));
 }
 
-exports.split = function (davos, path, out) {
-  path = absolutePath(davos, path);
-  
-  if (!fs.existsSync(path)) {
-    return;
-  }
-
+exports.split = function (config, path, out) {
   let child = 1; // start from 1 to skip <xml/>
-  const xmlFile = fs.readFileSync(path).toString().replace(/xmlns=".+?"/, '');
-  const document = new DOMParser().parseFromString(xmlFile);
+  let xmlFile;
+  let document;
+  let node;
+  let nodeName;
+
+  path = absolutePath(config, path);
+  if (!fs.existsSync(path)) return;
+
+  xmlFile = fs.readFileSync(path).toString().replace(/xmlns=".+?"/, '');
+  document = new DOMParser().parseFromString(xmlFile);
 
   while (document.childNodes[child].nodeName === "#text") {
     child++;
   }
 
-  const node = document.childNodes[child];
-  const nodeName = node.nodeName;
+  node = document.childNodes[child];
+  nodeName = node.nodeName;
 
   if (!exports.processors[nodeName]) {
     throw new Error("Splitting " + nodeName + " is currently not supported.");
   } else {
-    return exports.processors[nodeName](davos, path, out, prettifier)
+    return exports.processors[nodeName](config, path, out, prettifier)
   }
 }
 
 exports.processors = {
-  library: function (davos, fpath, out, prettifier) {
-    return exports.splitBundle(davos, fpath, "//content", out, {
+  library: function (config, fpath, out, prettifier) {
+    return exports.splitBundle(config, fpath, "//content", out, {
       template: "library",
       ns: "http://www.demandware.com/xml/impex/library/2006-10-31",
       persist: (node, resolve, reject, out, template) => {
@@ -87,15 +91,15 @@ exports.processors = {
         fs.writeFile(out + "/library." + node.getAttribute("content-id") + ".xml", prettifier(template.replace("{{ libraryid }}", library.hasAttribute("library-id") ? library.getAttribute("library-id") : "").replace("{{ objects }}", (function (replacement) {
           return () => replacement;
         })(node.toString())), {
-          indent: davos.config.indentSize
+          indent: config.indentSize
         }), function (err) {
           err ? reject(err) : resolve()
         });
       }
     });
   },
-  'slot-configurations': function (davos, fpath, out, prettifier) {
-    return exports.splitBundle(davos, fpath, "//slot-configuration", out, {
+  'slot-configurations': function (config, fpath, out, prettifier) {
+    return exports.splitBundle(config, fpath, "//slot-configuration", out, {
       template: "slots",
       ns: "http://www.demandware.com/xml/impex/slot/2008-09-08",
       persist: (node, resolve, reject, out, template) => {
@@ -104,14 +108,14 @@ exports.processors = {
         fs.writeFile(out + "/slots." + node.getAttribute("slot-id") + ".xml", prettifier(template.replace("{{ objects }}", (function (replacement) {
           return () => replacement;
         })(node.toString())), {
-          indent: davos.config.indentSize
+          indent: config.indentSize
         }), function (err) {
           err ? reject(err) : resolve()
         });
       }
     });
   },
-  metadata: function (davos, fpath, out, prettifier) {
+  metadata: function (config, fpath, out, prettifier) {
     function cloneAttribute(cloneInstance, source, attribute) {
       let id = attribute.getAttribute("attribute-id");
       let attrType;
@@ -133,8 +137,7 @@ exports.processors = {
             .appendChild(ad.cloneNode(true));
         });
     }
-
-    return exports.splitBundle(davos, fpath, "/metadata/*", out, {
+    return exports.splitBundle(config, fpath, "/metadata/*", out, {
       template: "metadata",
       ns: "http://www.demandware.com/xml/impex/metadata/2006-10-31",
       persist: (node, resolve, reject, out, template) => {
@@ -148,10 +151,6 @@ exports.processors = {
         }
 
         let clone = node.cloneNode();
-
-        if (node.nodeName === "type-extension" && node.getAttribute("type-id") === "Basket") {
-          var greeting = 'Wazaaaaa';
-        }
 
         Array.from(node.childNodes)
         .filter(child => child.hasOwnProperty("nodeName"))
@@ -211,14 +210,14 @@ exports.processors = {
 
             const nodeType = cloneInstance.nodeName === 'custom-type' ? 'custom' : 'system'
             const attributeType = cloneInstance.getAttribute('type-id');
-            const projectID = davos.config.projectID || 'projectID';
+            const projectID = config.projectID || 'projectID';
             const groupID = group.getAttribute('group-id').replace(' ', '');
             const writePath = `${out}/${nodeType}.${attributeType}.${projectID}.${groupID}.xml`;
 
-            fs.writeFileSync(
+            fs.writeFile(
               writePath,
               prettifier(template.replace("{{ objects }}", cloneInstance.toString()), {
-                indent: davos.config.indentSize
+                indent: config.indentSize
               }),
               function (err) {
                 err ? e1(err) : r1("done");
@@ -228,7 +227,7 @@ exports.processors = {
       }
     });
   },
-  promotions: function (davos, path, out, prettifier) {
+  promotions: function (config, path, out, prettifier) {
     let nodes = {
       campaign: {},
       promotion: {},
@@ -237,7 +236,7 @@ exports.processors = {
 
     let template;
 
-    return exports.splitBundle(davos, path, "/promotions/*", out, {
+    return exports.splitBundle(config, path, "/promotions/*", out, {
       template: "promotions",
       ns: "http://www.demandware.com/xml/impex/promotion/2008-01-31",
       persist: (node, resolve, reject, _out, _templ) => {
@@ -273,12 +272,12 @@ exports.processors = {
 
         return new Promise((resolve, reject) => {
           fs.writeFile(out + "/campaign." + id + ".xml", prettifier(template.replace("{{ objects }}", objects)), {
-            indent: davos.config.indentSize
+            indent: config.indentSize
           }, function (err) {
             err ? reject(err) : resolve("done");
           });
-        })
-      }))
+        }).catch(err => Log.error(err));
+      }));
     });
   }
 }

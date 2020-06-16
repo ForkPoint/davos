@@ -3,7 +3,7 @@ const Log = require('../../../src/logger');
 const expect = require('chai').expect;
 const WebDav = require('../../../src/webdav');
 const mockfs = require('mock-fs');
-const sandbox = require('../../Helpers/SandboxStub');
+const sandbox = require('../../Stubs/SandboxStub');
 const {
     mockFileSystemForUploadCartridgesWithConfigFile,
     mockFileSystemForUploadCartridgesWithOutConfigFile,

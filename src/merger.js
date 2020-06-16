@@ -11,7 +11,7 @@ function htmlEntities(str) {
   return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
 
-exports.merge = function (davos, files) {
+exports.merge = function (config, files) {
   if (!Array.isArray(files) || !files[0]) {
     return;
   }
@@ -29,18 +29,18 @@ exports.merge = function (davos, files) {
 
   let node = document.childNodes[child],
     nodeName = node.nodeName;
-  return exports.processors[exports.processors[nodeName] ? nodeName : "generic"](davos, files, node);
+  return exports.processors[exports.processors[nodeName] ? nodeName : "generic"](config, files, node);
 }
 
 exports.processors = {
-  generic: function (davos, files, rootElement) {
+  generic: function (config, files, rootElement) {
     return Promise.resolve(xmlm(...files.map(file => fs.readFileSync(file).toString()).filter(content => !!content)));
   },
-  services: function (davos, files, rootElement) {
+  services: function (config, files, rootElement) {
     let template = null;
 
     return Promise.all(files.map(filename => {
-      return splitter.splitBundle(davos, filename, "/services/*", null, {
+      return splitter.splitBundle(config, filename, "/services/*", null, {
         template: "services",
         ns: "http://www.demandware.com/xml/impex/services/2014-09-26",
         persist: (node, resolve, reject, out, xmltemplate) => {
@@ -59,7 +59,7 @@ exports.processors = {
       }).map(node => node.toString()).join("")));
     });
   },
-  library: function (davos, files, rootElement) {
+  library: function (config, files, rootElement) {
     let contents = [];
     function containsEncodedHTML(node) {
       return node.nodeName === "#text" && node.nodeValue.match(/(<([^>]+)>)/i)
@@ -86,7 +86,7 @@ exports.processors = {
     let template = null;
 
     return Promise.all(files.map(filename => {
-      return splitter.splitBundle(davos, filename, "/library/*", null, {
+      return splitter.splitBundle(config, filename, "/library/*", null, {
         template: "library",
         ns: "http://www.demandware.com/xml/impex/library/2006-10-31",
         persist: (node, resolve, reject, out, xmltemplate) => {
@@ -117,11 +117,11 @@ exports.processors = {
       return Promise.resolve(result);
     });
   },
-  promotions: function (davos, files, rootElement) {
+  promotions: function (config, files, rootElement) {
     let template = null;
 
     return Promise.all(files.map(filename => {
-      return splitter.splitBundle(davos, filename, "/promotions/*", null, {
+      return splitter.splitBundle(config, filename, "/promotions/*", null, {
         template: "promotions",
         ns: "http://www.demandware.com/xml/impex/promotion/2008-01-31",
         persist: (node, resolve, reject, out, xmltemplate) => {
@@ -132,8 +132,9 @@ exports.processors = {
         }
       });
     })).then(nodes => {
-      nodes = [].concat.apply([], nodes); // flatten array of arrays
       let weights = ["campaign", "promotion", "promotion-campaign-assignment"];
+
+      nodes = [].concat.apply([], nodes); // flatten array of arrays
 
       return Promise.resolve(template.replace("{{ objects }}", nodes.sort((a, b) => {
         return weights.indexOf(a.nodeName) - weights.indexOf(b.nodeName);

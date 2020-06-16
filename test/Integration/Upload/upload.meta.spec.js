@@ -3,8 +3,8 @@ const BM = require('../../../src/bm');
 const expect = require('chai').expect;
 const Log = require('../../../src/logger');
 const mockfs = require('mock-fs');
-const sandbox = require('../../Helpers/SandboxStub');
-const { stubBMMethodsForUploadMeta } = require('../../Helpers/SandboxStub');
+const sandbox = require('../../Stubs/SandboxStub');
+const { stubBMMethodsForUploadMeta } = require('../../Stubs/SandboxStub');
 const { mockFileSystemForUploadMetaWithoutConfigFile, mockFileSystemForUploadMetaWithConfigFile } = require('../../Helpers/MockHelper');
 
 let LogSpy = null;

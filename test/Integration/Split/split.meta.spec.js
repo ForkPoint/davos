@@ -1,4 +1,4 @@
-const sandbox = require('../../Helpers/SandboxStub');
+const sandbox = require('../../Stubs/SandboxStub');
 const expect = require('chai').expect;
 const mockfs = require('mock-fs');
 const Davos = require('../../../index');

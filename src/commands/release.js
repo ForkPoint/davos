@@ -9,5 +9,6 @@ exports.handler = (argv) => {
     const params = {
         git: argv
     };
-    new Davos.Core(params).gitLogDiff();
+    const davos = new Davos(params);
+    davos.gitLogDiff(davos.ConfigManager.getActiveProfile().config);
 }
