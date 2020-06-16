@@ -1,4 +1,4 @@
-const sandbox = require('../../Helpers/SandboxStub');
+const sandbox = require('../../Stubs/SandboxStub');
 const expect = require('chai').expect;
 const Davos = require('../../../index');
 const Log = require('../../../src/logger');

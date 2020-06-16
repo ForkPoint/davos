@@ -21,6 +21,8 @@ const Watcher = require('./tasks/watch');
 const ReplaceRevisionNumber = require('./tasks/replace.revisionNumber');
 const SplitMeta = require('./tasks/meta.split');
 const MergeMeta = require('./tasks/meta.merge');
+const PackageCreate = require('./tasks/package.create');
+const PackageImport = require('./tasks/package.import');
 
 class Davos {
   constructor(config) {
@@ -118,6 +120,17 @@ class Davos {
   async merge(paramIn = null, paramOut = null, force = null) {
     await MergeMeta(paramIn, paramOut, force, this.ConfigManager.getActiveConfig());
     Log.info('Finished merging meta');
+  }
+
+  /** Packs the metadata per site */
+  async pack(site = null, output = null, options = null) {
+    await PackageCreate(site, output, options);
+  }
+
+  /** Uploads and imports the archive to the current active instance */
+  async importPackage(name = null) {
+    await this.SFCCManager.Authenticate();
+    await PackageImport(this.SFCCManager, name);
   }
 }
 

@@ -56,8 +56,6 @@ class ConfigEditor {
     this.ConfigManager = davos.ConfigManager;
     this.config = config;
     this.workingDir = Utils.getCurrentRoot();
-
-    return this;
   }
 
   /**
@@ -86,7 +84,7 @@ class ConfigEditor {
       self.ConfigManager.saveConfiguration([
         {
           active: true,
-          name: result.hostname.split('-')[0],
+          profile: result.hostname.split('-')[0],
           config: {
             hostname: result.hostname,
             username: result.username,
@@ -125,7 +123,7 @@ class ConfigEditor {
         const newProfile = result.hostname.split('-')[0];
 
       for (let i = 0; i < len; i++) {
-        if (profiles[i].name === newProfile) {
+        if (profiles[i].profile === newProfile) {
           Log.info(chalk.yellow(`\nProfile ${newProfile} exists in your current configuration.`));
           return;
         }
@@ -133,7 +131,7 @@ class ConfigEditor {
 
       profiles.push({
         active: false,
-        name: result.hostname.split('-')[0],
+        profile: result.hostname.split('-')[0],
         config: {
           hostname: result.hostname,
           username: result.username,
@@ -162,13 +160,12 @@ class ConfigEditor {
    */
   editProfile () {
     const self = this;
-    const profileName = self.config.name;
     const profiles = self.ConfigManager.getProfiles();
-    const foundProfile = self.ConfigManager.getProfile(profileName);
+    const foundProfile = self.ConfigManager.getActiveProfile();
     const len = profiles.length;
 
     if (foundProfile === undefined) {
-      Log.info(chalk.red(`\nCannot find ${profileName} profile`));
+      Log.info(chalk.red(`\nCannot find profile`));
       return;
     }
 
@@ -185,7 +182,7 @@ class ConfigEditor {
         let currentProfile = profiles[i];
 
         if (currentProfile === foundProfile) {
-          currentProfile.name = result.hostname.split('-')[0];
+          currentProfile.profile = result.hostname.split('-')[0];
           currentProfile.config = {
             hostname: result.hostname,
             username: result.username,
@@ -215,12 +212,10 @@ class ConfigEditor {
     const len = profiles.length;
     let result;
 
-    const cartridges = CartridgeHelper.getCartridgesFromDir(this.workingDir); // for testing
-
     for (let i = 0; i < len; i++) {
       let currentProfile = profiles[i];
 
-      result = chalk.bgWhite(chalk.black(currentProfile.name));
+      result = chalk.bgWhite(chalk.black(currentProfile.profile));
 
       if (currentProfile === activeProfile) {
         result += chalk.cyan(' <--- active');
@@ -235,7 +230,7 @@ class ConfigEditor {
    */
   switchProfile () {
     const self = this;
-    const profileName = self.config.name;
+    const profileName = self.config.profile;
     const profiles = self.ConfigManager.getProfiles();
     const foundProfile = self.ConfigManager.getProfile(profileName); // profiles.find(x => x.profile === profile);
     const len = profiles.length;
@@ -254,7 +249,7 @@ class ConfigEditor {
 
     self.ConfigManager.saveConfiguration(newList);
 
-    Log.info(chalk.cyan(`\nSwitched to ${foundProfile.name}. It is now your active profile.`));
+    Log.info(chalk.cyan(`\nSwitched to ${foundProfile.profile}. It is now your active profile.`));
   }
 }
 

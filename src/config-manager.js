@@ -184,16 +184,17 @@ class ConfigManager {
    * @param {string} Filename
    */
   checkConfigFile() {
-    const configFileName = this.activeConfig;
+    const configFileName = this.activeConfig || null;
+    let exists = false;
 
     try {
-      const exists = fs.existsSync(configFileName);
-      return exists;
+      exists = fs.existsSync(configFileName);
     } catch (err) {
       Log.error(err);
       Log.info(`${configFileName} not present`);
-      return false;
     }
+
+    return exists;
   }
 
   /**
@@ -253,7 +254,7 @@ class ConfigManager {
 
   /** Saves a json configuration to the current active configuration file */
   saveConfiguration(json) {
-    const configFileName = this.getConfigName();
+    const configFileName = this.getConfigName() || Constants.DEFAULT_CONFIG_NAME;
 
     fs.writeFileSync(configFileName, JSON.stringify(json, null, '  '), 'UTF-8');
     Log.info(chalk.cyan(`\n Configuration saved in ${configFileName}`));

@@ -30,16 +30,6 @@ class SFCCManager {
         this.token = token;
     }
 
-    /** Lists the current code versions on the sandbox */
-    async ListCodeVersions() {
-
-    }
-
-    /** Activates code version */
-    async ActivateCodeVer(codeVer) {
-
-    }
-
     async Upload(file) {
         return new Promise((res, rej) => {
             instance.upload(this.config.hostname, file, this.token, {}, (err) => {

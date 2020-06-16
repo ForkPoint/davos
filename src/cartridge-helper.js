@@ -2,6 +2,8 @@ const path = require('path');
 const utils = require('./util');
 const Constants = require('./constants');
 const globby = require('globby');
+const fs = require('fs');
+const glob = require('glob');
 
 function getCartridgesPath() {
     return path.join(utils.getCurrentRoot(), Constants.CARTRIDGES_FOLDER);
@@ -27,15 +29,13 @@ function getCartridges(all = false, config) {
 function getCartridgesFromDir(dir) {
     let result = [];
 
-    dir = path.join(dir, "/cartridges")
+    dir = path.join(dir, "/cartridges");
 
-    let paths = globby.sync(['**/cartridge'], {
+    let paths = glob.sync('**/cartridge/', {
         cwd: dir,
         dot: true,
         nosort: true,
         absolute: true,
-        deep: 1,
-        onlyDirectories: true,
         ignore: Constants.GLOB_IGNORED
     });
 
