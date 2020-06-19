@@ -9,7 +9,7 @@ class Configuration {
         this.hostname = config.hostname || '';
         this.username = config.username || '';
         this.password = config.password || '';
-        this.codeVersion = config.codeVersion || '';
+        this.codeVersion = config.codeVersion || config['code-version'] || '';
         this.cartridge = config.cartridge || [];
         this.exclude = config.exclude || [];
         this.indentSize = config.indentSize || 2;
