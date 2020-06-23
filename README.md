@@ -224,7 +224,7 @@ In order to use this functionality, the folder and file structure must be create
 
 
 The structure is placed in the site/site_template folder:
-
+```bash
 ├───geolocations
 ├───meta
 ├───ocapi-settings
@@ -237,16 +237,16 @@ The structure is placed in the site/site_template folder:
 │   │   └───urls
 │   ├───SiteNameUS
 │   │   └───urls
-│   ├───`__common`
+│   ├───__common
 │   │   ├───ocapi-settings
 │   │   └───urls
-│   └───`__common__SiteName`
+│   └───__common__SiteName
 └───static
     └───default
         └───images
             └───slot
                 └───landing
-
+```
 
 
 This structure, allows to split the commonly used metadata per site in the `__common` or `__common__SiteName` folder and leave the site specific ones into the site specific folder [SiteName]. During the packing process, it will merge the metadata per site, using the common folders. If a file is found in the site specific folder, with the same name from the commons folder, the file from the site specific folder will have higher precedence.
