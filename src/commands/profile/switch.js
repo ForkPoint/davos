@@ -6,5 +6,8 @@ exports.aliases = ['sw'];
 exports.desc = 'Switch to profile';
 exports.builder = {};
 exports.handler = (argv) => {
-   new ConfigEditor(argv).switchProfile();
+   const configEditor = new ConfigEditor();
+   const name = argv.name;
+
+   configEditor.switchProfile(name);
 };

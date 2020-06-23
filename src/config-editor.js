@@ -199,7 +199,7 @@ class ConfigEditor {
 
       self.ConfigManager.saveConfiguration(newList);
 
-      Log.info(chalk.cyan(`\nSuccessfuly updated profile ${profileName}`));
+      Log.info(chalk.cyan(`\nSuccessfuly updated profile`));
     });
   }
 
@@ -228,16 +228,15 @@ class ConfigEditor {
   /**
    * Switch the active profile in the configuration manager
    */
-  switchProfile () {
+  switchProfile (name) {
     const self = this;
-    const profileName = self.config.profile;
     const profiles = self.ConfigManager.getProfiles();
-    const foundProfile = self.ConfigManager.getProfile(profileName); // profiles.find(x => x.profile === profile);
+    const foundProfile = self.ConfigManager.getProfile(name);
     const len = profiles.length;
     const newList = [];
 
     if (foundProfile === undefined) {
-      Log.info(chalk.red(`\nCannot find ${profileName} profile.`));
+      Log.info(chalk.red(`\nCannot find ${name} profile.`));
       return;
     }
 

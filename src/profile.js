@@ -15,7 +15,7 @@ class Profile {
     constructor(config, active, name) {
         this.config = new Configuration(config);
         this.active = active;
-        this.name = name;
+        this.profile = name;
     }
 
     SetActive(status) {

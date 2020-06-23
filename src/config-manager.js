@@ -241,8 +241,7 @@ class ConfigManager {
   }
 
   getProfile(name) {
-    console.log(this.profiles);
-    return this.profiles.find(prof => prof.name === name);
+    return this.profiles.find(prof => prof.profile === name);
   }
 
   /**
