@@ -90,34 +90,34 @@ Davos can be used to create profiles (davos.json) and manage them as well.
 
 A quick overview of the present functionalities:
 
-- Profile
-  - edit
-  - insert
-  - list
-  - switch
-- Metadata
-  - split
-  - merge
-- Package
-  - create
-  - import
-- Sandbox
+- [Profile](#profile-and-davos-configuration-related)
+  - [edit](#profile-edit)
+  - [insert](#profile-creation)
+  - [list](#profile-list)
+  - [switch](#profile-switch)
+- [Metadata](#metadata-related)
+  - [split](#metadata-split)
+  - [merge](#metadata-merge)
+- [Package](#package)
+  - [create](#package-create)
+  - [import](#package-import)
+- [Sandbox](#sandbox-related)
   - Code
-    - activate
-    - list
-    - shift
-    - deploy
+    - [activate](#code-activate)
+    - [list](#code-list)
+    - [shift](#code-shift)
+    - [deploy](#code-deploy)
   - Upload
-    - sites
-    - cartridges
-- Miscellaneous
-  - Watch
+    - [sites](#upload-sites)
+    - [cartridges](#upload-cartridges)
+- [Miscellaneous](#miscellaneous)
+  - [Watch](#watch)
 
 
 
 ### Profile and Davos configuration related
 
-#### davos.json and Profile creation
+#### Profile creation
 
 In order to create a *davos.json* and profile in it
 
