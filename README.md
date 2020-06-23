@@ -1,4 +1,4 @@
-# Davos - Your trusty WebDav companion.
+# Davos - A worthy SFCC developer companion.
 
 Davos is well suited to upload and sync your Cloud Commerce Digital projects, providing additional capabilities to ease your workflow with managing metadata, upload sites, code deployment and more.
 
@@ -219,7 +219,7 @@ davos meta merge --in=path/to/splitted/meta/ -out=path/to/file.xml
 
 Davos has the ability to pack and import so called "packages". These are basically the sites metadata but separated in a more complex structure
 
-In order to use this functionality, the folder and file structure must be create and maintained.
+In order to use this functionality, the folder and file structure must be created and maintained.
 
 
 
