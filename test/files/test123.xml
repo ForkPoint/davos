@@ -1,0 +1,198 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<library xmlns="http://www.demandware.com/xml/impex/library/2006-10-31" library-id="Diesel">
+    <content content-id="047-banners-hero-v1">
+        <display-name xml:lang="x-default">Banners Hero V1</display-name>
+        <online-flag>true</online-flag>
+        <searchable-flag>false</searchable-flag>
+        <page-attributes/>
+        <custom-attributes>
+            <custom-attribute attribute-id="body" xml:lang="x-default">&lt;div class=&quot;banners-hero banners-hero-v1&quot;&gt;
+	 &lt;div class=&quot;container&quot;&gt;
+	 	&lt;div class=&quot;col-md-5 col-xs-12 banner-content&quot;&gt;
+			&lt;h2 class=&quot;module-head-big&quot;&gt;
+				Vintage Vibes
+			&lt;/h2&gt;
+			&lt;div class=&quot;col-md-9&quot;&gt;
+				&lt;p&gt;We're head-over-heels with our latest denims,
+				 with the reserve technique giving new fabrics vintage vibes.
+				&lt;/p&gt;
+			&lt;/div&gt;
+			&lt;a href=&quot;#&quot; class=&quot;button secondary-white-btn&quot;&gt;Shop The Collection&lt;/a&gt;
+		&lt;/div&gt;
+	 &lt;/div&gt;
+&lt;/div&gt;</custom-attribute>
+            <custom-attribute attribute-id="contentStyling">&lt;style&gt;
+.banners-hero-v1{
+color: #fff;
+}
+&lt;/style&gt;</custom-attribute>
+            <custom-attribute attribute-id="imageUrl">modules/banners-hero-1.jpg</custom-attribute>
+        </custom-attributes>
+    </content><content content-id="047-banners-hero-v2">
+        <display-name xml:lang="x-default">Banners Hero V2</display-name>
+        <online-flag>true</online-flag>
+        <searchable-flag>false</searchable-flag>
+        <page-attributes/>
+        <custom-attributes>
+            <custom-attribute attribute-id="body" xml:lang="x-default">&lt;div class=&quot;banners-hero banners-hero-v2&quot;&gt;
+	 &lt;div class=&quot;container&quot;&gt;
+	 	&lt;div class=&quot;col-md-6 col-xs-12 banner-content&quot;&gt;
+			&lt;h2 class=&quot;module-head-big&quot;&gt;
+				Only The Brave
+			&lt;/h2&gt;
+			&lt;div class=&quot;col-md-8&quot;&gt;
+				&lt;p&gt;We're head-over-heels with our latest denims,
+				 with the reserve technique giving new fabrics vintage vibes.
+				&lt;/p&gt;
+			&lt;/div&gt;
+			&lt;a href=&quot;#&quot; class=&quot;button secondary-white-btn&quot;&gt;Shop The Collection&lt;/a&gt;
+ 			&lt;a href=&quot;#&quot; class=&quot;button light-btn&quot;&gt;Watch The Trailer&lt;/a&gt;
+		&lt;/div&gt;
+	 &lt;/div&gt;
+&lt;/div&gt;</custom-attribute>
+            <custom-attribute attribute-id="contentStyling">&lt;style&gt;
+.banners-hero-v2 {
+color: #fff;
+}
+&lt;/style&gt;</custom-attribute>
+            <custom-attribute attribute-id="imageUrl">modules/banners-hero-2.jpg</custom-attribute>
+        </custom-attributes>
+    </content><content content-id="047-banners-hero-v4">
+        <display-name xml:lang="x-default">Banners Hero V4</display-name>
+        <online-flag>true</online-flag>
+        <searchable-flag>false</searchable-flag>
+        <page-attributes/>
+        <custom-attributes>
+            <custom-attribute attribute-id="body" xml:lang="x-default">&lt;div class=&quot;banners-hero banners-hero-v4&quot;&gt;
+	 &lt;div class=&quot;container centered&quot;&gt;
+		 &lt;h2 class=&quot;module-head-huge&quot;&gt;
+			Vintage Vibes
+		&lt;/h2&gt;
+	 	&lt;div class=&quot;col-lg-4 col-md-5 col-xs-12 banner-content&quot;&gt;
+			&lt;p&gt;We're head-over-heels with our latest denims,
+				with the reserve technique giving new fabrics vintage vibes.
+			&lt;/p&gt;
+			&lt;a href=&quot;#&quot; class=&quot;button secondary-white-btn&quot;&gt;Jumpers For Him&lt;/a&gt;
+		&lt;/div&gt;
+	 &lt;/div&gt;
+&lt;/div&gt;</custom-attribute>
+            <custom-attribute attribute-id="contentStyling">&lt;style&gt;
+.banners-hero-v4{
+color: #fff;
+}
+&lt;/style&gt;</custom-attribute>
+            <custom-attribute attribute-id="imageUrl">modules/banners-hero-4.jpg</custom-attribute>
+        </custom-attributes>
+    </content><content content-id="047-banners-hero-v5">
+        <display-name xml:lang="x-default">Banners Hero V5</display-name>
+        <online-flag>true</online-flag>
+        <searchable-flag>false</searchable-flag>
+        <page-attributes/>
+        <custom-attributes>
+            <custom-attribute attribute-id="body" xml:lang="x-default">&lt;div class=&quot;banners-hero banners-hero-v5&quot;&gt;
+	 &lt;div class=&quot;container&quot;&gt;
+	 	&lt;div class=&quot;col-lg-4 col-md-5 col-xs-12 banner-content&quot;&gt;
+			&lt;h2 class=&quot;module-head-big&quot;&gt;
+				Smart may have the brains,
+				but stupid has the balls.
+			&lt;/h2&gt;
+			&lt;p&gt;Lorem ipsum dolor sit amet, consectetur adipiscing elit,
+			 sed do eiusmod tempor incididunt ut labore et dolore magna aliqua
+			&lt;/p&gt;
+			&lt;a href=&quot;#&quot; class=&quot;button secondary-white-btn&quot;&gt;Shop The Collection&lt;/a&gt;
+		&lt;/div&gt;
+	 &lt;/div&gt;
+&lt;/div&gt;</custom-attribute>
+            <custom-attribute attribute-id="contentStyling">&lt;style&gt;
+.banners-hero-v5{
+color: #fff;
+}
+&lt;/style&gt;</custom-attribute>
+            <custom-attribute attribute-id="imageUrl">modules/banners-hero-5.jpg</custom-attribute>
+        </custom-attributes>
+    </content><content content-id="banners-hero-twoimages">
+        <display-name xml:lang="x-default">Banner hero two images module</display-name>
+        <online-flag>true</online-flag>
+        <searchable-flag>false</searchable-flag>
+        <template>rendering/content/simplecontent</template>
+        <page-attributes/>
+        <custom-attributes>
+            <custom-attribute attribute-id="body" xml:lang="x-default">&lt;div class=&quot;banners-hero banners-hero-two-images&quot;&gt;
+    &lt;div class=&quot;container&quot;&gt;
+        &lt;div class=&quot;row&quot;&gt;
+            &lt;div class=&quot;col-sm-8 col-sm-offset-4 module-images&quot;&gt;
+                &lt;div class=&quot;col-sm-10 col-xs-offset-2 module-images-wrapper&quot;&gt;
+                    &lt;div class=&quot;module-image-1&quot;&gt;
+                        &lt;img alt=&quot;&quot; class=&quot;col-sm-12&quot;
+                            src=&quot;modules/banners-hero-two-images-1.jpg?$staticlink$&quot; title=&quot;&quot; /&gt;
+                    &lt;/div&gt;
+                    &lt;img alt=&quot;&quot; class=&quot;module-image-2 col-sm-4&quot;
+                        src=&quot;modules/banners-hero-two-images-2.jpg?$staticlink$&quot; /&gt;
+                &lt;/div&gt;
+            &lt;/div&gt;
+        &lt;/div&gt;
+        &lt;div class=&quot;col-xs-12 banner-content&quot;&gt;
+            &lt;h2 class=&quot;module-head-big&quot;&gt;Skating Skills&lt;/h2&gt;
+            &lt;p&gt;We're head over heels with our latest denims, with the reserve
+                technique giving new fabrics vintage vibes.&lt;/p&gt;
+            &lt;a class=&quot;button  light-btn&quot; value=&quot;Shop The Collection&quot;&gt;Shop
+                The Collection&lt;/a&gt;
+        &lt;/div&gt;
+    &lt;/div&gt;
+&lt;/div&gt;</custom-attribute>
+            <custom-attribute attribute-id="contentStyling">&lt;style&gt;
+/* background color */
+.banners-hero-two-images, .banners-hero-two-images .module-images {
+     background-color: #ff1010;
+}
+@media (min-width:992px) {
+    .banners-hero-two-images {
+     background-color: initial;
+     }
+}
+
+/* big image - mobile*/
+.banners-hero-two-images .module-image-1 {
+    right: 10px;
+    bottom: 10px;
+}
+/* big image - desktop */
+@media (min-width:768px) {
+    .banners-hero-two-images .module-image-1 {
+        right: 0px;
+        bottom: 80px;
+    }
+}
+/* smaill image - mobile*/
+.banners-hero-two-images .module-image-2 {
+    top: 0;
+    bottom: 0;
+    right: 160px;
+}
+/*  small image - desktop */
+@media (min-width:768px) {
+    .banners-hero-two-images .module-image-2 {
+        left: -50px;
+        top: 50px;
+        bottom: initial;
+       }
+}
+/*  small image - tablet*/
+@media (min-width:992px) {
+    .banners-hero-two-images .module-image-2 {
+        left: 0;
+        top: 50px;
+        bottom: initial;
+       }
+}
+/* text-module - desktop */
+@media (min-width:768px) {
+    .banners-hero-two-images .module-text {
+         top: 365px;
+         left: 0;
+     } 
+}
+&lt;/style&gt;</custom-attribute>
+        </custom-attributes>
+    </content>
+</library>

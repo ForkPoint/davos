@@ -1,44 +1,46 @@
-(function () {
-  'use strict';
+'use strict';
 
-  // Imports
-  const Logger = require('winston'),
-    config = require('winston/lib/winston/config');
+const winston = require('winston');
 
-  Logger.addColors({
-    debug: 'cyan',
-    info: 'green',
-    silly: 'magenta',
+// Logging levels
+const config = {
+  colors: {
+    error: 'red',
+    debug: 'blue',
     warn: 'yellow',
-    error: 'red'
-  });
-
-  Logger.remove(Logger.transports.Console);
-
-  Logger.add(Logger.transports.Console, {
-    level: 'verbose',
-    colorize: 'all',
-    handleExceptions: true,
-    json: false,
-    humanReadableUnhandledException: true,
-    /*
-    timestamp: function () {
-      return new Date()
-        .toISOString()
-        .replace(/T/, ' ') // replace T with a space
-        .replace(/\..+/, ''); // delete the dot and everything after
-    },
-		*/
-    formatter: function (options) {
-      // Return string will be passed to logger.
-      let message = /* options.timestamp() + ' ' + */ (options.message ? options.message : '') + (options.meta && Object.keys(options.meta).length ? '\n\t' + JSON.stringify(options.meta) : '');
-      return config.colorize(options.level, message);
-    }
-  });
-
-  Logger.exitOnError = function (err) {
-    return err.code !== 'EPIPE';
+    data: 'grey',
+    info: 'green',
+    verbose: 'cyan',
+    silly: 'magenta',
+    custom: 'yellow'
   }
+};
 
-  module.exports = Logger;
-})();
+winston.addColors(config.colors);
+
+const alignedWithColorsAndTime = winston.format.combine(
+  winston.format.colorize(),
+  winston.format.timestamp(),
+  winston.format.align(),
+  winston.format.printf((info) => {
+    const {
+      timestamp, level, message, ...args
+    } = info;
+
+    const ts = timestamp.slice(11, 19).replace('T', ' ');
+    return `${ts} [${level}]: ${message} ${Object.keys(args).length ? JSON.stringify(args, null, 2) : ''}`;
+  }),
+);
+
+const logger = module.exports = winston.createLogger({
+  format: alignedWithColorsAndTime,
+  transports: [
+    new winston.transports.Console({
+      handleExceptions: true,
+      humanReadableUnhandledException: true
+    })
+  ],
+  exitOnError: false
+});
+
+module.exports = logger;

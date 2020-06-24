@@ -1,183 +1,263 @@
-(function () {
-  'use strict';
 
-  // Constants
-  const DEFAULT_CONFIG_NAME = 'davos.json',
-    TMP_DIR = "tmp",
-    CONFIG_PROPERTIES = {
-      required: ['hostname', 'username', 'password', 'cartridge', 'codeVersion'],
-      optional: ['exclude', 'templateReplace']
-    },
-    GLOB_IGNORED = [
-      "**/.git/**",
-      "**/.svn/**",
-      "**/.sass-cache/**",
-      "**/node_modules/**"
-    ];
 
-  // Imports
-  const fs = require('fs'),
-    globby = require('globby'),
-    path = require('path'),
-    chalk = require('chalk'),
-    Queue = require('sync-queue');
+/** Constants */
 
-  // Locals
-  const Log = require('./logger');
+/** Modules */
+const fs = require('fs');
+const chalk = require('chalk');
+const Constants = require('./constants');
 
-  class ConfigManager {
-    constructor() {
-      /* contain all the profiles */
-      this.profiles = [];
-      /* contain active profile */
-      this.config = {};
-      return this;
-    }
+/** Internal modules */
+const Log = require('./logger');
+const Profile = require('./profile');
 
-    getConfigName() {
-      // @TODO make config name dynamic
-      // check files for structure that match config and get first one - if not - throws an error
-      return DEFAULT_CONFIG_NAME;
-    }
+/**
+ * Class Config Manager
+ *
+ * Represents a manager class to perform Operations on Profiles || Configurations
+ */
+class ConfigManager {
+  constructor(config) {
+    this.activeConfig = '';
+    this.profiles = [];
+    this.profileFactory(config);
+  }
 
-    getActiveProfile(config) {
-      if (!this.profiles) {
-        Log.error(chalk.red(`\nCannot read configuration.`));
-        return config;
-      }
+  /**
+   * Creates profiles and sets up their configuration objects for ConfigManager
+   *
+   * @param {object} Configuration object from the initialization of Davos
+   */
+  profileFactory(config) {
+    if (this.hasRequiredProperties(config)) {
+      this.profiles.push(new Profile(config, true, 'default'));
+    } else {
+      this.setActiveConfig();
+      const configFile = this.getConfigFile();
 
-      let activeProfile = this.profiles.find(x => x.active === true);
+      if (!configFile) {
+        /** create empty configuration */
+        Log.warn('No configuration file present, creating temporary empty configuration.');
+        Log.warn('Limited functionality will be available.');
 
-      if (!activeProfile) {
-        Log.error(chalk.red(`\nThere is no active profile in your configuration [${configPath}].`));
-        return config;
-      }
+        this.profiles.push(new Profile({}, true, 'default'));
+      } else {
+        /** if array, then it is davos.json */
+        if (Array.isArray(configFile)) {
+          configFile.forEach((profile) => {
+            const nonVitalConfigProperties = this.getNonVitalConfigProperties(profile.config);
+            const newProfile = new Profile(profile.config, profile.active, profile.profile);
 
-      this.config = activeProfile.config;
+            this.addNonVitalConfigPropertiesToProfile(newProfile, nonVitalConfigProperties);
 
-      if (config !== undefined) {
-        this.mergeConfiguration(config);
-      }
+            if (Object.keys(config).length) {
+              this.addNonVitalConfigPropertiesToProfile(newProfile, config);
+            }
+            this.profiles.push(newProfile);
+          });
+        } else {
+          const nonVitalConfigProperties = this.getNonVitalConfigProperties(configFile);
+          const newProfile = new Profile(configFile, true, 'default');
 
-      this.validateConfigProperties(this.config);
+          this.addNonVitalConfigPropertiesToProfile(newProfile, nonVitalConfigProperties);
 
-      this.config.cartridge.forEach(function (cartridge) {
-        if (cartridge.indexOf('\\') > -1 || cartridge.indexOf('**') < 0) {
-          Log.warn(chalk.yellow(`\nYour cartrige format is not valid. Please fix it.`));
-          process.exit();
+          if (Object.keys(config).length) {
+            this.addNonVitalConfigPropertiesToProfile(newProfile, config);
+          }
+          this.profiles.push(newProfile);
         }
-      });
-
-      return this.config;
-    }
-
-    mergeConfiguration(config) {
-      this.config = Object.assign({}, this.config, config);
-      return this.config;
-    }
-
-    isConfigExisting() {
-      let configName = this.getConfigName();
-
-      try {
-        fs.statSync(configName);
-        return true;
-      } catch (e) {
-        return false;
       }
     }
+  }
 
-    validateConfigProperties(config) {
-      CONFIG_PROPERTIES.required.forEach(function (property) {
-        if (!config.hasOwnProperty(property)) {
-          throw {
-            name: 'InavlidConfiguration',
-            message: `Your configuration profile does not contain ${property}`
-          };
-        }
-      });
-      CONFIG_PROPERTIES.optional.forEach(function (property) {
-        if (!config.hasOwnProperty(property)) {
-          Log.warn(`Your configuration profile does not contain optional property ${property}`);
-        }
-      });
+  /**
+   * Checks for the required properties
+   *
+   * @param {object} Configuration object from initialization of Davos
+   */
+  hasRequiredProperties(config) {
+    if (!config) return false;
+
+    const { required } = Constants.CONFIG_PROPERTIES;
+    return Object.keys(config).filter(prop => required.includes(prop)).length === required.length;
+  }
+
+  /**
+   * Checks for the optional properties
+   *
+   * @param {object} Configuration object from initialization of Davos
+   */
+  hasOptionalProperties(config) {
+    if (!config) return false;
+
+    const { optional } = Constants.CONFIG_PROPERTIES;
+    return Object.keys(config).filter(prop => optional.includes(prop)).length > 0;
+  }
+
+  /**
+   * Checks if a given property is an required one
+   *
+   * @param {string} Property to check
+   */
+  isRequiredProperty(property) {
+    const { required } = Constants.CONFIG_PROPERTIES;
+    return required.includes(property);
+  }
+
+  /**
+   * Checks if a given property is an optional one
+   *
+   * @param {string} Property to check
+   */
+  isOptionalProperty(property) {
+    const { optional } = Constants.CONFIG_PROPERTIES;
+    return optional.includes(property);
+  }
+
+  /**
+   * Returns an object, containing non-essential properties.
+   * These might include:
+   * [git], [pattern] etc...
+   *
+   * @param {object} Configuration object from initialization of Davos
+   */
+  getNonVitalConfigProperties(config) {
+    const nonVitalConfigProperties = {};
+
+    if (!config) {
+      return nonVitalConfigProperties;
     }
 
-    getCartridges(currentRoot) {
-      let result = [];
+    Object.keys(config).forEach((key) => {
+      if (!this.isRequiredProperty(key) && !this.isOptionalProperty(key)) {
+        nonVitalConfigProperties[key] = config[key];
+      }
+    });
 
-      let paths = globby.sync(['**/cartridge/'], {
-        cwd: currentRoot,
-        dot: true,
-        nosort: true,
-        absolute: true,
-        ignore: GLOB_IGNORED
-      });
+    return nonVitalConfigProperties;
+  }
 
-      paths.forEach(function (filePath) {
-        let absolutePath = filePath,
-          relativeCartridgePath = path.relative(currentRoot, absolutePath),
-          relativePath = path.dirname(relativeCartridgePath).replace(/\\/g, '/');
+  addNonVitalConfigPropertiesToProfile(profile, nonVitalAttributes) {
+    Object.keys(nonVitalAttributes).forEach(attr => profile.config.SetProperty(attr, nonVitalAttributes[attr]));
+  }
 
-        result.push(relativePath + '/**');
-      });
+  /**
+   * Gets the current configuration file
+   *
+   * NOTE: this will work, only if there is an existing configuration file (davos.json || dw.json)
+   */
+  getConfigFile() {
+    const configName = this.getConfigName();
+    let fileContents = '';
+    let json = null;
 
-      return result;
-    }
-
-    getTempDir() {
-      return this.config.tmpDir || TMP_DIR;
-    }
-
-    isValidCartridgePath(relativePath) {
-      const self = this;
-
-      let validCartridge = false;
-
-      self.config.cartridge.forEach(function (cartridge) {
-        if (relativePath.startsWith(cartridge)) {
-          validCartridge = true;
-        }
-      });
-
-      return validCartridge;
-    }
-
-    loadConfiguration() {
-      //parse the configuration
-      let configName = this.getConfigName(),
-        fileContents = '',
-        json = null;
-
+    if (configName) {
       try {
         fileContents = fs.readFileSync(configName, 'UTF-8');
       } catch (e) {
-        Log.error(chalk.red("\nConfiguration not found. Error: " + configName + " ::: " + e.message));
+        Log.error(chalk.red(`\nConfiguration not found. Error: ${configName} ::: ${e.message}`));
       }
 
       try {
         json = JSON.parse(fileContents);
       } catch (e) {
-        Log.error(chalk.red("\nThere was a problem parsing the configuration file : " + configName + " ::: " + e.message));
+        Log.error(chalk.red(`\nThere was a problem parsing the configuration file : ${configName} ::: ${e.message}`));
       }
 
-      this.profiles = json;
+      return json;
+    }
+    Log.warn('No configuration file present, please create either davos.json or dw.json');
+    return null;
+  }
 
-      return this;
+  /**
+   * Returns all profiles created on initialization or an empty array
+   */
+  getProfiles() {
+    return this.profiles;
+  }
+
+  /**
+   * Checks if a certain configuration file exists in the main directory
+   * davos.json || dw.json
+   *
+   * @param {string} Filename
+   */
+  checkConfigFile() {
+    const configFileName = this.activeConfig || null;
+    let exists = false;
+
+    try {
+      exists = fs.existsSync(configFileName);
+    } catch (err) {
+      Log.error(err);
+      Log.info(`${configFileName} not present`);
     }
 
-    saveConfiguration(json) {
-      let configFileName = this.getConfigName();
+    return exists;
+  }
 
-      fs.writeFileSync(configFileName, JSON.stringify(json, null, '  '), 'UTF-8');
-      Log.info(chalk.cyan('\n Configuration saved in ' + configFileName));
+  /**
+   * Sets the active configuration name to the ConfigManager object
+   * davos.json || dw.json
+   *
+   * If none is present and an operation is required to have it, execution will end here.
+   */
+  setActiveConfig() {
+    this.activeConfig = Constants.DEFAULT_CONFIG_NAME;
+    let configExists = this.checkConfigFile();
+
+    if (!configExists) {
+      this.activeConfig = Constants.DW_CONFIG_NAME;
+      configExists = this.checkConfigFile();
     }
 
-    promptError(e) {
-      Log.error(e);
-      return 1;
+    if (!configExists) {
+      this.activeConfig = '';
     }
   }
 
-  module.exports = ConfigManager;
-}());
+  /**
+   * Return the current active configuration name
+   * davos.json || dw.json
+   */
+  getConfigName() {
+    return this.activeConfig;
+  }
+
+  /**
+   * Returns the current active profile
+   * If many are active, the first one will be returned
+   */
+  getActiveProfile() {
+    const activeProfile = this.profiles.find(x => x.active === true);
+
+    if (!activeProfile) {
+      Log.error(chalk.red('\nThere is no active profile in your configuration.'));
+      throw new Error('No active profile');
+    }
+
+    return activeProfile;
+  }
+
+  getProfile(name) {
+    return this.profiles.find(prof => prof.profile === name);
+  }
+
+  /**
+   * Gets the configuration from the current active profile
+   */
+  getActiveConfig() {
+    return this.getActiveProfile().config;
+  }
+
+  /** Saves a json configuration to the current active configuration file */
+  saveConfiguration(json) {
+    const configFileName = this.getConfigName() || Constants.DEFAULT_CONFIG_NAME;
+
+    fs.writeFileSync(configFileName, JSON.stringify(json, null, '  '), 'UTF-8');
+    Log.info(chalk.cyan(`\n Configuration saved in ${configFileName}`));
+  }
+}
+
+module.exports = ConfigManager;

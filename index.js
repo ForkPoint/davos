@@ -1,15 +1,5 @@
-#!/usr/bin/env node
+'use strict';
 
-process.env.UV_THREADPOOL_SIZE = 128;
+const Core = require('./src/main');
 
-(function () {
-  'use strict';
-
-  module.exports = {
-    Core: require('./src/davos'),
-    ConfigManager: require('./src/config-manager'),
-    Logger: require('./src/logger'),
-    BM: require('./src/bm'),
-    WebDav: require('./src/webdav')
-  };
-}());
+module.exports = Core;

@@ -3,25 +3,20 @@
 
   // Constants
   const MAX_ATTEMPTS = 3,
-    RETRY_DELAY = 300,
-    REQUEST_TIMEOUT = 15000;
+    RETRY_DELAY = 3000,
+    REQUEST_TIMEOUT = 60000;
 
   // Locals
-  const ConfigManager = require('./config-manager'),
-    RequestManager = require('./request-manager'),
-    Log = require('./logger');
+  const RequestManager = require('./request-manager');
+  const Log = require('./logger');
 
   /**
    * A WebDav client realizing DELETE, PUT, UNZIP, MKCOL, PROPFIND
    * @param {Object} config The configuration object used by Davos
    */
   class WebDav {
-    constructor (config, ConfigManagerInstance) {
-      this.ConfigManager = ConfigManagerInstance || new ConfigManager();
-      this.config = (Object.keys(this.ConfigManager.config).length === 0)
-        ? this.ConfigManager.loadConfiguration().getActiveProfile(config)
-        : this.ConfigManager.mergeConfiguration(config);
-
+    constructor (config) {
+      this.config = config;
       this.options = {
         baseUrl: 'https://' + this.config.hostname + '/on/demandware.servlet/webdav/Sites/Cartridges/' + this.config.codeVersion,
         uri: '/',
@@ -33,7 +28,7 @@
         timeout: REQUEST_TIMEOUT
       };
 
-      this.reqMan = new RequestManager(this.options, this.ConfigManager);
+      this.reqMan = new RequestManager(this.options, this.config);
 
       return this;
     }
@@ -60,7 +55,7 @@
           }, function (err) {
             reject(err);
           });
-      });
+      }).catch(err => Log.error(err));
     }
 
     /**
@@ -81,7 +76,7 @@
           }, function (err) {
             reject(err);
           });
-      });
+      }).catch(err => Log.error(err));
     }
 
     /**
@@ -102,7 +97,7 @@
           }, function (err) {
             reject(err);
           });
-      });
+      }).catch(err => Log.error(err));
     }
 
     /**
@@ -123,7 +118,7 @@
           }, function (err) {
             reject(err);
           });
-      });
+      }).catch(err => Log.error(err));
     }
 
     /**
@@ -145,7 +140,7 @@
           }, function (err) {
             reject(err);
           });
-      });
+      }).catch(err => Log.error(err));
     }
 
     /**
@@ -169,7 +164,7 @@
           }, function (err) {
             reject(err);
           });
-      });
+      }).catch(err => Log.error(err));
     }
 
     /**
@@ -184,12 +179,12 @@
         };
 
         self.doRequest(options, MAX_ATTEMPTS, RETRY_DELAY)
-          .then(function () {
-            resolve();
+          .then(function (body) {
+            resolve(body);
           }, function (err) {
             reject(err);
           });
-      });
+      }).catch(err => Log.error(err));
     }
   }
 
