@@ -65,7 +65,7 @@
     "simple-git": "^2.6.0",
     "sync-queue": "0.0.2",
     "underscore": "^1.10.2",
-    "winston": "^3.2.1",
+    "winston": "^3.3.3",
     "xml-js": "^1.6.11",
     "xmlappend": "^1.0.4",
     "xmldoc": "^1.1.2",
