@@ -20,7 +20,7 @@ winston.addColors(config.colors);
 
 const alignedWithColorsAndTime = winston.format.combine(
   winston.format.colorize(),
-  winston.format.timestamp(),
+  winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
   winston.format.align(),
   winston.format.printf((info) => {
     const {

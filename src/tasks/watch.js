@@ -1,14 +1,31 @@
-const Log = require('../logger');
+/** Modules */
 const Queue = require('sync-queue');
-const WebDav = require('../webdav');
 const chokidar = require('chokidar');
 const md5File = require('md5-file');
 const chalk = require('chalk');
 
+/** Internal modules */
+const Log = require('../logger');
+const WebDav = require('../webdav');
+const cartridgeHelper = require('../cartridge-helper');
+
+function getCartridgesToWatch(config) {
+    let cartridges = [];
+
+    if (config.cartridge.length === 0) {
+        const allCartridges = cartridgeHelper.getCartridges(true, config);
+        cartridges = allCartridges.map(cartridge => `cartridges/${cartridge}`);
+    } else {
+        cartridges = config.cartridge.map(cartridge => `cartridges/${cartridge}`);
+    }
+
+    return cartridges;
+}
+
 function watch(config) {
     const queue = new Queue();
     const webdav = new WebDav(config);
-    const allCartridges = config.cartridge.map(cartridge => `cartridges/${cartridge}`);
+    const allCartridges = getCartridgesToWatch(config); // config.cartridge.map(cartridge => `cartridges/${cartridge}`);
     const excludesWithDotFiles = config.exclude.concat([/[\/\\]\./]);
     const watchHashList = [];
 
