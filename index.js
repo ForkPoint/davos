@@ -1,5 +1,5 @@
 'use strict';
 
-const Core = require('./src/main');
+const Core = require('./bin/main');
 
 module.exports = Core;

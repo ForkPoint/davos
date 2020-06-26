@@ -1,12 +1,7 @@
 (function () {
   'use strict';
 
-  // Imports
-  const chalk = require('chalk'),
-    Davos = require('../index'),
-    // ConfigManager = new Davos.ConfigManager(),
-    Log = require('./logger');
-
+  const chalk = require('chalk');
   const yargonaut = require('yargonaut')
   .style('bold.underline', 'Commands:')
   .style('bold.underline', 'Options:')
@@ -21,50 +16,7 @@
   .errorsStyle("red")
   .helpStyle('green.bold');
 
-  // Local dependencies
-  const ConfigEditor = require('./config-editor');
-
   let argv, activeConfig;
-//   let args = process.argv;
-//   let configlessCommands = [undefined, 'create', '-h', '--help', 'split', 'merge'];
-//   let isConfiglessCommand = false;
-//   for (let p = 0; p < configlessCommands.length; p++){
-//     if (args.indexOf(configlessCommands[p]) > -1) {
-//         isConfiglessCommand = true;
-//         break;
-// 	}
-//   }
-
-//   if (!isConfiglessCommand && !ConfigManager.isConfigExisting()) {
-//     Log.error(chalk.red(`\nCannot find configuration in [${process.cwd()}].`));
-//     return;
-//   }
-
-  //var configPath = path.join(process.cwd().getConfigName());
-//   if (!isConfiglessCommand) {
-//     activeConfig = ConfigManager.loadConfiguration().getActiveProfile();
-//   }
-
-  /**
-    profile
-      insert
-      list
-      edit
-      switch
-
-    setup
-    sync
-    watch
-
-    upload
-      code
-      site
-      meta
-
-    meta
-      split
-      merge
-   */
   var yargs = require('yargs');
   argv = yargs
     .version()
@@ -125,9 +77,8 @@
     .alias('V', 'version')
     .demandCommand(1, 'You need at least one command before moving on')
     .recommendCommands()
-    .wrap(80)//yargs.terminalWidth())
+    .wrap(80)
     .showHelpOnFail(true, 'Specify --help for available options')
     .epilog('For more information on Davos, go to https://forkpoint.com/products/davos')
     .argv;
-
 }());
