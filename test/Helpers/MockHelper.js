@@ -101,7 +101,7 @@ function mockGetCartridges() {
 
 function mockDavosJson() {
     mockfs({
-        'davos.json': '',
+        'davos.json': fs.readFileSync('test/files/davos.json', 'UTF-8').toString(),
         'cartridges': {
             'app_test': {
                 'cartridge': {}

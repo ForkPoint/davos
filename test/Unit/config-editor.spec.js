@@ -1,6 +1,7 @@
 const expect = require('chai').expect;
 const mockfs = require('mock-fs');
 const sinon = require('sinon');
+const path = require('path');
 const ConfigEditor = require('../../src/config-editor');
 const mockHelper = require('../Helpers/MockHelper');
 const fs = require('fs');
@@ -34,15 +35,16 @@ describe.only('Unit: Config-Editor', function () {
         let davosJson = '';
         let davosObj = [];
         let profile = {};
+        const davosConfig = path.join(process.cwd(), 'davos.json');
 
         mockHelper.mockDavosJson();
         stubHelper.stubPrompForCreateConfig(configEditor.ConfigManager);
         configEditor.createConfig();
 
-        jsonExists = fs.existsSync(process.cwd() + '/davos.json');
+        jsonExists = fs.existsSync(davosConfig);
 
         try {
-            davosJson = fs.readFileSync(process.cwd() + '/davos.json');
+            davosJson = fs.readFileSync(davosConfig).toString();
             davosObj = JSON.parse(davosJson);
             profile = davosObj[0];
         } catch(err) {
