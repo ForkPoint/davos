@@ -26,6 +26,6 @@ exports.handler = async (argv) => {
 
     await davos.merge();
   } else {
-    Log.error('Please provide in and out params: --in "path/to/file.xml" --out "output/folder"');
+    Log.error('Please provide in and out params: --in "path/to/splitted/meta" --out "output/folder/filename.xml"');
   }
 };

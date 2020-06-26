@@ -25,7 +25,7 @@ async function merge(paramIn, paramOut, force, config) {
         });
     }
 
-    pattern = path.join(root, config.command.in);
+    pattern = path.join(root, config.command.in).replace(/\\/g, '/');
     out = config.command.out;
     outPath = path.join(root, out);
     outWithoutFile = outPath.substring(0, outPath.lastIndexOf(path.sep));
