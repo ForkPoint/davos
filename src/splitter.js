@@ -24,7 +24,7 @@ function absolutePath(config, fpath) {
 }
 
 exports.splitBundle = function (config, fpath, xpath, out, cfg) {
-  const template = fs.readFileSync(__dirname + "/../resources/" + cfg.template + ".template").toString();
+  const template = fs.readFileSync(__dirname + "./resources/" + cfg.template + ".template").toString();
   const filepath = absolutePath(config, fpath);
   const xmlFile = fs.readFileSync(filepath).toString();
 

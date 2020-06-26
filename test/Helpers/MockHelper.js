@@ -11,7 +11,7 @@ function mockFileSystemForSplit() {
         },
         [OutputDir]: {/** another empty directory */ },
         'resources': {
-            'library.template': fs.readFileSync('resources/library.template', 'UTF-8').toString()
+            'library.template': fs.readFileSync('../src/resources/library.template', 'UTF-8').toString()
         }
     });
 }
@@ -24,7 +24,7 @@ function mockFileSystemForMerge() {
         },
         [OutputDir]: {/** another empty directory */ },
         'resources': {
-            'library.template': fs.readFileSync('resources/library.template', 'UTF-8').toString()
+            'library.template': fs.readFileSync('../src/resources/library.template', 'UTF-8').toString()
         }
     });
 }
@@ -34,7 +34,7 @@ function mockFileSystemForUploadMetaWithoutConfigFile() {
         'tmp': {},
         [OutputDir]: {/** another empty directory */ },
         'resources': {
-            'library.template': fs.readFileSync('resources/library.template', 'UTF-8').toString()
+            'library.template': fs.readFileSync('../src/resources/library.template', 'UTF-8').toString()
         },
         'sites/site_template/meta': {
             'davos-meta-bundle.xml': fs.readFileSync('test/files/test123.xml', 'UTF-8').toString()
@@ -48,7 +48,7 @@ function mockFileSystemForUploadMetaWithConfigFile() {
         'tmp': {},
         [OutputDir]: {/** another empty directory */ },
         'resources': {
-            'library.template': fs.readFileSync('resources/library.template', 'UTF-8').toString()
+            'library.template': fs.readFileSync('../src/resources/library.template', 'UTF-8').toString()
         },
         'sites/site_template/meta': {
             'davos-meta-bundle.xml': fs.readFileSync('test/files/test123.xml', 'UTF-8').toString()
@@ -62,7 +62,7 @@ function mockFileSystemForUploadCartridgesWithConfigFile() {
         'tmp': {},
         [OutputDir]: {/** another empty directory */ },
         'resources': {
-            'library.template': fs.readFileSync('resources/library.template', 'UTF-8').toString()
+            'library.template': fs.readFileSync('../src/resources/library.template', 'UTF-8').toString()
         },
         'sites/site_template/meta': {
             'davos-meta-bundle.xml': fs.readFileSync('test/files/test123.xml', 'UTF-8').toString()
@@ -77,7 +77,7 @@ function mockFileSystemForUploadCartridgesWithOutConfigFile() {
         },
         [OutputDir]: {/** another empty directory */ },
         'resources': {
-            'library.template': fs.readFileSync('resources/library.template', 'UTF-8').toString()
+            'library.template': fs.readFileSync('../src/resources/library.template', 'UTF-8').toString()
         },
         'sites/site_template/meta': {
             'davos-meta-bundle.xml': fs.readFileSync('test/files/test123.xml', 'UTF-8').toString()
