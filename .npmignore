@@ -2,7 +2,9 @@ node_modules
 *.log
 .DS_Store
 test
+tmp
 npm-debug.log
 .gitignore
 .editorconfig
 upload.json
+davos.json
