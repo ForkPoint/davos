@@ -1,12 +1,14 @@
 {
   "name": "davos",
-  "version": "2.0.0-alpha.9",
+  "version": "2.0.0-alpha.11",
   "description": "Salesforce Commerce Cloud (Demandware) - Configuration Manager and Continuous Integration deployment tools",
   "main": "index.js",
   "files": [
     "LICENSE",
     "index.js",
-    "bin"
+    "bin",
+    "src",
+    "resources"
   ],
   "bin": {
     "davos": "./bin/davos.js"
@@ -53,7 +55,7 @@
     "md5-file": "^5.0.0",
     "mergexml": "^1.2.1",
     "mkdirp-sync": "0.0.3",
-    "moment": "^2.26.0",
+    "moment": "^2.27.0",
     "multimatch": "^4.0.0",
     "prettify-xml": "^1.2.0",
     "pretty-data": "^0.40.0",
@@ -61,11 +63,11 @@
     "prompt": "^1.0.0",
     "request": "^2.88.2",
     "request-debug": "^0.2.0",
-    "sfcc-ci": "^2.5.1",
-    "simple-git": "^2.6.0",
+    "sfcc-ci": "^2.6.0",
+    "simple-git": "^2.11.0",
     "sync-queue": "0.0.2",
     "underscore": "^1.10.2",
-    "winston": "^3.2.1",
+    "winston": "^3.3.3",
     "xml-js": "^1.6.11",
     "xmlappend": "^1.0.4",
     "xmldoc": "^1.1.2",
@@ -78,7 +80,7 @@
   "devDependencies": {
     "chai": "^4.2.0",
     "chai-as-promised": "~7.1.1",
-    "eslint": "^7.2.0",
+    "eslint": "^7.3.1",
     "eslint-config-airbnb-base": "^14.2.0",
     "eslint-plugin-import": "^2.21.2",
     "fixpack": "~3.0.6",

@@ -5,8 +5,7 @@ const chalk = require('chalk');
 const Log = require('../logger');
 const cartridgeHelper = require('../cartridge-helper');
 
-async function ListDeployCartridges(config, token) {
-    const archiveName = `cartriges_${config.codeVersion}.zip`;
+async function ListDeployCartridges(config) {
     const cartridges = cartridgeHelper.getCartridges(false, config);
 
     Log.info('Cartridge list for deploy');

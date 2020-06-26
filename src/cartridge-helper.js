@@ -1,7 +1,6 @@
 const path = require('path');
 const utils = require('./util');
 const Constants = require('./constants');
-const globby = require('globby');
 const fs = require('fs');
 const glob = require('glob');
 

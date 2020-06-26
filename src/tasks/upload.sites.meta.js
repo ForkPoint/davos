@@ -2,7 +2,6 @@
 const path = require('path');
 
 /** Internal modules */
-const Log = require('../logger');
 const utils = require('../util');
 const Constants = require('../constants');
 
