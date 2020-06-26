@@ -262,6 +262,13 @@ function listCodeVersions(versions) {
     });
 }
 
+function getTemplate(templateName) {
+    const root = getCurrentRoot();
+    const template = fs.readFileSync(`${root}/${Constants.RESOURCES_FOLDER}/${templateName}.template`);
+
+    return template.toString();
+}
+
 module.exports = {
     deleteFiles: deleteFiles,
     gitLogDiff: gitLogDiff,
@@ -274,5 +281,6 @@ module.exports = {
     replaceTemplateInfo: replaceTemplateInfo,
     checkPath: checkPath,
     checkConsoleParamsForDetails: checkConsoleParamsForDetails,
-    listCodeVersions: listCodeVersions
+    listCodeVersions: listCodeVersions,
+    getTemplate: getTemplate,
 };

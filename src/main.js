@@ -23,6 +23,7 @@ const SplitMeta = require('./tasks/meta.split');
 const MergeMeta = require('./tasks/meta.merge');
 const PackageCreate = require('./tasks/package.create');
 const PackageImport = require('./tasks/package.import');
+const DownloadAsset = require('./tasks/download.asset');
 
 class Davos {
   constructor(config) {
@@ -131,6 +132,15 @@ class Davos {
   async importPackage(name = null) {
     await this.SFCCManager.Authenticate();
     await PackageImport(this.SFCCManager, name);
+  }
+
+  async downloadAsset(aid = null, folderID = null, output = null) {
+    if (!aid || !folderID || !output) {
+      Log.error('Please provide the needed parameters');
+      return;
+    } else {
+      DownloadAsset(aid, folderID, output, this.ConfigManager.getActiveConfig());
+    }
   }
 }
 

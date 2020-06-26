@@ -1,5 +1,6 @@
 module.exports = {
     CARTRIDGES_FOLDER : '/cartridges',
+    RESOURCES_FOLDER: '/resources',
     META_FOLDER : '/meta',
     SITES_META_FOLDER : '/sites/site_template',
     DEFAULT_CONFIG_NAME : 'davos.json',
