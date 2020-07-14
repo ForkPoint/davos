@@ -5,9 +5,7 @@
   "main": "index.js",
   "files": [
     "LICENSE",
-    "index.js",
-    "bin",
-    "resources"
+    "index.js"
   ],
   "bin": {
     "davos": "./bin/davos.js"
@@ -17,7 +15,6 @@
     "lint": "eslint .",
     "lint:fix": "npm run lint --silent -- --fix",
     "readme": "node ./node_modules/.bin/node-readme",
-    "build": "npx babel src --out-dir bin",
     "publish-please": "publish-please"
   },
   "keywords": [
@@ -78,9 +75,6 @@
     "yazl": "^2.5.1"
   },
   "devDependencies": {
-    "@babel/cli": "^7.10.3",
-    "@babel/core": "^7.10.3",
-    "@babel/preset-env": "^7.10.3",
     "chai": "^4.2.0",
     "chai-as-promised": "~7.1.1",
     "eslint": "^7.2.0",
