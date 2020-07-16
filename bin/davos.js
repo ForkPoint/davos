@@ -20,4 +20,4 @@ try {
     console.error('Failed to determine Node.js version, please make sure you\'re using version 8 or higher.');
 }
 
-require('./cli');
+require('../src/cli');
