@@ -112,6 +112,8 @@ A quick overview of the present functionalities:
     - [cartridges](#upload-cartridges)
 - [Miscellaneous](#miscellaneous)
   - [Watch](#watch)
+- [Download](#download)
+  - [Content Asset](#download-content-asset)
 
 
 
@@ -375,6 +377,26 @@ davos upload code
 
 
 ---
+
+
+
+### Downloads
+
+#### Download Content Asset
+
+Using **Davos** we have the ability to download content asset from the current active profile instance 
+
+It will save the found asset, with the content asset id
+
+> In the case below, it will save it as: ${cwd}/about-us.xml
+
+```bash
+davos download asset --aid=about-us --lib=SiteGenesisSharedLibrary --output=./
+```
+
+> NOTE: All three parameters are required
+>
+> the output, should be only a folder and not an file name with extension
 
 
 

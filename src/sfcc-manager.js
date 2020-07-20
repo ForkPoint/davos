@@ -1,9 +1,11 @@
+'use strict';
+
 /**
  * Modules
  */
 const sfcc = require('sfcc-ci');
-const instance = sfcc.instance;
-const job = sfcc.job;
+const {instance} = sfcc;
+const {job} = sfcc;
 const chalk = require('chalk');
 const request = require('request');
 
@@ -69,7 +71,7 @@ class SFCCManager {
                         Log.error(`Could not start job. HTTP ${err.status}`);
                         return;
                     }
-    
+
                     Log.error(`Could not start job: ${err}`);
                     rej();
                     return;
@@ -88,7 +90,7 @@ class SFCCManager {
                             const { status } = result;
 
                             if (err) {
-                                const fault = result.fault;
+                                const {fault} = result;
 
                                 if (fault) {
                                     if (fault.type === 'InvalidAccessTokenException') {
@@ -137,9 +139,9 @@ class SFCCManager {
             query: {
                 term_query: {
                     fields: [
-                        "job_id"
+                        'job_id'
                     ],
-                    operator: "is",
+                    operator: 'is',
                     values: [
                         Constants.SITE_IMPORT_JOB_ID
                     ]
@@ -157,14 +159,14 @@ class SFCCManager {
         Log.info('Checking for import job...');
 
         return new Promise((res, rej) => {
-            request.post(options, function (error, response, body) {
+            request.post(options, (error, response, body) => {
                 if (error) {
                     Log.error(error);
                     return;
                 }
 
 
-                const hits = JSON.parse(body).hits;
+                const {hits} = JSON.parse(body);
                 const running = hits.find((job) => job.status === 'RUNNING');
 
                 try {
@@ -183,7 +185,7 @@ class SFCCManager {
         const clientSecret = this.config['client-secret'];
 
         return new Promise((res, rej) => {
-            sfccAuth.auth(clientID, clientSecret, function (err, token) {
+            sfccAuth.auth(clientID, clientSecret, (err, token) => {
                 if (token) {
                     Log.info(`Authentication succeeded. Token is ${chalk.cyan(token)}`);
 

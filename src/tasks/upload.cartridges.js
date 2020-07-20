@@ -1,3 +1,5 @@
+'use strict'
+
 const Log = require('../logger');
 const WebDav = require('../webdav');
 const utils = require('../util');
@@ -10,26 +12,26 @@ function uploadCartridges(config) {
     const archiveName = `cartriges_${config.codeVersion}.zip`;
     const cartridges = cartridgeHelper.getCartridges(false, config);
 
-    Log.info(chalk.cyan(`Creating archive of ${cartridges.length} cartridges: ${cartridges.join(", ")}`));
+    Log.info(chalk.cyan(`Creating archive of ${cartridges.length} cartridges: ${cartridges.join(', ')}`));
 
-    return utils.compress(cartridgeHelper.getCartridgesPath(), archiveName, cartridges.map(name => name + "/**"), '', config).then(function () {
-        Log.info(chalk.cyan(`Uploading archive.`));
+    return utils.compress(cartridgeHelper.getCartridgesPath(), archiveName, cartridges.map(name => `${name  }/**`), '', config).then(() => {
+        Log.info(chalk.cyan('Uploading archive.'));
         return webdav.put(archiveName, {
             fromTmpDir: true
         });
-    }).then(function () {
+    }).then(() => {
         Log.info(chalk.cyan(`Unzipping archive, code version: ${config.codeVersion}`));
         return webdav.unzip(archiveName);
-    }).then(function () {
-        Log.info(chalk.cyan(`Removing archive.`));
+    }).then(() => {
+        Log.info(chalk.cyan('Removing archive.'));
         return webdav.delete(archiveName);
-    }).then(function () {
-        return utils.deleteArchive(archiveName, null, config).then(function () {
-            Log.info(chalk.cyan(`Cartriges uploaded.`));
+    }).then(() => {
+        return utils.deleteArchive(archiveName, null, config).then(() => {
+            Log.info(chalk.cyan('Cartriges uploaded.'));
         });
-    }, function (err) {
-            return utils.deleteArchive(archiveName, null, config).then(function () {
-            Log.info(chalk.red(`Error occurred.`));
+    }, (err) => {
+            return utils.deleteArchive(archiveName, null, config).then(() => {
+            Log.info(chalk.red('Error occurred.'));
             Log.error(err);
             console.log(err);
         });

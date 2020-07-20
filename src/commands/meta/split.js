@@ -1,4 +1,4 @@
-/* eslint no-unused-vars:0, no-unused-expressions:0 */
+
 const Davos = require('../../main');
 const Log = require('../../logger');
 
@@ -21,9 +21,9 @@ exports.handler = async (argv) => {
       }
     };
     const davos = new Davos(params);
-  
-    Log.info("Metadata split in progress");
-  
+
+    Log.info('Metadata split in progress');
+
     await davos.split();
   } else {
     Log.error('Please provide in and out params: --in "path/to/file.xml" --out "output/folder"');

@@ -1,3 +1,5 @@
+'use strict'
+
 exports.command = 'code <command>';
 exports.desc = 'Code operations';
 exports.aliases = ['c'];

@@ -1,3 +1,5 @@
+'use strict'
+
 exports.command = 'pack <command>';
 exports.desc = 'Package operations';
 exports.aliases = ['p'];

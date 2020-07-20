@@ -1,7 +1,7 @@
-const fs = require("fs");
-const path = require("path");
-const DOMParser = require('xmldom').DOMParser;
-const x = require("xpath");
+const fs = require('fs');
+const path = require('path');
+const {DOMParser} = require('xmldom');
+const x = require('xpath');
 const prettifier = require('prettify-xml');
 const utils = require('./util');
 const Constants = require('./constants');
@@ -12,19 +12,17 @@ function absolutePath(config, fpath) {
 
   if (path.isAbsolute(fpath)) {
     source = fpath;
-  } else {
-    if (config.basePath) {
+  } else if (config.basePath) {
       source = path.join(config.basePath, Constants.SITES_META_FOLDER, fpath);
     } else {
       source = path.join(utils.getCurrentRoot(), fpath);
     }
-  }
 
   return source;
 }
 
 exports.splitBundle = function (config, fpath, xpath, out, cfg) {
-  const template = fs.readFileSync(__dirname + "/../resources/" + cfg.template + ".template").toString();
+  const template = fs.readFileSync(`${__dirname  }./resources/${  cfg.template  }.template`).toString();
   const filepath = absolutePath(config, fpath);
   const xmlFile = fs.readFileSync(filepath).toString();
 
@@ -66,7 +64,7 @@ exports.split = function (config, path, out) {
   xmlFile = fs.readFileSync(path).toString().replace(/xmlns=".+?"/, '');
   document = new DOMParser().parseFromString(xmlFile);
 
-  while (document.childNodes[child].nodeName === "#text") {
+  while (document.childNodes[child].nodeName === '#text') {
     child++;
   }
 
@@ -74,94 +72,94 @@ exports.split = function (config, path, out) {
   nodeName = node.nodeName;
 
   if (!exports.processors[nodeName]) {
-    throw new Error("Splitting " + nodeName + " is currently not supported.");
+    throw new Error(`Splitting ${  nodeName  } is currently not supported.`);
   } else {
     return exports.processors[nodeName](config, path, out, prettifier)
   }
 }
 
 exports.processors = {
-  library: function (config, fpath, out, prettifier) {
-    return exports.splitBundle(config, fpath, "//content", out, {
-      template: "library",
-      ns: "http://www.demandware.com/xml/impex/library/2006-10-31",
+  library (config, fpath, out, prettifier) {
+    return exports.splitBundle(config, fpath, '//content', out, {
+      template: 'library',
+      ns: 'http://www.demandware.com/xml/impex/library/2006-10-31',
       persist: (node, resolve, reject, out, template) => {
-        let library = node.parentNode;
+        const library = node.parentNode;
 
-        fs.writeFile(out + "/library." + node.getAttribute("content-id") + ".xml", prettifier(template.replace("{{ libraryid }}", library.hasAttribute("library-id") ? library.getAttribute("library-id") : "").replace("{{ objects }}", (function (replacement) {
+        fs.writeFile(`${out  }/library.${  node.getAttribute('content-id')  }.xml`, prettifier(template.replace('{{ libraryid }}', library.hasAttribute('library-id') ? library.getAttribute('library-id') : '').replace('{{ objects }}', (function (replacement) {
           return () => replacement;
         })(node.toString())), {
           indent: config.indentSize
-        }), function (err) {
+        }), (err) => {
           err ? reject(err) : resolve()
         });
       }
     });
   },
-  'slot-configurations': function (config, fpath, out, prettifier) {
-    return exports.splitBundle(config, fpath, "//slot-configuration", out, {
-      template: "slots",
-      ns: "http://www.demandware.com/xml/impex/slot/2008-09-08",
+  'slot-configurations' (config, fpath, out, prettifier) {
+    return exports.splitBundle(config, fpath, '//slot-configuration', out, {
+      template: 'slots',
+      ns: 'http://www.demandware.com/xml/impex/slot/2008-09-08',
       persist: (node, resolve, reject, out, template) => {
-        let slot = node.parentNode;
+        const slot = node.parentNode;
 
-        fs.writeFile(out + "/slots." + node.getAttribute("slot-id") + ".xml", prettifier(template.replace("{{ objects }}", (function (replacement) {
+        fs.writeFile(`${out  }/slots.${  node.getAttribute('slot-id')  }.xml`, prettifier(template.replace('{{ objects }}', (function (replacement) {
           return () => replacement;
         })(node.toString())), {
           indent: config.indentSize
-        }), function (err) {
+        }), (err) => {
           err ? reject(err) : resolve()
         });
       }
     });
   },
-  metadata: function (config, fpath, out, prettifier) {
+  metadata (config, fpath, out, prettifier) {
     function cloneAttribute(cloneInstance, source, attribute) {
-      let id = attribute.getAttribute("attribute-id");
+      const id = attribute.getAttribute('attribute-id');
       let attrType;
 
       switch (cloneInstance.nodeName) {
-        case "custom-type":
-          attrType = "";
+        case 'custom-type':
+          attrType = '';
           break;
 
-        case "type-extension":
-          attrType = (attribute.getAttribute("system") === "true" ? "system" : "custom") + "-";
+        case 'type-extension':
+          attrType = `${attribute.getAttribute('system') === 'true' ? 'system' : 'custom'  }-`;
           break;
       }
 
-      Array.from(source.getElementsByTagName(attrType + "attribute-definitions")[0].childNodes)
-        .filter(ad => ad.nodeName === "attribute-definition" && ad.getAttribute("attribute-id") === id)
+      Array.from(source.getElementsByTagName(`${attrType  }attribute-definitions`)[0].childNodes)
+        .filter(ad => ad.nodeName === 'attribute-definition' && ad.getAttribute('attribute-id') === id)
         .forEach(ad => {
-          cloneInstance.getElementsByTagName(attrType + "attribute-definitions")[0]
+          cloneInstance.getElementsByTagName(`${attrType  }attribute-definitions`)[0]
             .appendChild(ad.cloneNode(true));
         });
     }
-    return exports.splitBundle(config, fpath, "/metadata/*", out, {
-      template: "metadata",
-      ns: "http://www.demandware.com/xml/impex/metadata/2006-10-31",
+    return exports.splitBundle(config, fpath, '/metadata/*', out, {
+      template: 'metadata',
+      ns: 'http://www.demandware.com/xml/impex/metadata/2006-10-31',
       persist: (node, resolve, reject, out, template) => {
         switch (node.nodeName) {
-          case "custom-type":
-          case "type-extension":
+          case 'custom-type':
+          case 'type-extension':
             break;
 
           default:
             return;
         }
 
-        let clone = node.cloneNode();
+        const clone = node.cloneNode();
 
         Array.from(node.childNodes)
-        .filter(child => child.hasOwnProperty("nodeName"))
+        .filter(child => child.hasOwnProperty('nodeName'))
         .forEach(child => {
           let childClone;
 
           switch (child.nodeName) {
-            case "system-attribute-definitions":
-            case "custom-attribute-definitions":
-            case "attribute-definitions":
-            case "group-definitions":
+            case 'system-attribute-definitions':
+            case 'custom-attribute-definitions':
+            case 'attribute-definitions':
+            case 'group-definitions':
               childClone = child.cloneNode();
               break;
 
@@ -174,19 +172,19 @@ exports.processors = {
 
         // IMPORTANT: DO NOT modify "clone" and "node" variables within the promises !!!
 
-        Promise.all(Array.from((node.getElementsByTagName("group-definitions")[0] || {
+        Promise.all(Array.from((node.getElementsByTagName('group-definitions')[0] || {
             childNodes: []
-          }).childNodes).filter(group => group.nodeName === "attribute-group")
+          }).childNodes).filter(group => group.nodeName === 'attribute-group')
           .map(group => new Promise((r1, e1) => {
 
-            let cloneInstance = clone.cloneNode(true);
+            const cloneInstance = clone.cloneNode(true);
 
             // no need to check if group-definitions exists because if
             // code has reached this point it means it does.
-            cloneInstance.getElementsByTagName("group-definitions")[0].appendChild(group.cloneNode(true));
+            cloneInstance.getElementsByTagName('group-definitions')[0].appendChild(group.cloneNode(true));
 
             Array.from(group.childNodes)
-              .filter(attribute => attribute.nodeName === "attribute")
+              .filter(attribute => attribute.nodeName === 'attribute')
               .map(attribute => {
                 cloneAttribute(cloneInstance, node, attribute);
               });
@@ -199,8 +197,8 @@ exports.processors = {
               if (!node.nodeName) return;
 
               switch (node.nodeName) {
-                case "custom-attribute-definitions":
-                case "system-attribute-definitions":
+                case 'custom-attribute-definitions':
+                case 'system-attribute-definitions':
                   if (!Object.keys(node.childNodes).length) {
                     cloneInstance.removeChild(node);
                   }
@@ -216,19 +214,19 @@ exports.processors = {
 
             fs.writeFile(
               writePath,
-              prettifier(template.replace("{{ objects }}", cloneInstance.toString()), {
+              prettifier(template.replace('{{ objects }}', cloneInstance.toString()), {
                 indent: config.indentSize
               }),
-              function (err) {
-                err ? e1(err) : r1("done");
+              (err) => {
+                err ? e1(err) : r1('done');
               }
             );
           }))).then(resolve).catch(reject);
       }
     });
   },
-  promotions: function (config, path, out, prettifier) {
-    let nodes = {
+  promotions (config, path, out, prettifier) {
+    const nodes = {
       campaign: {},
       promotion: {},
       assign: {}
@@ -236,22 +234,22 @@ exports.processors = {
 
     let template;
 
-    return exports.splitBundle(config, path, "/promotions/*", out, {
-      template: "promotions",
-      ns: "http://www.demandware.com/xml/impex/promotion/2008-01-31",
+    return exports.splitBundle(config, path, '/promotions/*', out, {
+      template: 'promotions',
+      ns: 'http://www.demandware.com/xml/impex/promotion/2008-01-31',
       persist: (node, resolve, reject, _out, _templ) => {
         template = _templ;
         out = _out;
 
-        if (node.nodeName === "promotion-campaign-assignment") {
-          let id = node.getAttribute("campaign-id");
+        if (node.nodeName === 'promotion-campaign-assignment') {
+          const id = node.getAttribute('campaign-id');
           if (!nodes.assign[id]) {
             nodes.assign[id] = [];
           }
 
           nodes.assign[id].push(node);
         } else {
-          nodes[node.nodeName][node.getAttribute(node.nodeName + "-id")] = node;
+          nodes[node.nodeName][node.getAttribute(`${node.nodeName  }-id`)] = node;
         }
 
         resolve();
@@ -260,10 +258,10 @@ exports.processors = {
 
       return Promise.all(Object.keys(nodes.campaign).map(id => {
         let objects = nodes.campaign[id].toString();
-        let assignments = "";
+        let assignments = '';
 
         (nodes.assign[id] || []).map(assignment => {
-          objects += nodes.promotion[assignment.getAttribute("promotion-id")].toString();
+          objects += nodes.promotion[assignment.getAttribute('promotion-id')].toString();
 
           assignments += assignment.toString();
         })
@@ -271,10 +269,10 @@ exports.processors = {
         objects += assignments;
 
         return new Promise((resolve, reject) => {
-          fs.writeFile(out + "/campaign." + id + ".xml", prettifier(template.replace("{{ objects }}", objects)), {
+          fs.writeFile(`${out  }/campaign.${  id  }.xml`, prettifier(template.replace('{{ objects }}', objects)), {
             indent: config.indentSize
-          }, function (err) {
-            err ? reject(err) : resolve("done");
+          }, (err) => {
+            err ? reject(err) : resolve('done');
           });
         }).catch(err => Log.error(err));
       }));

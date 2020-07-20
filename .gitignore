@@ -1,2 +1,8 @@
 node_modules
 .vscode/
+bin
+cartridges
+sites
+*.bak
+*.log
+package-lock.json

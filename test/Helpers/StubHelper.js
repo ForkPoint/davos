@@ -3,7 +3,7 @@ function stubPrompForCreateConfig(configManager) {
     const sinon = require('sinon');
     const prompt = require('prompt');
 
-    sinon.stub(prompt, 'get').callsFake(function () {
+    sinon.stub(prompt, 'get').callsFake(() => {
         configManager.saveConfiguration([
             {
                 active: true,
@@ -19,7 +19,7 @@ function stubPrompForCreateConfig(configManager) {
                     templateReplace: {
                         files: ['test'],
                         pattern: {
-                            buildVersion: "@DEPLOYMENT_VERSION@"
+                            buildVersion: '@DEPLOYMENT_VERSION@'
                         }
                     }
                 }
@@ -29,5 +29,5 @@ function stubPrompForCreateConfig(configManager) {
 }
 
 module.exports = {
-    stubPrompForCreateConfig: stubPrompForCreateConfig,
+    stubPrompForCreateConfig,
 };

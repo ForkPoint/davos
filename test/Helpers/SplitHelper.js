@@ -1,10 +1,12 @@
+'use strict';
+
 const fs = require('fs');
-const expect = require('chai').expect;
+const {expect} = require('chai');
 const path = require('path');
 const { Paths: { OutputDir } } = require('../Constants');
 
 function verifyFileSplitted() {
-    let files = fs.readdirSync(OutputDir);
+    const files = fs.readdirSync(OutputDir);
 
     expect(files.length).to.equal(5);
     const expectedIds = [
@@ -15,11 +17,11 @@ function verifyFileSplitted() {
         'banners-hero-twoimages'
     ];
     expectedIds.forEach(id => {
-        let content = fs.readFileSync(path.resolve(OutputDir, `library.${id}.xml`), 'UTF-8');
+        const content = fs.readFileSync(path.resolve(OutputDir, `library.${id}.xml`), 'UTF-8');
         expect(content).to.contain(id);
     });
 }
 
 module.exports = {
-    verifyFileSplitted: verifyFileSplitted,
+    verifyFileSplitted,
 };

@@ -1,3 +1,5 @@
+'use strict';
+
 /** Modules */
 const fs = require('fs');
 const chalk = require('chalk');
@@ -13,19 +15,19 @@ const Constants = require('./constants');
 // used to be just 'delete'
 function deleteArchive(archiveName, logMessage, config) {
     const defaultMsg = 'Removing local archive.';
-    return del(getTempDir(config) + "/" + archiveName).then(function () {
+    return del(`${getTempDir(config)  }/${  archiveName}`).then(() => {
         Log.info(chalk.cyan(logMessage || defaultMsg));
     });
 }
 
 function deleteFiles(folder){
-    var files = fs.readdirSync(folder);
+    const files = fs.readdirSync(folder);
 
     if (files.length > 0) {
-        var res = null;
+        let res = null;
         for (let c = 0; c < files.length; c++) {
-            let filePath = folder + path.sep + files[c] + 'ss';
-            fs.stat(filePath, function (err, stats) {
+            const filePath = `${folder + path.sep + files[c]  }ss`;
+            fs.stat(filePath, (err, stats) => {
 
                 if (err) {
                     res = false
@@ -34,7 +36,7 @@ function deleteFiles(folder){
                 }
 
 
-                fs.unlink(filePath, function (err) {
+                fs.unlink(filePath, (err) => {
                     if (err) {
                         Log.error(err.message);
                         return false;
@@ -47,7 +49,7 @@ function deleteFiles(folder){
 }
 
 function gitLogDiff(config){
-    const exec = require('child_process').exec;
+    const {exec} = require('child_process');
     const gitLogDifference = `git diff --name-only ${config.git.start} ${config.git.end} --diff-filter=AM -- sites/site_template`;
     const root = getCurrentRoot();
     const tempDir = getTempDir(config);
@@ -57,9 +59,9 @@ function gitLogDiff(config){
         return false;
     }
 
-    require('del').sync(root + path.sep + tempDir + path.sep + "*");
+    require('del').sync(`${root + path.sep + tempDir + path.sep  }*`);
 
-    exec(gitLogDifference, function (err, stdout, stderr) {
+    exec(gitLogDifference, (err, stdout, stderr) => {
         const changedFiles = stdout.split(/\r|\n/).filter(Boolean);
 
         if (err) return false;
@@ -69,9 +71,9 @@ function gitLogDiff(config){
 
             for (let c = 0; c < changedFiles.length; c++) {
                 const changedFile = changedFiles[c]
-                const pathToFile = tempDir + path.sep + config.git.end + changedFile.replace('sites/site_template', "").replace(path.basename(changedFile), "");
+                const pathToFile = tempDir + path.sep + config.git.end + changedFile.replace('sites/site_template', '').replace(path.basename(changedFile), '');
 
-                mkdirp(pathToFile, function (err) {
+                mkdirp(pathToFile, (err) => {
                     if (err) console.error(err);
 
                     fs.copyFile(changedFile, pathToFile + path.basename(changedFile), (err) => {
@@ -95,7 +97,7 @@ function compress(root, archiveName, arrayWithGlob, rootPrefix, config) {
     if (arrayWithGlob === undefined) arrayWithGlob = ['**'];
     if (rootPrefix === undefined) rootPrefix = '';
 
-    return new Promise(function (compressResolve, compressReject) {
+    return new Promise(((compressResolve, compressReject) => {
         const archive = new yazl.ZipFile();
         const tempDir = getTempDir(config);
 
@@ -106,8 +108,8 @@ function compress(root, archiveName, arrayWithGlob, rootPrefix, config) {
             absolute: true,
             ignore: config.exclude
         }).then((paths) => {
-            paths.forEach(function (filePath) {
-                let absolutePath = filePath,
+            paths.forEach((filePath) => {
+                const absolutePath = filePath,
                     relativePath = rootPrefix + path.relative(root, absolutePath);
                 if (fs.lstatSync(absolutePath).isDirectory()) {
                     archive.addEmptyDirectory(relativePath);
@@ -117,13 +119,13 @@ function compress(root, archiveName, arrayWithGlob, rootPrefix, config) {
             });
             archive.end();
             archive.outputStream
-                .pipe(fs.createWriteStream(tempDir + "/" + archiveName))
-                .on('close', function () {
+                .pipe(fs.createWriteStream(`${tempDir  }/${  archiveName}`))
+                .on('close', () => {
                     Log.info(chalk.cyan('Archive created.'));
                     compressResolve();
                 });
-        }).catch(function (err) { });
-    });
+        }).catch((err) => { });
+    }));
 }
 
 function getCurrentRoot() {
@@ -158,7 +160,7 @@ function promptError(e) {
 }
 
 function replaceTemplateInfo(config) {
-    return new Promise(function (replaceResolve, replaceReject) {
+    return new Promise(((replaceResolve, replaceReject) => {
         if (!config.Has('templateReplace')) {
             Log.info(chalk.cyan('Skipping template replace.'));
             return replaceResolve();
@@ -168,14 +170,14 @@ function replaceTemplateInfo(config) {
         // replace webdav wilth SFCC-CI module
         const webdav = new WebDav(config);
 
-        config.templateReplace.files.forEach(function (templateFile) {
-            queue.place(function () {
+        config.templateReplace.files.forEach((templateFile) => {
+            queue.place(() => {
                 return (function () {
                     return webdav.getContent(templateFile);
-                })().then(function (fileContent) {
-                    let patterns = config.templateReplace.pattern;
+                })().then((fileContent) => {
+                    const patterns = config.templateReplace.pattern;
 
-                    Object.keys(patterns).forEach(function (key) {
+                    Object.keys(patterns).forEach((key) => {
                         let regexp = new RegExp(patterns[key], 'g'),
                             value = '';
 
@@ -191,18 +193,18 @@ function replaceTemplateInfo(config) {
                     });
 
                     return Promise.resolve(fileContent);
-                }).then(function (fileContent) {
+                }).then((fileContent) => {
                     return webdav.putContent(templateFile, fileContent);
-                }).then(function () {
+                }).then(() => {
                     queue.next();
-                }, function (err) {
+                }, (err) => {
                     queue.next();
                 });
             });
         });
 
         return replaceResolve();
-    });
+    }));
 }
 
 function checkPath(config, ...params) {
@@ -210,7 +212,7 @@ function checkPath(config, ...params) {
 
     for (let c = 0; c < params.length; c++) {
         let dirExists;
-        let dir = params[c];
+        const dir = params[c];
 
         try {
             dirExists = fs.existsSync(dir);
@@ -262,17 +264,25 @@ function listCodeVersions(versions) {
     });
 }
 
+function getTemplate(templateName) {
+    const root = getCurrentRoot();
+    const template = fs.readFileSync(`${root}/${Constants.RESOURCES_FOLDER}/${templateName}.template`);
+
+    return template.toString();
+}
+
 module.exports = {
-    deleteFiles: deleteFiles,
-    gitLogDiff: gitLogDiff,
-    deleteArchive: deleteArchive,
-    compress: compress,
-    getCurrentRoot: getCurrentRoot,
+    deleteFiles,
+    gitLogDiff,
+    deleteArchive,
+    compress,
+    getCurrentRoot,
     // checkForParametersInConfig: checkForParametersInConfig,
-    getTempDir: getTempDir,
-    promptError: promptError,
-    replaceTemplateInfo: replaceTemplateInfo,
-    checkPath: checkPath,
-    checkConsoleParamsForDetails: checkConsoleParamsForDetails,
-    listCodeVersions: listCodeVersions
+    getTempDir,
+    promptError,
+    replaceTemplateInfo,
+    checkPath,
+    checkConsoleParamsForDetails,
+    listCodeVersions,
+    getTemplate,
 };

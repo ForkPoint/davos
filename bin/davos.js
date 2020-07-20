@@ -3,14 +3,14 @@
 process.env.UV_THREADPOOL_SIZE = 128;
 
 try {
-    var version = process.version;
+    let version = process.version;
     if( version.indexOf('v') === 0 ) version = version.substr(1);
         version = version.split('.');
 
-    var majorVersion = version[0];
+    let majorVersion = version[0];
         majorVersion = parseInt(majorVersion);
 
-    var minorVersion = version[1];
+    let minorVersion = version[1];
         minorVersion = parseInt(minorVersion);
 
     if( majorVersion < 8 || ( majorVersion === 8 && minorVersion < 5 ) )

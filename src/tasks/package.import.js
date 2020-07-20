@@ -1,3 +1,5 @@
+'use strict'
+
 /** Modules */
 const path = require('path');
 const glob = require('glob');

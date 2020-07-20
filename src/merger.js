@@ -1,10 +1,9 @@
-const xmlm = require("xmlappend");
-const fs = require("fs");
-const path = require("path");
-const splitter = require("./splitter");
+const xmlm = require('xmlappend');
+const fs = require('fs');
+const splitter = require('./splitter');
 
 function escapeReplacement(string) {
-  return string.replace(/\$/g, "$$$");
+  return string.replace(/\$/g, '$$$');
 }
 
 function htmlEntities(str) {
@@ -16,33 +15,33 @@ exports.merge = function (config, files) {
     return;
   }
 
-  const xdom = require("xmldom");
-  let parser = new xdom.DOMParser();
+  const xdom = require('xmldom');
+  const parser = new xdom.DOMParser();
 
   let child = 1; // start from 1 to skip <xml/>
   const readFile = fs.readFileSync(files[0]);
-  let document = parser.parseFromString(readFile.toString().replace(/xmlns=".+?"/, ''));
+  const document = parser.parseFromString(readFile.toString().replace(/xmlns=".+?"/, ''));
 
-  while (document.childNodes[child].nodeName === "#text") {
+  while (document.childNodes[child].nodeName === '#text') {
     child++;
   }
 
-  let node = document.childNodes[child],
-    nodeName = node.nodeName;
-  return exports.processors[exports.processors[nodeName] ? nodeName : "generic"](config, files, node);
+  const node = document.childNodes[child],
+    {nodeName} = node;
+  return exports.processors[exports.processors[nodeName] ? nodeName : 'generic'](config, files, node);
 }
 
 exports.processors = {
-  generic: function (config, files, rootElement) {
+  generic (config, files, rootElement) {
     return Promise.resolve(xmlm(...files.map(file => fs.readFileSync(file).toString()).filter(content => !!content)));
   },
-  services: function (config, files, rootElement) {
+  services (config, files, rootElement) {
     let template = null;
 
     return Promise.all(files.map(filename => {
-      return splitter.splitBundle(config, filename, "/services/*", null, {
-        template: "services",
-        ns: "http://www.demandware.com/xml/impex/services/2014-09-26",
+      return splitter.splitBundle(config, filename, '/services/*', null, {
+        template: 'services',
+        ns: 'http://www.demandware.com/xml/impex/services/2014-09-26',
         persist: (node, resolve, reject, out, xmltemplate) => {
           if (node) {
             template = xmltemplate;
@@ -52,17 +51,17 @@ exports.processors = {
       });
     })).then(nodes => {
       nodes = [].concat.apply([], nodes); // flatten array of arrays
-      let weights = ["service-credential", "service-profile", "service"];
+      const weights = ['service-credential', 'service-profile', 'service'];
 
-      return Promise.resolve(template.replace("{{ objects }}", nodes.sort((a, b) => {
+      return Promise.resolve(template.replace('{{ objects }}', nodes.sort((a, b) => {
         return weights.indexOf(a.nodeName) - weights.indexOf(b.nodeName);
-      }).map(node => node.toString()).join("")));
+      }).map(node => node.toString()).join('')));
     });
   },
-  library: function (config, files, rootElement) {
-    let contents = [];
+  library (config, files, rootElement) {
+    const contents = [];
     function containsEncodedHTML(node) {
-      return node.nodeName === "#text" && node.nodeValue.match(/(<([^>]+)>)/i)
+      return node.nodeName === '#text' && node.nodeValue.match(/(<([^>]+)>)/i)
     }
     function extractContent(node) {
       contents.push(htmlEntities(escapeReplacement(node.nodeValue)));
@@ -86,9 +85,9 @@ exports.processors = {
     let template = null;
 
     return Promise.all(files.map(filename => {
-      return splitter.splitBundle(config, filename, "/library/*", null, {
-        template: "library",
-        ns: "http://www.demandware.com/xml/impex/library/2006-10-31",
+      return splitter.splitBundle(config, filename, '/library/*', null, {
+        template: 'library',
+        ns: 'http://www.demandware.com/xml/impex/library/2006-10-31',
         persist: (node, resolve, reject, out, xmltemplate) => {
           template = xmltemplate;
           resolve(node);
@@ -98,7 +97,7 @@ exports.processors = {
       nodes = [].concat.apply([], nodes); // flatten array of arrays
 
       // put folder nodes first in the list
-      let weights = ["folder", "content"];
+      const weights = ['folder', 'content'];
       nodes = nodes.sort((a, b) => {
         return weights.indexOf(a.nodeName) - weights.indexOf(b.nodeName);
       });
@@ -106,24 +105,24 @@ exports.processors = {
       nodes.forEach(extractContents); // extract html content from text nodes recursively
 
       // replace library id and nodes in template
-      let result = template.replace("{{ libraryid }}", rootElement.getAttribute("library-id"))
-        .replace("{{ objects }}", nodes.map(node => escapeReplacement(node.toString())).join(""))
+      let result = template.replace('{{ libraryid }}', rootElement.getAttribute('library-id'))
+        .replace('{{ objects }}', nodes.map(node => escapeReplacement(node.toString())).join(''))
 
       // replace extracted contents
       result = contents.reduce((xml, content, index) => {
         return xml.replace(`{{ htmlcontent${index} }}`, content);
       }, result);
-      
+
       return Promise.resolve(result);
     });
   },
-  promotions: function (config, files, rootElement) {
+  promotions (config, files, rootElement) {
     let template = null;
 
     return Promise.all(files.map(filename => {
-      return splitter.splitBundle(config, filename, "/promotions/*", null, {
-        template: "promotions",
-        ns: "http://www.demandware.com/xml/impex/promotion/2008-01-31",
+      return splitter.splitBundle(config, filename, '/promotions/*', null, {
+        template: 'promotions',
+        ns: 'http://www.demandware.com/xml/impex/promotion/2008-01-31',
         persist: (node, resolve, reject, out, xmltemplate) => {
           if (node) {
             template = xmltemplate;
@@ -132,13 +131,13 @@ exports.processors = {
         }
       });
     })).then(nodes => {
-      let weights = ["campaign", "promotion", "promotion-campaign-assignment"];
+      const weights = ['campaign', 'promotion', 'promotion-campaign-assignment'];
 
       nodes = [].concat.apply([], nodes); // flatten array of arrays
 
-      return Promise.resolve(template.replace("{{ objects }}", nodes.sort((a, b) => {
+      return Promise.resolve(template.replace('{{ objects }}', nodes.sort((a, b) => {
         return weights.indexOf(a.nodeName) - weights.indexOf(b.nodeName);
-      }).map(node => node.toString()).join("")));
+      }).map(node => node.toString()).join('')));
     });
   },
 }

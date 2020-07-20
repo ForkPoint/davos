@@ -1,3 +1,5 @@
+'use strict';
+
 /** Modules */
 const path = require('path');
 const fs = require('fs');
@@ -19,13 +21,13 @@ const defaultSite = 'template';
 function getPackageToPack(site) {
     const sitePrefix = 'site_';
     let siteToPack = site;
-    
+
     if (!siteToPack) {
         siteToPack = `${sitePrefix}${defaultSite}`;
     } else {
         siteToPack = `${sitePrefix}${siteToPack}`;
     }
-    
+
     return siteToPack;
 }
 
@@ -79,8 +81,8 @@ function createArchive(pathForArchiving, archiveName, outputPath, temp, addition
 
         archive.end();
         archive.outputStream
-            .pipe(fs.createWriteStream(writeDir + "/" + archiveName))
-            .on('close', function () {
+            .pipe(fs.createWriteStream(`${writeDir  }/${  archiveName}`))
+            .on('close', () => {
                 Log.info(chalk.cyan(`${archiveName} created.`));
                 res();
             });

@@ -1,3 +1,5 @@
+'use strict';
+
 /**
  * Internal modules
  */
@@ -6,7 +8,7 @@ const Configuration = require('./configuration');
 /**
  * Class Profile
  * Represents a single profile with a given configuration
- * 
+ *
  * @param {object} Profile Configuration
  * @param {bool} Active Profile
  * @param {string} Profile Name

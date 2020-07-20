@@ -1,4 +1,5 @@
-/* eslint no-unused-vars:0, no-unused-expressions:0 */
+'use strict'
+
 const yargs = require('yargs');
 exports.command = 'completion';
 exports.aliases = ['comp'];

@@ -24,7 +24,7 @@ class BM {
 
     this.options = {
       method: 'POST',
-      baseUrl: 'https://' + this.config.hostname + '/on/demandware.store/Sites-Site/default',
+      baseUrl: `https://${  this.config.hostname  }/on/demandware.store/Sites-Site/default`,
       uri: '/',
       contentString: null,
       jar: request.jar(),
@@ -40,7 +40,7 @@ class BM {
 
   getCheckProgressConfig(type) {
     switch (type) {
-      case "site":
+      case 'site':
         return {
           uri: '/ViewSiteImpex-Status',
           max_attempts: 100,
@@ -49,18 +49,18 @@ class BM {
           selector: '#unitSelection ~ table:nth-of-type(3)',
           label: 'Site Import ({0})'
         };
-      case "metaValidation":
+      case 'metaValidation':
         return {
-          uri: "/ViewCustomizationImpex-Start",
+          uri: '/ViewCustomizationImpex-Start',
           max_attempts: 100,
           max_import_attempts: 1,
           retry_delay: 1000,
           selector: 'form[name="ImpexForm"] > table:nth-child(6)',
           label: 'Meta Data Validation <{0}>'
         }
-      case "metaImport":
+      case 'metaImport':
         return {
-          uri: "/ViewCustomizationImpex-Start",
+          uri: '/ViewCustomizationImpex-Start',
           max_attempts: 100,
           max_import_attempts: 1,
           retry_delay: 1000,
@@ -72,9 +72,9 @@ class BM {
 
   doRequest(options, attemptsLeft = MAX_ATTEMPTS, retryDelay = RETRY_DELAY) {
     return this.reqMan.doRequest(options, attemptsLeft, retryDelay)
-      .then(function (body) {
+      .then((body) => {
         return Promise.resolve(body);
-      }, function (err) {
+      }, (err) => {
         return Promise.reject(err);
       });
   }
@@ -85,8 +85,8 @@ class BM {
   login() {
     const self = this;
 
-    return new Promise(function (resolve, reject) {
-      let options = {
+    return new Promise(((resolve, reject) => {
+      const options = {
         uri: '/ViewApplication-ProcessLogin',
         form: {
           LoginForm_Login: self.config.username,
@@ -96,19 +96,19 @@ class BM {
       };
 
       self.doRequest(options, MAX_ATTEMPTS, RETRY_DELAY)
-        .then(function (body) {
+        .then((body) => {
           if (!self.bmTools.isLoggedIn(body)) {
-            let e = new Error('Not able to login into business manager.')
+            const e = new Error('Not able to login into business manager.')
             return reject(e);
           }
 
           self.bmTools.parseCsrfToken(body);
 
           resolve();
-        }, function (err) {
+        }, (err) => {
           reject(err);
         });
-    });
+    }));
   }
 
   /**
@@ -116,43 +116,43 @@ class BM {
    */
   ensureNoImport(archiveName) {
     const self = this;
-    const SITE_IMPORT = this.getCheckProgressConfig("site");
+    const SITE_IMPORT = this.getCheckProgressConfig('site');
 
-    return new Promise(function (resolve, reject) {
-      let options = {
+    return new Promise(((resolve, reject) => {
+      const options = {
         uri: self.bmTools.appendCSRF('/ViewSiteImpex-Status')
       };
 
       if (archiveName === undefined || archiveName.length < 1) {
-        let e = new Error('Invalid archive name.');
+        const e = new Error('Invalid archive name.');
         return reject(e);
       }
 
       self.doRequest(options, MAX_ATTEMPTS, RETRY_DELAY)
-        .then(function (body) {
+        .then((body) => {
           if (!self.bmTools.isLoggedIn(body)) {
-            let e = new Error('Not authenticated.');
+            const e = new Error('Not authenticated.');
             return reject(e);
           }
 
           self.bmTools.parseCsrfToken(body);
 
-          let job = self.bmTools.parseBody(body, {
-            archiveName: archiveName,
+          const job = self.bmTools.parseBody(body, {
+            archiveName,
             selector: SITE_IMPORT.selector,
             processLabel: SITE_IMPORT.label
           });
 
           if (job && job.isRunning) {
-            let e = new Error('Import already running! Duration: ' + job.duration);
+            const e = new Error(`Import already running! Duration: ${  job.duration}`);
             return reject(e);
           }
 
           resolve();
-        }, function (err) {
+        }, (err) => {
           reject(err);
         });
-    });
+    }));
   }
 
   /**
@@ -160,14 +160,14 @@ class BM {
    */
   importSites(archiveName, attemptsLeft) {
     const self = this;
-    const SITE_IMPORT = this.getCheckProgressConfig("site");
+    const SITE_IMPORT = this.getCheckProgressConfig('site');
 
     if (attemptsLeft === undefined) {
       attemptsLeft = SITE_IMPORT.max_import_attempts;
     }
 
-    return new Promise(function (resolve, reject) {
-      let options = {
+    return new Promise(((resolve, reject) => {
+      const options = {
         uri: self.bmTools.appendCSRF('/ViewSiteImpex-Dispatch'),
         form: {
           ImportFileName: archiveName,
@@ -177,50 +177,50 @@ class BM {
       };
 
       if (archiveName === undefined || archiveName.length < 1) {
-        let e = new Error('Invalid archive name.');
+        const e = new Error('Invalid archive name.');
         return reject(e);
       }
 
       if (attemptsLeft < 1) {
-        let e = new Error('Maximum retries reached. Unable to import site.');
+        const e = new Error('Maximum retries reached. Unable to import site.');
         return reject(e);
       }
 
       self.doRequest(options, MAX_ATTEMPTS, RETRY_DELAY)
-        .then(function (body) {
+        .then((body) => {
           if (!self.bmTools.isLoggedIn(body)) {
-            let e = new Error('Not authenticated.');
+            const e = new Error('Not authenticated.');
             return reject(e);
           }
           self.bmTools.parseCsrfToken(body);
           if (!self.bmTools.isValidRequest(body)) {
             Log.info(chalk.cyan('The request was not validated. Retrying with new csrf token.'));
             (function () {
-              return new Promise(function (retryResolve, retryReject) {
-                setTimeout(function () {
+              return new Promise(((retryResolve, retryReject) => {
+                setTimeout(() => {
                   retryResolve();
                 }, SITE_IMPORT.retry_delay);
-              });
-            })().then(function () {
+              }));
+            })().then(() => {
               return self.importSites(archiveName, --attemptsLeft);
-            }).then(function () {
+            }).then(() => {
               resolve();
-            }, function (err) {
+            }, (err) => {
               reject(err);
             });
           } else {
             resolve();
           }
-        }, function (err) {
+        }, (err) => {
           reject(err);
         });
-    });
+    }));
   }
 
   /**
    * HTTP Request BM CHECK IMPORT PROGRESS
    */
-  checkImportProgress(archiveName, attemptsLeft, importConfig = "site") {
+  checkImportProgress(archiveName, attemptsLeft, importConfig = 'site') {
     const self = this;
     const config = this.getCheckProgressConfig(importConfig);
 
@@ -228,70 +228,70 @@ class BM {
       attemptsLeft = config.max_attempts;
     }
 
-    return new Promise(function (resolve, reject) {
-      let options = {
+    return new Promise(((resolve, reject) => {
+      const options = {
         uri: self.bmTools.appendCSRF(config.uri)
       };
 
       if (archiveName === undefined || archiveName.length < 1) {
-        let e = new Error('Invalid archive name.');
+        const e = new Error('Invalid archive name.');
         return reject(e);
       }
 
       if (attemptsLeft < 1) {
-        let e = new Error('Maximum retries reached. Login to BM for more details.');
+        const e = new Error('Maximum retries reached. Login to BM for more details.');
         return reject(e);
       }
 
       self.doRequest(options, MAX_ATTEMPTS, RETRY_DELAY)
-        .then(function (body) {
+        .then((body) => {
           if (!self.bmTools.isLoggedIn(body)) {
-            let e = new Error('Not authenticated.');
+            const e = new Error('Not authenticated.');
             return reject(e);
           }
 
           self.bmTools.parseCsrfToken(body);
 
-          let job = self.bmTools.parseBody(body, {
-            archiveName: archiveName,
+          const job = self.bmTools.parseBody(body, {
+            archiveName,
             selector: config.selector,
             processLabel: config.label
           });
 
           if (!job) {
-            let e = new Error('Could not find import job.');
+            const e = new Error('Could not find import job.');
             return reject(e);
           }
 
           if (job.isRunning) {
-            Log.info(chalk.cyan('Job still running. Execution time: ' + job.duration));
+            Log.info(chalk.cyan(`Job still running. Execution time: ${  job.duration}`));
             (function () {
-              return new Promise(function (retryResolve, retryReject) {
-                setTimeout(function () {
+              return new Promise(((retryResolve, retryReject) => {
+                setTimeout(() => {
                   retryResolve();
                 }, config.retry_delay);
-              });
-            })().then(function () {
+              }));
+            })().then(() => {
               return self.checkImportProgress(archiveName, --attemptsLeft);
-            }).then(function () {
+            }).then(() => {
               resolve();
-            }, function (err) {
+            }, (err) => {
               reject(err);
             });
           } else if (job.isError) {
-            let e = new Error('Import failed! Login to BM for more details.');
+            const e = new Error('Import failed! Login to BM for more details.');
             return reject(e);
           } else if (job.isFinished) {
-            Log.info(chalk.cyan('Finished. ' + (job.dataErrors || 'No') + ' data errors. Duration: ' + job.duration));
+            Log.info(chalk.cyan(`Finished. ${  job.dataErrors || 'No'  } data errors. Duration: ${  job.duration}`));
             return resolve();
           } else {
-            let e = new Error('Unexpected state!');
+            const e = new Error('Unexpected state!');
             return reject(e);
           }
-        }, function (err) {
+        }, (err) => {
           reject(err);
         });
-    });
+    }));
   }
 
   /**
@@ -300,8 +300,8 @@ class BM {
   activateCodeVersion() {
     const self = this;
     
-    return new Promise(function (resolve, reject) {
-      let options = {
+    return new Promise(((resolve, reject) => {
+      const options = {
         uri: self.bmTools.appendCSRF('/ViewCodeDeployment-Activate'),
         form: {
           CodeVersionID: self.config.codeVersion
@@ -309,32 +309,32 @@ class BM {
       };
 
       self.doRequest(options, MAX_ATTEMPTS, RETRY_DELAY)
-        .then(function () {
+        .then(() => {
           resolve();
-        }, function (err) {
+        }, (err) => {
           reject(err);
         });
-    });
+    }));
   }
 
   /**
    * WebDav Request Upload Sites Meta
    */
   uploadSitesArchive(path) {
-    return this.uploadImpex(path, "/src/instance");
+    return this.uploadImpex(path, '/src/instance');
   }
 
   uploadMeta(path) {
-    return this.uploadImpex(path, "/src/customization");
+    return this.uploadImpex(path, '/src/customization');
   }
 
   uploadImpex(path, location) {
     const self = this;
 
-    return new Promise(function (resolve, reject) {
-      let options = {
+    return new Promise(((resolve, reject) => {
+      const options = {
         method: 'PUT',
-        baseUrl: 'https://' + self.config.hostname + '/on/demandware.servlet/webdav/Sites/Impex' + location,
+        baseUrl: `https://${  self.config.hostname  }/on/demandware.servlet/webdav/Sites/Impex${  location}`,
         uri: path,
         // change auth to bearer and token ?
         auth: {
@@ -347,32 +347,32 @@ class BM {
       };
 
       self.doRequest(options, MAX_ATTEMPTS, RETRY_DELAY)
-        .then(function () {
+        .then(() => {
           resolve();
-        }, function (err) {
+        }, (err) => {
           reject(err);
         });
-    });
+    }));
   }
 
   /**
    * WebDav Request Delete Sites Meta
    */
   deleteSitesArchive(path) {
-    return this.deleteImpex(path, "/src/instance");
+    return this.deleteImpex(path, '/src/instance');
   }
 
   deleteMeta(path) {
-    return this.deleteImpex(path, "/src/customization");
+    return this.deleteImpex(path, '/src/customization');
   }
 
   deleteImpex(path, location) {
     const self = this;
 
-    return new Promise(function (resolve, reject) {
-      let options = {
+    return new Promise(((resolve, reject) => {
+      const options = {
         method: 'DELETE',
-        baseUrl: 'https://' + self.config.hostname + '/on/demandware.servlet/webdav/Sites/Impex' + location,
+        baseUrl: `https://${  self.config.hostname  }/on/demandware.servlet/webdav/Sites/Impex${  location}`,
         uri: path,
         contentString: null,
         auth: {
@@ -384,17 +384,17 @@ class BM {
       };
 
       self.doRequest(options, MAX_ATTEMPTS, RETRY_DELAY)
-        .then(function () {
+        .then(() => {
           resolve();
-        }, function (err) {
+        }, (err) => {
           reject(err);
         });
-    });
+    }));
   }
 
   validateMetaImport(filename) {
-    let options = {
-      uri: this.bmTools.appendCSRF("/ViewCustomizationImport-Dispatch"),
+    const options = {
+      uri: this.bmTools.appendCSRF('/ViewCustomizationImport-Dispatch'),
       form: {
         SelectedFile: filename,
         ProcessPipelineName: 'ProcessObjectTypeImport',
@@ -410,14 +410,14 @@ class BM {
   }
 
   importMeta(filename) {
-    var cheerio = require('cheerio'),
+    const cheerio = require('cheerio'),
       self = this;
 
     /**
      * Selects the first completed validation for import
      */
     function selectValidationJob(body) {
-      var $ = cheerio.load(body);
+      const $ = cheerio.load(body);
 
       if (!self.bmTools.isLoggedIn(body)) {
         throw 'Not able to login into business manager';
@@ -426,20 +426,20 @@ class BM {
       self.bmTools.parseCsrfToken(body);
 
       // Check if validation has been done on this file: Prepare label text
-      var archiveLabel = 'Meta Data Validation <{0}>'.replace('{0}', filename),
+      let archiveLabel = 'Meta Data Validation <{0}>'.replace('{0}', filename),
         $td = $('form[name="ImpexForm"] > table:nth-child(6) tr > td:nth-child(2)'),
         importLink;
 
       // Compare target label text with actual result, strip whitespace (to ignore line breaks etc.)
-      var record = $td.filter(function () {
-        var normalizedTargetLabel = self.bmTools.removeAllWhiteSpaces(archiveLabel);
-        var normalizedActualLabel = self.bmTools.removeAllWhiteSpaces($(this).text());
+      const record = $td.filter(function () {
+        const normalizedTargetLabel = self.bmTools.removeAllWhiteSpaces(archiveLabel);
+        const normalizedActualLabel = self.bmTools.removeAllWhiteSpaces($(this).text());
 
         return normalizedActualLabel === normalizedTargetLabel;
       });
 
       if (!record || record.length === 0) {
-        throw 'No validation task found for ' + filename;
+        throw `No validation task found for ${  filename}`;
       }
 
       importLink = $(record).find('.selection_link').first().attr('href');
@@ -449,14 +449,14 @@ class BM {
       // Go to validation form page in order to execute import process
       return self.doRequest({
         baseUrl: self.bmTools.appendCSRF(importLink),
-        uri: ""
+        uri: ''
       }).then(importMeta);
     }
     /**
      * Execute meta data import for the validation file
      */
     function importMeta(body) {
-      var $ = cheerio.load(body);
+      const $ = cheerio.load(body);
 
       self.bmTools.parseCsrfToken(body);
 
@@ -465,7 +465,7 @@ class BM {
         throw 'Validation errors have been found, unable to import';
       }
 
-      var formAction = $('form[name="ValidateFileForm"]').attr('action'),
+      const formAction = $('form[name="ValidateFileForm"]').attr('action'),
         form = {
           SelectedFile: $('input[name="SelectedFile"]').attr('value'),
           JobConfigurationUUID: $('input[name="JobConfigurationUUID"]').attr('value'),
@@ -481,13 +481,13 @@ class BM {
 
       return self.doRequest({
         baseUrl: self.bmTools.appendCSRF(formAction),
-        uri: "",
-        form: form
+        uri: '',
+        form
       });
     }
 
     return this.doRequest({
-      uri: this.bmTools.appendCSRF(this.getCheckProgressConfig("metaImport").uri)
+      uri: this.bmTools.appendCSRF(this.getCheckProgressConfig('metaImport').uri)
     }).then(selectValidationJob);
   }
 }

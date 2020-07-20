@@ -1,3 +1,5 @@
+'use strict'
+
 exports.command = 'upload <command>';
 exports.desc = 'Upload operations';
 exports.aliases = ['u'];

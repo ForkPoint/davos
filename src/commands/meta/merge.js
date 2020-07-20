@@ -1,4 +1,4 @@
-/* eslint no-unused-vars:0, no-unused-expressions:0 */
+
 const Davos = require('../../main');
 const Log = require('../../logger');
 
@@ -22,10 +22,10 @@ exports.handler = async (argv) => {
     };
     const davos = new Davos(params);
 
-    Log.info("Metadata merge in progress");
+    Log.info('Metadata merge in progress');
 
     await davos.merge();
   } else {
-    Log.error('Please provide in and out params: --in "path/to/file.xml" --out "output/folder"');
+    Log.error('Please provide in and out params: --in "path/to/split/meta" --out "output/folder/filename.xml"');
   }
 };
