@@ -1,6 +1,6 @@
 {
   "name": "davos",
-  "version": "2.0.0-alpha.11",
+  "version": "2.0.0-alpha.12",
   "description": "Salesforce Commerce Cloud (Demandware) - Configuration Manager and Continuous Integration deployment tools",
   "main": "index.js",
   "files": [
