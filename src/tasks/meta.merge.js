@@ -1,3 +1,5 @@
+'use strict';
+
 const path = require('path');
 const merger = require('../merger');
 const globby = require('globby');
@@ -43,7 +45,7 @@ async function merge(paramIn, paramOut, force, config) {
 
             try {
                 merger.merge(config, files).then(result => {
-                    fs.writeFile(out || (dir + '/bundle.xml'), result, 'utf8', function (err) {
+                    fs.writeFile(out || (`${dir  }/bundle.xml`), result, 'utf8', (err) => {
                         if (err) e(err)
                         Log.info('Write successfull');
                         r();

@@ -1,8 +1,68 @@
 {
-    "extends": "airbnb-base",
-
-    "rules": {
-      "no-console": "off",
-      "prefer-arrow-callback": "off"
+  "extends": "eslint:recommended",
+  "parserOptions": {
+    "ecmaVersion": 2017,
+    "sourceType": "script",
+    "ecmaFeatures": {
+      "jsx": false
     }
+  },
+  "env": {
+    "node": true,
+    "browser": false,
+    "es6": true
+  },
+  "rules": {
+    "array-callback-return": "error",
+    "no-empty": [
+      "error",
+      {
+        "allowEmptyCatch": true
+      }
+    ],
+    "no-lonely-if": "error",
+    "no-var": "error",
+    "object-shorthand": "error",
+    "prefer-arrow-callback": [
+      "error",
+      {
+        "allowNamedFunctions": true
+      }
+    ],
+    "prefer-const": [
+      "error",
+      {
+        "ignoreReadBeforeAssign": true
+      }
+    ],
+    "prefer-destructuring": [
+      "error",
+      {
+        "object": true,
+        "array": false
+      }
+    ],
+    "prefer-spread": "error",
+    "prefer-template": "error",
+    "radix": "error",
+    "strict": "error",
+    "quotes": [
+      "error",
+      "single"
+    ]
+  },
+  "overrides": [
+    {
+      "files": ["test/**/*"],
+      "env" : {
+        "mocha": true
+      }, // Or *.test.js
+      "rules": {
+        "require-jsdoc": "off",
+        "no-undef" : "off",
+        "no-unused-vars" : "off",
+        "strict": "off"
+      }
+    }
+  ]
 }

@@ -1,3 +1,5 @@
+'use strict';
+
 const path = require('path');
 const splitter = require('../splitter');
 const utils = require('../util');

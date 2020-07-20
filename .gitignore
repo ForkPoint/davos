@@ -3,3 +3,6 @@ node_modules
 bin
 cartridges
 sites
+*.bak
+*.log
+package-lock.json

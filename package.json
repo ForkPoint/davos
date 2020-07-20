@@ -1,21 +1,25 @@
 {
   "name": "davos",
-  "version": "2.0.0-alpha.9",
+  "version": "2.0.0-alpha.11",
   "description": "Salesforce Commerce Cloud (Demandware) - Configuration Manager and Continuous Integration deployment tools",
   "main": "index.js",
   "files": [
     "LICENSE",
-    "index.js"
+    "index.js",
+    "bin",
+    "src",
+    "resources"
   ],
   "bin": {
     "davos": "./bin/davos.js"
   },
   "scripts": {
     "test": "mocha test/**/*.spec.js",
-    "lint": "eslint .",
+    "lint": "eslint --report-unused-disable-directives --ignore-path .gitignore .",
     "lint:fix": "npm run lint --silent -- --fix"
   },
   "keywords": [
+    "commerce cloud",
     "demandware",
     "webdav",
     "upload",
@@ -26,7 +30,9 @@
     "watch",
     "isml",
     "continuous integration",
-    "commerce cloud"
+    "file merge",
+    "build",
+    "deployment"
   ],
   "author": "ForkPoint",
   "license": "MIT",
@@ -70,8 +76,6 @@
     "chai": "^4.2.0",
     "chai-as-promised": "~7.1.1",
     "eslint": "^7.4.0",
-    "eslint-config-airbnb-base": "^14.2.0",
-    "eslint-plugin-import": "^2.22.0",
     "mocha": "^8.0.1",
     "mocha-clean": "~1.0.0",
     "mock-fs": "^4.12.0",

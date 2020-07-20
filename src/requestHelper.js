@@ -27,5 +27,5 @@ async function getAccessToken(clientID, clientSecret) {
 }
 
 module.exports = {
-    getAccessToken: getAccessToken
+    getAccessToken
 };

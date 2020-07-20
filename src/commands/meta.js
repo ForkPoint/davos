@@ -1,3 +1,5 @@
+'use strict'
+
 exports.command = 'meta <command>';
 exports.desc = 'Metadata operations';
 exports.builder = function (yargs) {

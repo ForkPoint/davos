@@ -1,3 +1,5 @@
+'use strict';
+
 /** Modules */
 const sfccCode = require('sfcc-ci').code;
 const chalk = require('chalk');
@@ -15,7 +17,7 @@ function activateCodeVersion(instance, token, version) {
                 rej('No such version');
                 return;
             }
-    
+
             Log.info(`${chalk.cyan(version)} active on ${chalk.green(instance)}`);
             res();
         });

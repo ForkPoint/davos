@@ -1,4 +1,6 @@
-const expect = require('chai').expect;
+'use strict';
+
+const {expect} = require('chai');
 const mockfs = require('mock-fs');
 const sinon = require('sinon');
 const path = require('path');
@@ -11,15 +13,15 @@ const sandbox = require('../Stubs/SandboxStub');
 
 let logSpy;
 
-describe.only('Unit: Config-Editor', function () {
-    afterEach(function () {
+describe.only('Unit: Config-Editor', () => {
+    afterEach(() => {
         mockfs.restore();
         sandbox.resetHistory();
         sinon.restore();
     });
 
     /** Config Editor Initialization */
-    it('should create an ConfigEditor instance', function () {
+    it('should create an ConfigEditor instance', () => {
         const configEditor = new ConfigEditor({});
 
         expect(configEditor).to.not.be.null;
@@ -29,7 +31,7 @@ describe.only('Unit: Config-Editor', function () {
     });
 
     /** Create configuration file profile */
-    it('should create an configuration file from input', function() {
+    it('should create an configuration file from input', () => {
         const configEditor = new ConfigEditor({});
         let jsonExists = false;
         let davosJson = '';
@@ -61,17 +63,17 @@ describe.only('Unit: Config-Editor', function () {
     });
 
     /** List profiles in configuration file */
-    it('should list the current profiles in the configuration file', function() {
+    it('should list the current profiles in the configuration file', () => {
         let configEditor = {};
         let davosJson = [];
-        
+
         logSpy = sandbox.spy(Log, 'info');
         mockHelper.mockDavosJsonWithProfiles();
         configEditor = new ConfigEditor({});
         configEditor.listProfiles();
 
         try {
-            davosJson = JSON.parse(fs.readFileSync(process.cwd() + '/davos.json'));
+            davosJson = JSON.parse(fs.readFileSync(`${process.cwd()  }/davos.json`));
         } catch(err) {
             console.log(err);
             return;
@@ -114,7 +116,7 @@ describe.only('Unit: Config-Editor', function () {
     //     logSpy.restore();
     // });
 
-    it('should edit an existing configuration and save it in the configuration json', function() {
+    it('should edit an existing configuration and save it in the configuration json', () => {
         let configEditor = {};
         let jsonExists = false;
         let davosJson = '';
@@ -128,9 +130,9 @@ describe.only('Unit: Config-Editor', function () {
 
         configEditor.editProfile();
 
-        jsonExists = fs.existsSync(process.cwd() + '/davos.json');
+        jsonExists = fs.existsSync(`${process.cwd()  }/davos.json`);
         try {
-            davosJson = fs.readFileSync(process.cwd() + '/davos.json');
+            davosJson = fs.readFileSync(`${process.cwd()  }/davos.json`);
             davosObj = JSON.parse(davosJson);
             activeProfile = davosObj.find(profile => profile.active);
         } catch(err) {

@@ -1,5 +1,6 @@
+'use strict';
+
 (function () {
-  'use strict';
 
   const chalk = require('chalk');
   const yargonaut = require('yargonaut')
@@ -11,13 +12,13 @@
   .style('bold.blue', 'default:')
   .style('bold.green', 'aliases:')
   .style('yellow', 'required')
-  .style("blue")
-  .style("yellow", "required")
-  .errorsStyle("red")
+  .style('blue')
+  .style('yellow', 'required')
+  .errorsStyle('red')
   .helpStyle('green.bold');
 
   let argv, activeConfig;
-  var yargs = require('yargs');
+  const yargs = require('yargs');
   argv = yargs
     .version()
     .usage(`${chalk.yellow(`${yargonaut.asFont('davos', 'Cyberlarge')}`)}\n${chalk.bold.underline('Usage:')}\ndavos <command> [options]`)
@@ -32,13 +33,13 @@
     .example('davos upload sites', 'import sites meta')
     .example('davos upload sites --f [meta file name]', 'import specific meta file')
     .example('davos watch', 'watch all cartridges from your configuration for changes or a specific single cartridge from your local cartridges')
-    .example("davos meta split --in [path/to/bundle.xml] --out dir/for/chunks", "split a meta/library bundle into chunks by attribute group or content assets. Path must be relative starting from sites/site_template/ directory.")
-    .example("davos meta merge --in [pattern] --out bundle.xml", "merge all files matching the pattern into a bundle.xml in your CWD")
-    .example("davos code list", "Lists the current code versions available on the current active profile instance")
-    .example("davos code activate --ver [code version name]", "Activates the given code version on the current active profile instance")
-    .example("davos code shift", "Shifts the code versions. Selects the first non-active, activates it, then switches back to the previous code version")
-    .example("davos code deploy (able to deploy to PIG instances, if the profile contains 'pfx' (p12 certificate) and 'passphrase' properties", "Deploys the current code base to the active profile instance")
-    .example("davos code deploy --list", "Lists the codebase cartridges that will be uploaded to the active profile code version in the instance")
+    .example('davos meta split --in [path/to/bundle.xml] --out dir/for/chunks', 'split a meta/library bundle into chunks by attribute group or content assets. Path must be relative starting from sites/site_template/ directory.')
+    .example('davos meta merge --in [pattern] --out bundle.xml', 'merge all files matching the pattern into a bundle.xml in your CWD')
+    .example('davos code list', 'Lists the current code versions available on the current active profile instance')
+    .example('davos code activate --ver [code version name]', 'Activates the given code version on the current active profile instance')
+    .example('davos code shift', 'Shifts the code versions. Selects the first non-active, activates it, then switches back to the previous code version')
+    .example('davos code deploy (able to deploy to PIG instances, if the profile contains \'pfx\' (p12 certificate) and \'passphrase\' properties', 'Deploys the current code base to the active profile instance')
+    .example('davos code deploy --list', 'Lists the codebase cartridges that will be uploaded to the active profile code version in the instance')
 
     .config(activeConfig)
     .options({

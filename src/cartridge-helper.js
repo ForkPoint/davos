@@ -1,3 +1,5 @@
+'use strict'
+
 const path = require('path');
 const utils = require('./util');
 const Constants = require('./constants');
@@ -15,7 +17,7 @@ function getCartridgesPath() {
  */
 function getCartridges(all = false, config) {
     if (all || !config.cartridge) {
-        let cartridgesDir = getCartridgesPath();
+        const cartridgesDir = getCartridgesPath();
 
         return fs.readdirSync(cartridgesDir).filter(dir => {
             return fs.lstatSync(path.join(cartridgesDir, dir)).isDirectory();
@@ -26,11 +28,11 @@ function getCartridges(all = false, config) {
 }
 
 function getCartridgesFromDir(dir) {
-    let result = [];
+    const result = [];
 
-    dir = path.join(dir, "/cartridges");
+    dir = path.join(dir, '/cartridges');
 
-    let paths = glob.sync('**/cartridge/', {
+    const paths = glob.sync('**/cartridge/', {
         cwd: dir,
         dot: true,
         nosort: true,
@@ -38,8 +40,8 @@ function getCartridgesFromDir(dir) {
         ignore: Constants.GLOB_IGNORED
     });
 
-    paths.forEach(function (filePath) {
-        let absolutePath = filePath,
+    paths.forEach((filePath) => {
+        const absolutePath = filePath,
             relativeCartridgePath = path.relative(dir, absolutePath),
             relativePath = path.dirname(relativeCartridgePath).replace(/\\/g, '/');
 
@@ -50,7 +52,7 @@ function getCartridgesFromDir(dir) {
 }
 
 module.exports = {
-    getCartridgesPath: getCartridgesPath,
-    getCartridges: getCartridges,
-    getCartridgesFromDir: getCartridgesFromDir
+    getCartridgesPath,
+    getCartridges,
+    getCartridgesFromDir
 };

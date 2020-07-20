@@ -1,3 +1,5 @@
+'use strict';
+
 /** Modules */
 const sfccCode = require('sfcc-ci').code;
 const chalk = require('chalk');
@@ -8,16 +10,16 @@ const util = require('../util');
 
 function ListCodeVersions(instance, token) {
     return new Promise((res, rej) => {
-        sfccCode.list(instance, token, function(err, list) {
+        sfccCode.list(instance, token, (err, list) => {
             let versions = [];
-    
+
             if (err) {
                 rej(err);
                 return;
             }
-    
+
             versions = list.data;
-    
+
             /** show the code versions */
             util.listCodeVersions(versions);
             res();

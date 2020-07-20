@@ -117,13 +117,13 @@ function mockDavosJsonWithProfiles() {
 }
 
 module.exports = {
-    mockFileSystemForSplit: mockFileSystemForSplit,
-    mockFileSystemForMerge: mockFileSystemForMerge,
-    mockFileSystemForUploadMetaWithoutConfigFile: mockFileSystemForUploadMetaWithoutConfigFile,
-    mockFileSystemForUploadMetaWithConfigFile: mockFileSystemForUploadMetaWithConfigFile,
-    mockFileSystemForUploadCartridgesWithConfigFile: mockFileSystemForUploadCartridgesWithConfigFile,
-    mockFileSystemForUploadCartridgesWithOutConfigFile: mockFileSystemForUploadCartridgesWithOutConfigFile,
-    mockGetCartridges: mockGetCartridges,
-    mockDavosJson: mockDavosJson,
-    mockDavosJsonWithProfiles: mockDavosJsonWithProfiles,
+    mockFileSystemForSplit,
+    mockFileSystemForMerge,
+    mockFileSystemForUploadMetaWithoutConfigFile,
+    mockFileSystemForUploadMetaWithConfigFile,
+    mockFileSystemForUploadCartridgesWithConfigFile,
+    mockFileSystemForUploadCartridgesWithOutConfigFile,
+    mockGetCartridges,
+    mockDavosJson,
+    mockDavosJsonWithProfiles,
 };

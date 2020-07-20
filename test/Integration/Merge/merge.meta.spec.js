@@ -1,5 +1,5 @@
 const sandbox = require('../../Stubs/SandboxStub');
-const expect = require('chai').expect;
+const {expect} = require('chai');
 const Davos = require('../../../index');
 const Log = require('../../../src/logger');
 const mockfs = require('mock-fs');
@@ -10,8 +10,8 @@ const { Paths: { OutputDir, InputMergeDir, OutputMergeFile } } = require('../../
 
 let logSpy = null;
 
-describe('INTEGRATION: Meta Merge', function () {
-    afterEach(function () {
+describe('INTEGRATION: Meta Merge', () => {
+    afterEach(() => {
         mockfs.restore();
         sandbox.resetHistory();
     });
@@ -35,19 +35,19 @@ describe('INTEGRATION: Meta Merge', function () {
         verifyFilesMerged();
     });
 
-    it('should log error file when folder does not exist', async function () {
+    it('should log error file when folder does not exist', async () => {
         mockFileSystemForMerge();
         const davos = new Davos();
         logSpy = sandbox.spy(Log, 'error');
-        const newDir = InputMergeDir + 'test';
-        let res = await davos.merge(newDir, OutputMergeFile);
+        const newDir = `${InputMergeDir  }test`;
+        const res = await davos.merge(newDir, OutputMergeFile);
 
         expect(res).to.be.false;
         expect(logSpy.callCount).to.equal(1);
         logSpy.restore();
     });
 
-    it('should create new folder with --force if it does not exists', async function () {
+    it('should create new folder with --force if it does not exists', async () => {
         mockFileSystemForSplit();
         const newDir = 'test';
         const params = { command: { in: InputMergeDir + newDir, out: OutputDir, force: true } };
@@ -55,16 +55,16 @@ describe('INTEGRATION: Meta Merge', function () {
 
         await davos.merge();
 
-        let files = fs.readdirSync(InputMergeDir);
+        const files = fs.readdirSync(InputMergeDir);
         expect(files.indexOf(newDir)).not.equal(-1);
     });
 
-    it('should log error if params in and out not provided', async function () {
+    it('should log error if params in and out not provided', async () => {
         const params = { command: {} };
         const davos = new Davos(params);
         logSpy = sandbox.spy(Log, 'error');
 
-        let res = await davos.merge();
+        const res = await davos.merge();
 
         expect(res).to.be.false;
         expect(logSpy.callCount).to.equal(1);

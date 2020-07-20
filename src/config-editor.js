@@ -76,7 +76,7 @@ class ConfigEditor {
     }
 
     prompt.start();
-    prompt.get(createInsertEdit, function (err, result) {
+    prompt.get(createInsertEdit, (err, result) => {
       if (err) {
         return Utils.promptError(err);
       }
@@ -96,7 +96,7 @@ class ConfigEditor {
             templateReplace: {
               files: [result.templateReplace],
               pattern: {
-                buildVersion: "@DEPLOYMENT_VERSION@"
+                buildVersion: '@DEPLOYMENT_VERSION@'
               }
             }
           }
@@ -112,7 +112,7 @@ class ConfigEditor {
     const self = this;
 
     prompt.start();
-    prompt.get(createInsertEdit, function (err, result) {
+    prompt.get(createInsertEdit, (err, result) => {
       if (err) {
         return Utils.promptError(err);
       }
@@ -143,7 +143,7 @@ class ConfigEditor {
           templateReplace: {
             files: [result.templateReplace],
             pattern: {
-              buildVersion: "@DEPLOYMENT_VERSION@"
+              buildVersion: '@DEPLOYMENT_VERSION@'
             }
           }
         }
@@ -165,12 +165,12 @@ class ConfigEditor {
     const len = profiles.length;
 
     if (foundProfile === undefined) {
-      Log.info(chalk.red(`\nCannot find profile`));
+      Log.info(chalk.red('\nCannot find profile'));
       return;
     }
 
     prompt.start();
-    prompt.get(createInsertEdit, function (err, result) {
+    prompt.get(createInsertEdit, (err, result) => {
       if (err) {
         return Utils.promptError(err);
       }
@@ -179,7 +179,7 @@ class ConfigEditor {
       const newList = [];
 
       for (let i = 0; i < len; i++) {
-        let currentProfile = profiles[i];
+        const currentProfile = profiles[i];
 
         if (currentProfile === foundProfile) {
           currentProfile.profile = result.hostname.split('-')[0];
@@ -199,7 +199,7 @@ class ConfigEditor {
 
       self.ConfigManager.saveConfiguration(newList);
 
-      Log.info(chalk.cyan(`\nSuccessfuly updated profile`));
+      Log.info(chalk.cyan('\nSuccessfuly updated profile'));
     });
   }
 
@@ -213,7 +213,7 @@ class ConfigEditor {
     let result;
 
     for (let i = 0; i < len; i++) {
-      let currentProfile = profiles[i];
+      const currentProfile = profiles[i];
 
       result = chalk.bgWhite(chalk.black(currentProfile.profile));
 
@@ -241,7 +241,7 @@ class ConfigEditor {
     }
 
     for (let i = 0; i < len; i++) {
-      let currentProfile = profiles[i];
+      const currentProfile = profiles[i];
       currentProfile.SetActive(currentProfile === foundProfile);
       newList.push(currentProfile);
     }

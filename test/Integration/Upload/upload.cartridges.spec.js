@@ -1,6 +1,6 @@
 const Davos = require('../../../index');
 const Log = require('../../../src/logger');
-const expect = require('chai').expect;
+const {expect} = require('chai');
 const WebDav = require('../../../src/webdav');
 const mockfs = require('mock-fs');
 const sandbox = require('../../Stubs/SandboxStub');
@@ -11,8 +11,8 @@ const {
 
 let LogSpy;
 
-describe('INTEGRATION: Upload Cartridges', function () {
-    afterEach(function () {
+describe('INTEGRATION: Upload Cartridges', () => {
+    afterEach(() => {
         mockfs.restore();
         LogSpy.restore();
         sandbox.resetHistory();
@@ -32,7 +32,7 @@ describe('INTEGRATION: Upload Cartridges', function () {
         this.enableTimeouts(false);
         mockFileSystemForUploadCartridgesWithOutConfigFile();
         LogSpy = sandbox.spy(Log, 'error');
-        const params = { "username": "user", "hostname": "test.demandware.net", "password": "pass", "codeVersion": "v1", "exclude": ["**/node_modules/**", "**/.git/**", "**/.svn/**", "**/.sass-cache/**"], "cartridge": ["app_storefront"] }
+        const params = { 'username': 'user', 'hostname': 'test.demandware.net', 'password': 'pass', 'codeVersion': 'v1', 'exclude': ['**/node_modules/**', '**/.git/**', '**/.svn/**', '**/.sass-cache/**'], 'cartridge': ['app_storefront'] }
         const davos = new Davos(params);
         await davos.uploadCartridges();
         sandbox.assert.calledOnce(WebDav.prototype.delete);
