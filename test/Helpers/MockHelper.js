@@ -101,7 +101,7 @@ function mockGetCartridges() {
 
 function mockDavosJson() {
     mockfs({
-        'davos.json': '',
+        'davos.json': fs.readFileSync('test/files/davos.json', 'UTF-8').toString(),
         'cartridges': {
             'app_test': {
                 'cartridge': {}
@@ -117,13 +117,13 @@ function mockDavosJsonWithProfiles() {
 }
 
 module.exports = {
-    mockFileSystemForSplit: mockFileSystemForSplit,
-    mockFileSystemForMerge: mockFileSystemForMerge,
-    mockFileSystemForUploadMetaWithoutConfigFile: mockFileSystemForUploadMetaWithoutConfigFile,
-    mockFileSystemForUploadMetaWithConfigFile: mockFileSystemForUploadMetaWithConfigFile,
-    mockFileSystemForUploadCartridgesWithConfigFile: mockFileSystemForUploadCartridgesWithConfigFile,
-    mockFileSystemForUploadCartridgesWithOutConfigFile: mockFileSystemForUploadCartridgesWithOutConfigFile,
-    mockGetCartridges: mockGetCartridges,
-    mockDavosJson: mockDavosJson,
-    mockDavosJsonWithProfiles: mockDavosJsonWithProfiles,
+    mockFileSystemForSplit,
+    mockFileSystemForMerge,
+    mockFileSystemForUploadMetaWithoutConfigFile,
+    mockFileSystemForUploadMetaWithConfigFile,
+    mockFileSystemForUploadCartridgesWithConfigFile,
+    mockFileSystemForUploadCartridgesWithOutConfigFile,
+    mockGetCartridges,
+    mockDavosJson,
+    mockDavosJsonWithProfiles,
 };

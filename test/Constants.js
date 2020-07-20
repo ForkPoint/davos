@@ -1,3 +1,5 @@
+'use strict';
+
 module.exports = {
     Paths: {
         OutputDir: '../some/other/path/',

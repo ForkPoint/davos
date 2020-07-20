@@ -1,3 +1,5 @@
+'use strict';
+
 /** Modules */
 const sfccCode = require('sfcc-ci').code;
 const chalk = require('chalk');
@@ -18,7 +20,7 @@ async function DeployCodeVersion(config, token) {
         passphrase: config.passphrase
     } : {};
 
-    await utils.compress(cartridgeHelper.getCartridgesPath(), archiveName, cartridges.map(name => name + "/**"), config.codeVersion + '/', config);
+    await utils.compress(cartridgeHelper.getCartridgesPath(), archiveName, cartridges.map(name => `${name  }/**`), `${config.codeVersion  }/`, config);
 
     Log.info(`Deploying to ${chalk.cyan(config.hostname)}...`);
 
@@ -29,7 +31,7 @@ async function DeployCodeVersion(config, token) {
                 rej(err);
                 return;
             }
-    
+
             Log.info(`Successfully deployed ${config.codeVersion} to ${config.hostname}`);
             res();
         });

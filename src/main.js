@@ -98,9 +98,9 @@ class Davos {
    * @param {string} pattern Starts from project root or cwd
    * @param {string} placeholder A string to look for
    */
-  replaceRevisionNumber(pattern, placeholder = "@BUILD_NUMBER@") {
+  replaceRevisionNumber(pattern, placeholder = '@BUILD_NUMBER@') {
     const config = this.ConfigManager.getActiveConfig();
-    ReplaceRevisionNumber(pattern, placeholder = "@BUILD_NUMBER@", config);
+    ReplaceRevisionNumber(pattern, placeholder = '@BUILD_NUMBER@', config);
   }
 
   /**

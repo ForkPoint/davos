@@ -1,4 +1,4 @@
-const expect = require('chai').expect;
+const {expect} = require('chai');
 const mockfs = require('mock-fs');
 // const sandbox = require('../Stubs/SandboxStub');
 const cartridgeHelper = require('../../src/cartridge-helper');
@@ -9,13 +9,13 @@ const Configuration = require('../Mock/Configuration');
 const mockHelper = require('../Helpers/MockHelper');
 const globby = require('globby');
 
-describe('Unit: Cartridge Helper', function () {
-    afterEach(function () {
+describe('Unit: Cartridge Helper', () => {
+    afterEach(() => {
         mockfs.restore();
     });
 
     /** Get Cartridge Path */
-    it('should return cartridge path, based on the current root', function () {
+    it('should return cartridge path, based on the current root', () => {
         const path = cartridgeHelper.getCartridgesPath();
 
         expect(path).to.be.string;
@@ -23,7 +23,7 @@ describe('Unit: Cartridge Helper', function () {
     });
 
     /** Get Cartridges */
-    it('should return an array containing cartridges paths from the configuration', function() {
+    it('should return an array containing cartridges paths from the configuration', () => {
         const config = new Configuration({ cartridge: ['app_test/cartridge'] });
         const cartridges = cartridgeHelper.getCartridges(null, config);
 
@@ -31,7 +31,7 @@ describe('Unit: Cartridge Helper', function () {
         expect(cartridges).to.have.lengthOf(1);
     });
 
-    it('should return an array containing cartridges paths from the system, with configuration passed', function () {
+    it('should return an array containing cartridges paths from the system, with configuration passed', () => {
         const config = new Configuration({ cartridge: ['app_test/cartridge'] });
         let cartridges = [];
 

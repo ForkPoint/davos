@@ -1,8 +1,10 @@
+'use strict'
+
 /**
  * Class Configuration
  * Represents a single configuration, attached to a certain Profile
- * 
- * @param {object} config 
+ *
+ * @param {object} config
  */
 class Configuration {
     constructor(config) {

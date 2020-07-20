@@ -1,3 +1,5 @@
+'use strict';
+
 /** Modules */
 const Queue = require('sync-queue');
 const chokidar = require('chokidar');
@@ -63,17 +65,17 @@ function watch(config) {
             if (!isFirstUseFiles) {
                 Log.info(`File ${p} has been added`);
 
-                queue.place(function () {
+                queue.place(() => {
                     /** Remove 'cartridges/' substring from path. */
-                    let newPath = p.split('\\');
+                    const newPath = p.split('\\');
                     newPath.shift();
                     p = newPath.join('\\');
 
                     return webdav.put(p)
-                        .then(function () {
+                        .then(() => {
                             Log.info(chalk.cyan(`Successfully uploaded: ${p}`));
                             queue.next();
-                        }, function (err) {
+                        }, (err) => {
                             Log.error(err);
                             queue.next();
                         });
@@ -84,17 +86,17 @@ function watch(config) {
             if (!isFirstUseDirectories) {
                 Log.info(`Directory ${p} has been added`);
 
-                queue.place(function () {
+                queue.place(() => {
                     /** Remove 'cartridges/' substring from path. */
-                    let newPath = p.split('\\');
+                    const newPath = p.split('\\');
                     newPath.shift();
                     p = newPath.join('\\');
 
                     return webdav.mkcol(p)
-                        .then(function () {
+                        .then(() => {
                             Log.info(chalk.cyan(`Successfully uploaded: ${p}`));
                             queue.next();
-                        }, function (err) {
+                        }, (err) => {
                             Log.error(err);
                             queue.next();
                         });
@@ -119,17 +121,17 @@ function watch(config) {
 
                 Log.info(`File ${p} has been changed`);
 
-                queue.place(function () {
+                queue.place(() => {
                     /** Remove 'cartridges/' substring from path. */
-                    let newPath = p.split('\\');
+                    const newPath = p.split('\\');
                     newPath.shift();
                     p = newPath.join('\\');
 
                     return webdav.put(p)
-                        .then(function () {
+                        .then(() => {
                             Log.info(chalk.cyan(`Successfully uploaded: ${p}`));
                             queue.next();
-                        }, function (err) {
+                        }, (err) => {
                             Log.debug(err);
                             queue.next();
                         });
@@ -137,7 +139,7 @@ function watch(config) {
             }
         })
         .on('unlink', path => {
-            let removedFile = watchHashList.find(x => x.filePath === path),
+            const removedFile = watchHashList.find(x => x.filePath === path),
                 indexOfRemovedFile = watchHashList.indexOf(removedFile);
 
             if (indexOfRemovedFile != -1) {
@@ -146,17 +148,17 @@ function watch(config) {
 
             Log.info(`File ${path} has been removed`);
 
-            queue.place(function () {
+            queue.place(() => {
                 /** Remove 'cartridges/' substring from path. */
-                let newPath = path.split('\\');
+                const newPath = path.split('\\');
                 newPath.shift();
                 path = newPath.join('\\');
 
                 return webdav.delete(path)
-                    .then(function () {
+                    .then(() => {
                         Log.info(chalk.cyan(`Successfully deleted: ${path}`));
                         queue.next();
-                    }, function (err) {
+                    }, (err) => {
                         Log.error(err);
                         queue.next();
                     });
@@ -165,23 +167,23 @@ function watch(config) {
         .on('unlinkDir', path => {
             Log.info(`Directory ${path} has been removed`);
 
-            queue.place(function () {
+            queue.place(() => {
                 /** Remove 'cartridges/' substring from path. */
-                let newPath = path.split('\\');
+                const newPath = path.split('\\');
                 newPath.shift();
                 path = newPath.join('\\');
 
                 return webdav.delete(path)
-                    .then(function () {
+                    .then(() => {
                         Log.info(chalk.cyan(`Successfully deleted: ${path}`));
                         queue.next();
-                    }, function (err) {
+                    }, (err) => {
                         Log.error(err);
                         queue.next();
                     });
             });
         })
-        .on('error', function (err) {
+        .on('error', (err) => {
             Log.error('Error while watching with chokidar:', err, '\nRestarting watch...');
         });
 }

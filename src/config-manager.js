@@ -1,6 +1,4 @@
-
-
-/** Constants */
+'use strict'
 
 /** Modules */
 const fs = require('fs');

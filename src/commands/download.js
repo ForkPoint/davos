@@ -1,3 +1,5 @@
+'use strict'
+
 exports.command = 'download <command>';
 exports.desc = 'download operations';
 exports.aliases = ['dl'];

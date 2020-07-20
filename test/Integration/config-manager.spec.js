@@ -1,4 +1,4 @@
-const expect = require('chai').expect;
+const {expect} = require('chai');
 const mockfs = require('mock-fs');
 const sinon = require('sinon');
 const Davos = require('../../src/main');
@@ -10,15 +10,15 @@ const sandbox = require('../Stubs/SandboxStub');
 
 let logSpy;
 
-describe.only('Integration: Config-Manager', function () {
-    afterEach(function () {
+describe.only('Integration: Config-Manager', () => {
+    afterEach(() => {
         mockfs.restore();
         sandbox.resetHistory();
         sinon.restore();
     });
 
     /** Config Editor Initialization */
-    it('should initialize ConfigManager and create profiles, based on the configuration file', function () {
+    it('should initialize ConfigManager and create profiles, based on the configuration file', () => {
         let davos = {};
         let davosJson = '';
         let davosObj = [];
@@ -28,7 +28,7 @@ describe.only('Integration: Config-Manager', function () {
         davos = new Davos();
 
         try {
-            davosJson = fs.readFileSync(process.cwd() + '/davos.json');
+            davosJson = fs.readFileSync(`${process.cwd()  }/davos.json`);
             davosObj = JSON.parse(davosJson);
         } catch (err) {
             console.log(err);

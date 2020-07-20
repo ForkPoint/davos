@@ -1,3 +1,5 @@
+'use strict';
+
 /** Modules */
 const request = require('request');
 const fs = require('fs');
@@ -42,9 +44,9 @@ function escapeHTML(s) {
 function assetTemplateReplace(template, libraryID, assetJS) {
     const assetKeys = Object.keys(assetJS);
     let assetContent = '';
-    let pageAttributes = {};
-    let customAttributes = {};
-    let siteMapAttributes = {};
+    const pageAttributes = {};
+    const customAttributes = {};
+    const siteMapAttributes = {};
 
     template = template.replace(/{{ libraryid }}/g, libraryID).replace(/{{ aid }}/g, assetJS.id);
 
@@ -74,7 +76,7 @@ function assetTemplateReplace(template, libraryID, assetJS) {
 
         Object.keys(assetPageAttributesMap).forEach((key) => {
             let value = '';
-            
+
             if (assetJS[key]) {
                 value = Object.prototype.hasOwnProperty.call(pageAttributes[key], 'default') ? pageAttributes[key].default : pageAttributes[key];
                 assetContent += `<${assetPageAttributesMap[key]}>${value}</${assetPageAttributesMap[key]}>`;
@@ -118,7 +120,7 @@ function assetTemplateReplace(template, libraryID, assetJS) {
         Object.keys(assetSiteMapAttributesMap).forEach((key) => {
 
             if (assetJS[key]) {
-                let value = Object.prototype.hasOwnProperty.call(siteMapAttributes[key], 'default') ? siteMapAttributes[key].default : siteMapAttributes[key];
+                const value = Object.prototype.hasOwnProperty.call(siteMapAttributes[key], 'default') ? siteMapAttributes[key].default : siteMapAttributes[key];
                 assetContent += `<${assetSiteMapAttributesMap[key]}>${value}</${assetSiteMapAttributesMap[key]}>`;
             }
         });
@@ -142,7 +144,7 @@ async function downloadAsset(aid, libID, output, config) {
     Log.info('Attempting to get asset...');
 
     return await new Promise((res, rej) => {
-        request.get(options, function (error, response, body) {
+        request.get(options, (error, response, body) => {
             let result = '';
             let path = '';
             let template = '';

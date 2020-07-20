@@ -1,6 +1,6 @@
 const Davos = require('../../../index');
 const BM = require('../../../src/bm');
-const expect = require('chai').expect;
+const {expect} = require('chai');
 const Log = require('../../../src/logger');
 const mockfs = require('mock-fs');
 const sandbox = require('../../Stubs/SandboxStub');
@@ -9,48 +9,48 @@ const { mockFileSystemForUploadMetaWithoutConfigFile, mockFileSystemForUploadMet
 
 let LogSpy = null;
 
-describe('INTEGRATION: Upload Meta', function () {
-    afterEach(function () {
+describe('INTEGRATION: Upload Meta', () => {
+    afterEach(() => {
         mockfs.restore();
         sandbox.resetHistory();
     });
 
-    it('should upload metadata to server via CLI without config file', async function () {
-        let params = { pattern: 'davos-meta-bundle.xml', hostname: "test.demandware.net", username: "user", password: "password", codeVersion: "v1" };
+    it('should upload metadata to server via CLI without config file', async () => {
+        const params = { pattern: 'davos-meta-bundle.xml', hostname: 'test.demandware.net', username: 'user', password: 'password', codeVersion: 'v1' };
         mockFileSystemForUploadMetaWithoutConfigFile();
         const davos = new Davos(params);
         await davos.uploadMeta();
         sandbox.assert.calledOnce(BM.prototype.deleteMeta);
     });
     
-    it('should upload metadata to server via CLI with config file', async function () {
-        let params = { pattern: 'davos-meta-bundle.xml' };
+    it('should upload metadata to server via CLI with config file', async () => {
+        const params = { pattern: 'davos-meta-bundle.xml' };
         mockFileSystemForUploadMetaWithConfigFile();
         const davos = new Davos(params);
         await davos.uploadMeta();
         sandbox.assert.calledOnce(BM.prototype.deleteMeta);
     });
 
-    it('should upload metadata to server via gulp without config file', async function () {
+    it('should upload metadata to server via gulp without config file', async () => {
         mockFileSystemForUploadMetaWithoutConfigFile();
         const davos = new Davos();
-        await davos.uploadMeta({ "pattern": "davos-meta-bundle.xml", "username": "user", "hostname": "test.demandware.net", "password": "pass", "codeVersion": "v1" });
+        await davos.uploadMeta({ 'pattern': 'davos-meta-bundle.xml', 'username': 'user', 'hostname': 'test.demandware.net', 'password': 'pass', 'codeVersion': 'v1' });
         sandbox.assert.calledOnce(BM.prototype.deleteMeta);
     });
 
-    it('should upload metadata to server via gulp with config file', async function () {
+    it('should upload metadata to server via gulp with config file', async () => {
         mockFileSystemForUploadMetaWithConfigFile();
         const davos = new Davos();
-        await davos.uploadMeta({ "pattern": "davos-meta-bundle.xml" });
+        await davos.uploadMeta({ 'pattern': 'davos-meta-bundle.xml' });
         sandbox.assert.calledOnce(BM.prototype.deleteMeta);
     });
 
     it('should log error if configuration is not provided via CLI', async function () {
         this.enableTimeouts(false);
-        let params = { pattern: 'davos-meta-bundle.xml' };
+        const params = { pattern: 'davos-meta-bundle.xml' };
         LogSpy = sandbox.spy(Log, 'error');
         const davos = new Davos(params);
-        let res = await davos.uploadMeta();
+        const res = await davos.uploadMeta();
         expect(res).to.be.undefined;
         /**
          * 5 errors:
@@ -65,7 +65,7 @@ describe('INTEGRATION: Upload Meta', function () {
         this.enableTimeouts(false);
         LogSpy = sandbox.spy(Log, 'error');
         const davos = new Davos();
-        let res = await davos.uploadMeta({ pattern: 'davos-meta-bundle.xml' });
+        const res = await davos.uploadMeta({ pattern: 'davos-meta-bundle.xml' });
         expect(res).to.be.undefined;
         expect(LogSpy.callCount).to.be.equal(1);
         LogSpy.restore();

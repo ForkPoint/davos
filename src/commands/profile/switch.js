@@ -1,4 +1,4 @@
-/* eslint no-unused-vars:0, no-unused-expressions:0 */
+
 const ConfigEditor = require('../../config-editor');
 
 exports.command = 'switch [name]';
@@ -7,7 +7,7 @@ exports.desc = 'Switch to profile';
 exports.builder = {};
 exports.handler = (argv) => {
    const configEditor = new ConfigEditor();
-   const name = argv.name;
+   const {name} = argv;
 
    configEditor.switchProfile(name);
 };

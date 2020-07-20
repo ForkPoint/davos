@@ -1,4 +1,5 @@
-/* eslint no-unused-vars:0, no-unused-expressions:0 */
+'use strict'
+
 const Davos = require('../../main');
 const Log = require('../../logger');
 
@@ -9,7 +10,7 @@ exports.builder = {};
 
 exports.handler = async (argv) => {
     const siteName = argv.site;
-    const output = argv.output;
+    const {output} = argv;
     const davos = new Davos();
 
     Log.info('Attempting to pack site...');
