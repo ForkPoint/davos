@@ -21,6 +21,7 @@ const Constants = require('./constants');
  * SFCC Manager Class
  */
 class SFCCManager {
+
     constructor(config) {
         this.config = config;
         this.token = '';
@@ -165,7 +166,6 @@ class SFCCManager {
                     return;
                 }
 
-
                 const {hits} = JSON.parse(body);
                 const running = hits.find((job) => job.status === 'RUNNING');
 
@@ -184,6 +184,8 @@ class SFCCManager {
         const clientID = this.config['client-id'];
         const clientSecret = this.config['client-secret'];
 
+        Log.debug('Client id is: \n' + clientID +', secret ' + clientSecret);
+
         return new Promise((res, rej) => {
             sfccAuth.auth(clientID, clientSecret, (err, token) => {
                 if (token) {
@@ -193,12 +195,16 @@ class SFCCManager {
                     res();
                 }
                 if (err) {
+                    Log.info('Authentication failed.');
                     Log.error(`Authentication error: ${err}`);
 
                     rej(err);
                 }
             });
-        }).catch(err => Log.error(err));
+        }).catch(err => {
+            Log.error('An error occurred while authenticating with OCAPI');
+            Log.error(err);
+        });
     }
 }
 

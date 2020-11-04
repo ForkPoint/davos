@@ -18,6 +18,14 @@ const createInsertEdit = [{
   name: 'codeversion',
   description: 'Code Version (default is version1)',
   default: 'version1'
+}, {
+  name: 'client-id',
+  description: 'Client ID for the OCAPI configuration)',
+  default: 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'
+}, {
+  name: 'client-secret',
+  description: 'Client secret for the OCAPI configuration',
+  default: 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'
 },{
   name: 'indentSize',
   description: 'Space indentation size for meta files (2 or 4)',
@@ -90,6 +98,8 @@ class ConfigEditor {
             username: result.username,
             password: result.password,
             codeVersion: result.codeversion,
+            ['client-id']: result['client-id'],
+            ['client-secret']: result['client-secret'],
             cartridge: cartridges,
             indentSize: result.indentSize,
             exclude: result.exclude.split(' '),
@@ -137,6 +147,8 @@ class ConfigEditor {
           username: result.username,
           password: result.password,
           codeVersion: result.codeversion,
+          ['client-id']: result['client-id'],
+            ['client-secret']: result['client-secret'],
           cartridge: cartridges,
           indentSize: result.indentSize,
           exclude: result.exclude.split(' '),

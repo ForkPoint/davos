@@ -35,7 +35,7 @@ class ConfigManager {
 
       if (!configFile) {
         /** create empty configuration */
-        Log.warn('No configuration file present, creating temporary empty configuration.');
+        Log.warn('No configuration file present, creating a virtual configuration.');
         Log.warn('Limited functionality will be available.');
 
         this.profiles.push(new Profile({}, true, 'default'));
