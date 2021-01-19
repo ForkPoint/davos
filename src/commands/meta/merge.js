@@ -24,7 +24,7 @@ exports.handler = async (argv) => {
 
     Log.info('Metadata merge in progress');
 
-    await davos.merge();
+    await davos.merge(argv.in, argv.out, argv.force);
   } else {
     Log.error('Please provide in and out params: --in "path/to/split/meta" --out "output/folder/filename.xml"');
   }

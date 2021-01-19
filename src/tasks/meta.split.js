@@ -20,7 +20,7 @@ async function split(paramIn, paramOut, force, config) {
         config.SetProperty('command', {
             in: paramIn,
             out: paramOut,
-            force: force === '--force' ? force : false
+            force: force
         });
     }
 
@@ -29,6 +29,9 @@ async function split(paramIn, paramOut, force, config) {
     bundleWithOutFile = bundle.substring(0, bundle.lastIndexOf(path.sep));
 
     if (!utils.checkPath(config, bundleWithOutFile, out)) return false;
+
+
+    Log.info('Running split with input '+ bundle +' and output ' + out + ' ' + (force?'forcing output folder creation':''));
 
     return splitter.split(config, bundle, out);
 }
