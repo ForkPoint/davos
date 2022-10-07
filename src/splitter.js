@@ -95,7 +95,6 @@ exports.processors = {
         })(node.toString())), {
           indent: config.indentSize
         }), (err) => {
-          Log.error(err);
           err ? reject(err) : resolve()
         });
       }
@@ -113,7 +112,6 @@ exports.processors = {
         })(node.toString())), {
           indent: config.indentSize
         }), (err) => {
-          Log.error(err);
           err ? reject(err) : resolve()
         });
       }
