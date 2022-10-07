@@ -23,7 +23,7 @@ async function merge(paramIn, paramOut, force, config) {
         config.SetProperty('command', {
             in: paramIn,
             out: paramOut,
-            force: force === '--force' ? force : false
+            force: force
         });
     }
 

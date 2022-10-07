@@ -13,18 +13,11 @@ exports.builder = {
 };
 exports.handler = async (argv) => {
   if (argv.in && argv.out) {
-    const params = {
-      command: {
-        in: argv.in,
-        out: argv.out,
-        force: argv.force
-      }
-    };
-    const davos = new Davos(params);
 
+    const davos = new Davos();
     Log.info('Metadata split in progress');
+    await davos.split(argv.in, argv.out, argv.force);
 
-    await davos.split();
   } else {
     Log.error('Please provide in and out params: --in "path/to/file.xml" --out "output/folder"');
   }

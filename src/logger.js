@@ -19,6 +19,7 @@ const config = {
 winston.addColors(config.colors);
 
 const alignedWithColorsAndTime = winston.format.combine(
+  winston.format.errors({ stack: true }),
   winston.format.colorize(),
   winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
   winston.format.align(),
@@ -37,7 +38,10 @@ const logger = module.exports = winston.createLogger({
   transports: [
     new winston.transports.Console({
       handleExceptions: true,
-      humanReadableUnhandledException: true
+      humanReadableUnhandledException: true,
+      json: false,
+      level: 'debug',
+      colorize: true,
     })
   ],
   exitOnError: false

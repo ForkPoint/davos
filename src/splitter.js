@@ -1,7 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 const {DOMParser} = require('xmldom');
-const x = require('xpath');
+const xpathLib = require('xpath');
 const prettifier = require('prettify-xml');
 const utils = require('./util');
 const Constants = require('./constants');
@@ -22,7 +22,7 @@ function absolutePath(config, fpath) {
 }
 
 exports.splitBundle = function (config, fpath, xpath, out, cfg) {
-  const template = fs.readFileSync(`${__dirname  }./resources/${  cfg.template  }.template`).toString();
+  const template = fs.readFileSync(`${__dirname}/${Constants.RESOURCES_FOLDER}/${cfg.template}.template`).toString();
   const filepath = absolutePath(config, fpath);
   const xmlFile = fs.readFileSync(filepath).toString();
 
@@ -33,7 +33,8 @@ exports.splitBundle = function (config, fpath, xpath, out, cfg) {
 
   return new Promise((resolve, reject) => {
     const document = new DOMParser().parseFromString(xmlFile.replace(`xmlns="${cfg.ns}"`, ''));
-    const nodes = x.select(xpath, document);
+
+    const nodes = xpathLib.select(xpath, document);
     const nodeMap = nodes.map(node => new Promise((fileResolve, fileReject) => cfg.persist(
       node,
       fileResolve,
@@ -74,6 +75,7 @@ exports.split = function (config, path, out) {
   if (!exports.processors[nodeName]) {
     throw new Error(`Splitting ${  nodeName  } is currently not supported.`);
   } else {
+    Log.info(`Processing type ${nodeName} ...`);
     return exports.processors[nodeName](config, path, out, prettifier)
   }
 }
@@ -85,12 +87,15 @@ exports.processors = {
       ns: 'http://www.demandware.com/xml/impex/library/2006-10-31',
       persist: (node, resolve, reject, out, template) => {
         const library = node.parentNode;
+        var contentAssetName = `${out  }/library.${  node.getAttribute('content-id')  }.xml`;
+        Log.info(contentAssetName);
 
         fs.writeFile(`${out  }/library.${  node.getAttribute('content-id')  }.xml`, prettifier(template.replace('{{ libraryid }}', library.hasAttribute('library-id') ? library.getAttribute('library-id') : '').replace('{{ objects }}', (function (replacement) {
           return () => replacement;
         })(node.toString())), {
           indent: config.indentSize
         }), (err) => {
+          Log.error(err);
           err ? reject(err) : resolve()
         });
       }
@@ -108,6 +113,7 @@ exports.processors = {
         })(node.toString())), {
           indent: config.indentSize
         }), (err) => {
+          Log.error(err);
           err ? reject(err) : resolve()
         });
       }
@@ -127,13 +133,18 @@ exports.processors = {
           attrType = `${attribute.getAttribute('system') === 'true' ? 'system' : 'custom'  }-`;
           break;
       }
+      var attributeDefinitions = source.getElementsByTagName(`${attrType  }attribute-definitions`)[0];
+      if(attributeDefinitions) {
 
-      Array.from(source.getElementsByTagName(`${attrType  }attribute-definitions`)[0].childNodes)
-        .filter(ad => ad.nodeName === 'attribute-definition' && ad.getAttribute('attribute-id') === id)
-        .forEach(ad => {
-          cloneInstance.getElementsByTagName(`${attrType  }attribute-definitions`)[0]
-            .appendChild(ad.cloneNode(true));
-        });
+        var childNodes = attributeDefinitions.childNodes;
+        Array.from(childNodes)
+          .filter(ad => ad.nodeName === 'attribute-definition' && ad.getAttribute('attribute-id') === id)
+          .forEach(ad => {
+            cloneInstance.getElementsByTagName(`${attrType  }attribute-definitions`)[0]
+              .appendChild(ad.cloneNode(true));
+          });
+
+      }
     }
     return exports.splitBundle(config, fpath, '/metadata/*', out, {
       template: 'metadata',

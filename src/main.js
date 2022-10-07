@@ -29,6 +29,9 @@ class Davos {
   constructor(config) {
     this.ConfigManager = new ConfigManager(config || {});
     this.SFCCManager = new SFCCManager(this.ConfigManager.getActiveConfig());
+
+    Log.debug('Configuration is: \n');
+    Log.debug(JSON.stringify(this.ConfigManager.getActiveConfig(), null, 2));
   }
 
   /** List code versions */
@@ -105,17 +108,17 @@ class Davos {
 
   /**
    * Metadata Split
-   * 
+   *
    * Split a big Metadata xml file into smaller chunks, separated by object type definition
    */
   async split(paramIn = null, paramOut = null, force = null) {
     await SplitMeta(paramIn, paramOut, force, this.ConfigManager.getActiveConfig());
     Log.info('Finished splitting meta');
   }
-  
+
   /**
    * Metadata Merge
-   * 
+   *
    * Merge a bunch of xml files with the same root element into a bundle.
    */
   async merge(paramIn = null, paramOut = null, force = null) {

@@ -30,7 +30,7 @@ function getCartridges(all = false, config) {
 function getCartridgesFromDir(dir) {
     const result = [];
 
-    dir = path.join(dir, '/cartridges');
+    // dir = path.join(dir, '/cartridges');
 
     const paths = glob.sync('**/cartridge/', {
         cwd: dir,

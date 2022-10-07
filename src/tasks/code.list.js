@@ -15,6 +15,7 @@ function ListCodeVersions(instance, token) {
 
             if (err) {
                 rej(err);
+                Log.error(err);
                 return;
             }
 
@@ -24,7 +25,7 @@ function ListCodeVersions(instance, token) {
             util.listCodeVersions(versions);
             res();
         });
-    }).catch(err => Log.error(err));
+    }).catch(err => Log.error(`An error occurred while listing code versions : err`));
 }
 
 module.exports = ListCodeVersions;

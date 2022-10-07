@@ -1,5 +1,5 @@
 module.exports = {
-    CARTRIDGES_FOLDER : '/cartridges',
+    CARTRIDGES_FOLDER : '',
     RESOURCES_FOLDER: '/resources',
     META_FOLDER : '/meta',
     SITES_META_FOLDER : '/sites/site_template',

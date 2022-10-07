@@ -221,11 +221,11 @@ function checkPath(config, ...params) {
         if (!dirExists) {
             // why should a --force command be used to create directory?
             // should the directory just be created if it doesn't exist?
-            if (Object.prototype.hasOwnProperty.call(config.command, 'force') && config.command.force) {
+            if (config.command.force) {
                 fs.mkdirSync(dir, { recursive: true });
                 result = true;
             } else {
-                Log.error('Folder does not exist. Use --force to create it');
+                Log.error('Folder ' + dir + ' does not exist. Use --force if you want to create it');
                 return false;
             }
         } else {
