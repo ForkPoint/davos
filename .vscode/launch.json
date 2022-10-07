@@ -33,7 +33,7 @@
             "request": "launch",
             "name": "Davos Split",
 			"program": "${workspaceFolder}/bin/davos.js",
-            "cwd": "${workspaceFolder}/../../bee/tfg",
+            "cwd": "${workspaceFolder}/test/data",
 
 			"args": [
 				"meta",
@@ -41,6 +41,58 @@
                 "sites/site_template/meta/system-objecttype-extensions.xml",
                 "--out",
                 "sites/site_template/meta"
+            ],
+            "outputCapture": "std",
+            "internalConsoleOptions": "openOnSessionStart"
+		},
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "Davos Split Mancity",
+			"program": "${workspaceFolder}/bin/davos.js",
+            "cwd": "${workspaceFolder}/test/data",
+
+			"args": [
+				"meta",
+                "split",
+                "--in"
+                "repo-system-objecttype-extensions.xml",
+                "--out",
+                "dev"
+                "--force"
+            ],
+            "outputCapture": "std",
+            "internalConsoleOptions": "openOnSessionStart"
+		},
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "Davos Split Mancity Staging",
+			"program": "${workspaceFolder}/bin/davos.js",
+            "cwd": "${workspaceFolder}/test/data",
+
+			"args": [
+				"meta",
+                "split",
+                "--in"
+                "staging-system-objecttype-extensions.xml",
+                "--out",
+                "stg"
+                "--force"
+            ],
+            "outputCapture": "std",
+            "internalConsoleOptions": "openOnSessionStart"
+		},
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "Davos Code List",
+			"program": "${workspaceFolder}/bin/davos.js",
+            "cwd": "${workspaceFolder}/test/data",
+
+			"args": [
+				"code",
+                "list"
             ],
             "outputCapture": "std",
             "internalConsoleOptions": "openOnSessionStart"

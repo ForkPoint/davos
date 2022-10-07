@@ -13,11 +13,11 @@ try {
     let minorVersion = version[1];
         minorVersion = parseInt(minorVersion);
 
-    if( majorVersion < 8 || ( majorVersion === 8 && minorVersion < 5 ) )
-        return console.error('Error: DAVOS requires Node.js v8.5 or higher to run. Please upgrade your Node.js version and try again.');
+    if( majorVersion < 12 || ( majorVersion === 12 && minorVersion < 11 ) )
+        return console.error('Error: DAVOS requires Node.js v12.11 or higher to run. Please upgrade your Node.js version and try again.');
 
 } catch( err ) {
-    console.error('Failed to determine Node.js version, please make sure you\'re using version 8 or higher.');
+    console.error('Failed to determine Node.js version, please make sure you\'re using version 12 or higher.');
 }
 
 require('../src/cli');
